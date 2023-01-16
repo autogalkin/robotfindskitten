@@ -1,0 +1,10 @@
+﻿.idea
+x64
+.vs
+loader/Debug
+Debug
+*.vcxproj
+loader/notepadgame.vcxproj.filters
+loader/notepadgame.vcxproj.user
+loader/loader.vcxproj.user
+notepadgame.sln.DotSettings.user
