@@ -3,6 +3,8 @@
 #include <Richedit.h>
 #include "boost/range/adaptor/indexed.hpp"
 
+#include "core/notepader.h"
+
 
 HWND world::create_native_window(const DWORD dwExStyle, const LPCWSTR lpWindowName, const DWORD dwStyle,
                                  const int X, const int Y, const int nWidth, const int nHeight, const HWND hWndParent, const HMENU hMenu,
@@ -14,6 +16,7 @@ HWND world::create_native_window(const DWORD dwExStyle, const LPCWSTR lpWindowNa
     L"Scintilla",lpWindowName, dwStyle,
     X,Y,nWidth,nHeight,hWndParent,hMenu, hInstance,lpParam);
     init_direct_access();
+    backbuffer = std::make_unique<class backbuffer>(notepader::get().get_world()); // TODO как правильно передать world
     return edit_window_;
 }
 
@@ -25,6 +28,28 @@ void world::init_direct_access()
     //direct_function_ =  reinterpret_cast<int64_t (__cdecl *)(sptr_t, int, uptr_t, sptr_t)>(&SendMessageW); // NOLINT(clang-diagnostic-cast-function-type)
     //direct_wnd_ptr_ = reinterpret_cast<sptr_t>(edit_window_);
     direct_wnd_ptr_ = static_cast<sptr_t>(SendMessage(get_native_window(),SCI_GETDIRECTPOINTER, 0, 0));
+}
+
+bool backbuffer::init()
+{
+        
+    const auto w = world_.lock();
+    const int width = w->get_char_width();
+        
+    if(RECT rect; w->get_window_rect(rect))
+    {
+        line_lenght_ = static_cast <int> (std::floor((std::abs(rect.left - rect.right) / width)));
+        lines_count_ = w->get_lines_on_screen();
+        if(!buffer) buffer = std::make_unique<std::vector< std::vector<char> >>(lines_count_);
+        else buffer->resize(lines_count_);
+        for(auto& line : *buffer)
+        {
+            line.resize(line_lenght_+2, ' '); // 2 for \n and \0
+            line.back() = '\0';
+        }
+        return true;
+    }
+    return false;
 }
 
 void backbuffer::send() const

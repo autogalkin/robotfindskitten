@@ -24,7 +24,7 @@ public:
     virtual void tickframe(const float deltatime)
     {
         on_tick(deltatime);
-        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(10)));
+        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(100)));
     }
 
     virtual [[nodiscard]] boost::signals2::signal<void(const float deltatime)>& get_on_tick()
@@ -105,7 +105,12 @@ protected:
     // Block window title updates
     bool hook_SetWindowTextW(HMODULE module) const;
 
-    virtual void tickframe(const float deltatime) override{ ticker::tickframe(deltatime);}
+    virtual void tickframe(const float deltatime) override
+    {
+        //world_->backbuffer->send();
+        ticker::tickframe(deltatime);
+        //world_->backbuffer->get();
+    }
     
 private:
 

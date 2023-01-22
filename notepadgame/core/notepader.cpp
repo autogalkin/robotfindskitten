@@ -28,9 +28,10 @@ void notepader::init(const HWND& main_window)
 
 void notepader::post_connect_to_notepad() 
 {
-	
+	outlog::get().print("post connect");
 	get().input_ = std::make_unique<input>();
 	get().get_input_manager()->init();
+	get().get_world()->backbuffer->init(); // TODO buffer initialize
 	// TODO убрать по местам
 	SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETVIRTUALSPACEOPTIONS, SCVS_USERACCESSIBLE|SCVS_NOWRAPLINESTART, 0);
 	SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETADDITIONALSELECTIONTYPING, 1, 0);
@@ -159,27 +160,32 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 	[](DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR lpWindowName, DWORD dwStyle,
 	int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu,
 	HINSTANCE hInstance, LPVOID lpParam) -> HWND {
-
-	// here creates class 'Notepad' and 'Edit'; can change creation params here
+		// here creates class 'Notepad' and 'Edit'; can change creation params here
+	HWND out_hwnd;
+		
 	if (!lstrcmp(lpClassName, WC_EDIT)) // handles the edit control creation and create custom window
 	{
-		HWND hwndEdit = get().init_world()->create_native_window(dwExStyle,lpWindowName, dwStyle,
+		out_hwnd = get().init_world()->create_native_window(dwExStyle,lpWindowName, dwStyle,
 		X,Y,nWidth,nHeight,hWndParent,hMenu, hInstance,lpParam);
-		return hwndEdit;
 	}
-		
-	const auto result = original(dwExStyle, lpClassName, lpWindowName, dwStyle,
-		                             X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+	else
+	{
+		out_hwnd = original(dwExStyle, lpClassName, lpWindowName, dwStyle,
+									 X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+	}
 		
 	// catch notepad.exe window
 	if (!lstrcmp(lpClassName, L"Notepad"))
 	{
-	     get().init(result);
+	     get().init(out_hwnd);
 	}
 		
-	if(get().get_main_window() && get().get_world()->get_native_window()) post_connect_to_notepad();
-	
-	return result;
+	if(get().get_main_window() && get().get_world() && get().get_world()->get_native_window())
+	{
+		post_connect_to_notepad(); // TODO std::call_once ?
+	}
+		
+	return out_hwnd;
 	});
 }
 
