@@ -10,3 +10,4 @@ loader/loader.vcxproj.user
 notepadgame.sln.DotSettings.user
 cmake-build-debug
 mainlog.txt
+out
