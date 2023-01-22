@@ -10,7 +10,7 @@
 #include <Richedit.h>
 #include <vector>
 
-#include "scintilla/include/Scintilla.h"
+#include "Scintilla.h"
 
 
 #include "core/outlog.h"
@@ -26,10 +26,9 @@
 
 
 template<typename T>
-concept Container = requires(T t)
+concept is_container_of_chars = requires(T t)
 {
-    std::begin(t);
-    std::end(t);
+    {t.data()} -> std::convertible_to<char*>;
 };
 
 class backbuffer;
@@ -90,8 +89,7 @@ public:
     
     [[nodiscard]] std::pair<int64_t, int64_t> get_selection_range() const noexcept;
 
-    template<typename T>
-    requires Container
+    template<is_container_of_chars T>
     void get_selection_t(T& out) const noexcept  {}
 
     std::pair<int64_t, int64_t> get_selection_text(std::string& out) const noexcept;
@@ -167,7 +165,7 @@ inline void world::set_background_color(const COLORREF c) const noexcept
 
 inline void world::set_all_text_color(const COLORREF c) const noexcept
 {
-    std::vector<char> v;
+    std::string v;
     get_selection_t(v);
     PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_DEFAULT,c);  // set back-color of window
     PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_LINENUMBER, c);  // set back-color of margin

@@ -1,3 +1,4 @@
+
 #include <Windows.h>
 #include <iostream>
 #include <filesystem>
@@ -24,8 +25,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    auto proc_handle = proc_info.hProcess;
-    auto proc_id = GetProcessId(proc_info.hProcess);
+    const auto proc_handle = proc_info.hProcess;
+    const auto proc_id = GetProcessId(proc_info.hProcess);
     std::cout << "Opened " << proc_id << std::endl;
 
     auto kernel32_handle = GetModuleHandleA("kernel32.dll");
