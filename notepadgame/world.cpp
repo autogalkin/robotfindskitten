@@ -1,43 +1,77 @@
 ﻿#include "world.h"
-
-#include <algorithm>
 #include <CommCtrl.h>
-#include <vector>
+#include <Richedit.h>
+#include "boost/range/adaptor/indexed.hpp"
 
-void world::append_at_caret_position(const std::wstring& s)
+
+HWND world::create_native_window(const DWORD dwExStyle, const LPCWSTR lpWindowName, const DWORD dwStyle,
+                                 const int X, const int Y, const int nWidth, const int nHeight, const HWND hWndParent, const HMENU hMenu,
+                                 const HINSTANCE hInstance, const LPVOID lpParam)
 {
-    const LRESULT end = get_caret_index()-1;
-    SendMessage(edit_window_, EM_SETSEL, end, end); // set selection - end of text
-    SendMessage(edit_window_, EM_REPLACESEL, 0, reinterpret_cast<LPARAM>(s.c_str())); // append!
+    native_dll_ = LoadLibrary(TEXT("Scintilla.dll"));
+    
+    edit_window_ = CreateWindowEx(dwExStyle,
+    L"Scintilla",lpWindowName, dwStyle,
+    X,Y,nWidth,nHeight,hWndParent,hMenu, hInstance,lpParam);
+    init_direct_access();
+    return edit_window_;
+}
+
+void world::init_direct_access()
+{
+     //direct_function_ = reinterpret_cast<int64_t (__cdecl *)(sptr_t, int, uptr_t, sptr_t)>( 
+         //GetProcAddress(  native_dll_, "Scintilla_DirectFunction"));
+    direct_function_ = reinterpret_cast<int64_t (__cdecl *)(sptr_t, int, uptr_t, sptr_t)>(SendMessage(get_native_window(),SCI_GETDIRECTFUNCTION, 0, 0));
+    //direct_function_ =  reinterpret_cast<int64_t (__cdecl *)(sptr_t, int, uptr_t, sptr_t)>(&SendMessageW); // NOLINT(clang-diagnostic-cast-function-type)
+    //direct_wnd_ptr_ = reinterpret_cast<sptr_t>(edit_window_);
+    direct_wnd_ptr_ = static_cast<sptr_t>(SendMessage(get_native_window(),SCI_GETDIRECTPOINTER, 0, 0));
+}
+
+void backbuffer::send() const
+{
+    const auto w = world_.lock();
+    const auto pos = w->get_caret_index();
+    const int64_t fl = w->get_first_visible_line();
+    const int64_t h_scroll = w->get_horizontal_scroll_offset() / w->get_char_width();
         
+    for(const auto [i, line] : *buffer | boost::adaptors::indexed(0))
+    {
+        const int64_t lnum = fl + i;
+        const int64_t fi = w->get_first_char_index_in_line(lnum);
+        const int64_t ll = w->get_line_lenght(lnum); // include endl if exists
+        int64_t endsel = h_scroll + line_lenght_+endl > ll-endl ? ll : line_lenght_ + h_scroll+1;
+           
+        char ch_end {'\0'};
+        if(lnum >= w->get_lines_count()-1)    { ch_end = '\n';   }
+        else                                  { endsel  -= endl; }
+            
+        *(line.end() - 1/*past-the-end*/ - endl) = ch_end; 
+        w->set_selection(fi+h_scroll,  fi  + endsel);
+        w->replace_selection(line);
+    }
+       
+    w->set_caret_index(pos);
 }
 
-
-std::wstring world::get_line_text(const WPARAM any_char_index_in_expected_line)
+void backbuffer::get() const
 {
-    const LRESULT current_line_num = get_line_index(any_char_index_in_expected_line);
-    const LRESULT line_length = get_line_lenght(any_char_index_in_expected_line);
-    std::vector<wchar_t> w_buffer(line_length+1, '\0');
-    wchar_t* buffer_ptr = w_buffer.data();
-    *reinterpret_cast<unsigned short*>( buffer_ptr  ) = static_cast<unsigned short>( line_length+1);
-    SendMessage(get_native_window(), EM_GETLINE, current_line_num, reinterpret_cast<LPARAM>( buffer_ptr) );
-    return {w_buffer.begin(), w_buffer.end()};
+    const auto w = world_.lock();
+    const auto pos = w->get_caret_index();
+    const int64_t fl = w->get_first_visible_line();
+    const int64_t h_scroll = w->get_horizontal_scroll_offset() / w->get_char_width();
+    
+    for(const auto [i, line] : *buffer | boost::adaptors::indexed(0))
+    {
+        const int64_t lnum = fl + i;
+        const int64_t fi = w->get_first_char_index_in_line(lnum);
+        //const int64_t ll = w->get_line_lenght(lnum);
+        
+        w->set_selection(fi+h_scroll,  fi  + line_lenght_ + h_scroll);
+        //Sleep(500);
+        auto [st, end] = w->get_selection_text(line);
+    }
+    w->set_caret_index(pos);
 }
 
-std::wstring world::get_all_text()
-{
-    const LRESULT len = get_all_text_length();
-    std::vector<wchar_t> buffer(len+1, '\0');
-    SendMessage(get_native_window(), WM_GETTEXT, len+1, reinterpret_cast<LPARAM>(buffer.data()));
-    return {buffer.begin(), buffer.end()}; 
-}
 
 
-LRESULT world::set_window_color(const HDC& device_context)
-{
-    //SetBkMode( device_context, TRANSPARENT ); // some beautiful bugs!
-    SetTextColor(device_context, RGB(241, 241, 241));
-    SetBkColor(device_context, RGB(37, 37, 38));
-    //(LRESULT) GetStockObject(DC_BRUSH); for only text
-    return reinterpret_cast<LRESULT>(CreateSolidBrush(RGB(37, 37, 38)));
-}

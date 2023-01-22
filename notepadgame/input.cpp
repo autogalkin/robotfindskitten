@@ -1,5 +1,5 @@
 ﻿#include "input.h"
-#include "core/outputlog.h"
+
 
 
 void input::receive_input()
@@ -7,7 +7,7 @@ void input::receive_input()
     // wParam is a keycode VK_...
     // The repeat count, scan code, extended-key flag, context code, https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
     if(0ul == curr_input_code_) return;
-    outputlog::glog().print("hello");
+
     switch (static_cast<key>(curr_input_code_))
     {
     case key::w: signals_.on_w(curr_direction_); break;
