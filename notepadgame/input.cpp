@@ -1,6 +1,14 @@
 ﻿#include "input.h"
 
+#include "core/notepader.h"
 
+
+
+
+void input::init()
+{
+    notepader::get().get_on_tick().connect([this](float deltatime) { receive_input(); });
+}
 
 void input::receive_input()
 {

@@ -330,7 +330,6 @@
       <AdditionalIncludeDirectories>C:\Program Files\boost\boost_1_81_0;</AdditionalIncludeDirectories>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="core\ticker.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="input.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
@@ -633,11 +632,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="core\common.h" />
     <ClInclude Include="core\iat_hook.h" />
     <ClInclude Include="core\notepader.h" />
     <ClInclude Include="core\outlog.h" />
-    <ClInclude Include="core\ticker.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="world.h" />
     <ClInclude Include="world_entities\actor.h" />

@@ -8,7 +8,37 @@
 #include "../world.h"
 
 
-class notepader final // notepad.exe wrapper
+
+class ticker
+{
+public:
+    static constexpr double time_step = 1 / 10.0 * 100;
+    explicit ticker()= default;
+    virtual ~ticker() = default;
+    
+    ticker(ticker &other) = delete;
+    ticker& operator=(const ticker& other) = delete;
+    ticker(ticker&& other) noexcept = delete;
+    ticker& operator=(ticker&& other) noexcept = delete;
+
+    virtual void tickframe(const float deltatime)
+    {
+        on_tick(deltatime);
+        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(10)));
+    }
+
+    virtual [[nodiscard]] boost::signals2::signal<void(const float deltatime)>& get_on_tick()
+    {
+        return on_tick;
+    }
+
+private:
+    boost::signals2::signal<void(const float deltatime)> on_tick{};
+};
+
+
+
+class notepader final : public ticker // notepad.exe wrapper
 {
 public:
 
@@ -28,11 +58,10 @@ public:
     
     void connect_to_notepad(const HMODULE module /* notepad.exe module*/, const uint8_t start_options=options::empty)
     {
-        start_options_ = start_options;
+        options_ = start_options;
         hook_CreateWindowExW(module);
         hook_SendMessageW(module);
         hook_GetMessageW(module);
-        
         hook_SetWindowTextW(module);
         
     }
@@ -54,17 +83,16 @@ protected:
     {
     }
 
-    virtual ~notepader() = default;
+    virtual ~notepader() override = default;
 
     void init(const HWND& main_window); // calls from hook_CreateWindowExW
     const std::shared_ptr<world>& init_world() {world_ = std::make_shared<world>(); return world_;}
-    static DWORD WINAPI post_init_notepad_window(LPVOID); // calls after the first catch hook_GetMessageW
+    static void WINAPI post_connect_to_notepad(); // calls after the first catch hook_GetMessageW
     void close();
 
     // custom WindowProc
     static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
-   
-
+    
     // Capture and block keyboard and mouse inputs
     bool hook_GetMessageW(HMODULE module) const;
     
@@ -77,11 +105,11 @@ protected:
     // Block window title updates
     bool hook_SetWindowTextW(HMODULE module) const;
 
-    
+    virtual void tickframe(const float deltatime) override{ ticker::tickframe(deltatime);}
     
 private:
 
-    uint8_t start_options_{ options::empty };
+    uint8_t options_{ options::empty };
     boost::signals2::signal<void ()> on_open_{};
     boost::signals2::signal<void ()> on_close_{};
     
@@ -90,4 +118,5 @@ private:
     HWND main_window_;
     LONG_PTR original_proc_; // notepad.exe window proc 
 };
+
 

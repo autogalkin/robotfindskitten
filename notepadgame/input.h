@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "boost/signals2.hpp"
 #include <Windows.h>
-#include "core/common.h"
+
 
 
 
@@ -43,9 +43,9 @@ public:
         std::swap(signals_, other.signals_);
         return *this;
     }
-
+   
     [[nodiscard]] key_signals& get_signals() {return signals_; }
-    void init(){ on_global_tick.connect([this] { receive_input(); });}
+    void init();
     void receive_input();
     void set_input_message(const LPMSG msg);
 
