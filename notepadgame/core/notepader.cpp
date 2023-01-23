@@ -18,7 +18,6 @@ void notepader::init(const HWND& main_window)
 {
 	
 	main_window_ = main_window;
-	SetWindowText(main_window_, L"notepadgame");
 	
 	// patch wnd proc
 	original_proc_ = GetWindowLongPtr(main_window_, GWLP_WNDPROC);
@@ -28,29 +27,17 @@ void notepader::init(const HWND& main_window)
 
 void notepader::post_connect_to_notepad() 
 {
-	outlog::get().print("post connect");
 	get().input_ = std::make_unique<input>();
 	get().get_input_manager()->init();
-	get().get_world()->backbuffer->init(); // TODO buffer initialize
-	// TODO убрать по местам
-	SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETVIRTUALSPACEOPTIONS, SCVS_USERACCESSIBLE|SCVS_NOWRAPLINESTART, 0);
-	SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETADDITIONALSELECTIONTYPING, 1, 0);
+	
+	//SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETVIRTUALSPACEOPTIONS, SCVS_USERACCESSIBLE|SCVS_NOWRAPLINESTART, 0);
+	//SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETADDITIONALSELECTIONTYPING, 1, 0);
         
 	auto& world = notepader::get().get_world();
-	notepader::get().get_world()->show_spaces(true);
-	notepader::get().get_world()->show_eol(true);
-    
+	world->show_spaces(true);
+	world->show_eol(true);
 	world->set_background_color(RGB(37,37,38));
 	world->set_all_text_color(RGB(240,240,240));
-    
-	//SendMessage(world->get_native_window(), SCI_HIDESELECTION, 1,0);
-	// set font
-	SendMessage(world->get_native_window(), SCI_STYLESETFONT, STYLE_DEFAULT, reinterpret_cast<sptr_t>("Lucida Console"));
-	SendMessage(world->get_native_window() ,SCI_STYLESETBOLD, STYLE_DEFAULT, 1); // bold
-	SendMessage(world->get_native_window(), SCI_STYLESETSIZE, STYLE_DEFAULT,36); // pt size
-	SendMessage(world->get_native_window(), SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT,1);
-	SendMessage(world->get_native_window(), SCI_SETHSCROLLBAR, 1,0);
-	
 	get().on_open_();
 	
 }
@@ -83,8 +70,8 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 
 
 
-
-bool notepader::hook_GetMessageW(HMODULE module) const
+// TODO описание как из getmessage в peek message
+bool notepader::hook_GetMessageW(const HMODULE module) const
 {
 	static decltype(&GetMessageW) original = nullptr;
 	return iat_hook::hook_import<decltype(original)>(module,
@@ -130,9 +117,17 @@ bool notepader::hook_GetMessageW(HMODULE module) const
 			lpMsg->message = WM_NULL; // send null to original dispatch loop
 		}
 
-		
-		get().tickframe(1); // TODO delta time
-		
+		try{
+			static  std::once_flag once;
+			std::call_once(once, []{get().reset_to_start();});
+			get().tickframe();
+			
+			}
+			catch([[maybe_unused]] std::exception& e){
+				//onError(e.what());
+				PostQuitMessage(0);
+				//close(); // TODO handle exeptions
+			}
 		return 1;
 		//const auto orig_res = original(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
 	});
@@ -165,7 +160,7 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 		
 	if (!lstrcmp(lpClassName, WC_EDIT)) // handles the edit control creation and create custom window
 	{
-		out_hwnd = get().init_world()->create_native_window(dwExStyle,lpWindowName, dwStyle,
+		out_hwnd = get().make_world()->create_native_window(dwExStyle,lpWindowName, dwStyle,
 		X,Y,nWidth,nHeight,hWndParent,hMenu, hInstance,lpParam);
 	}
 	else
@@ -182,9 +177,9 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 		
 	if(get().get_main_window() && get().get_world() && get().get_world()->get_native_window())
 	{
-		post_connect_to_notepad(); // TODO std::call_once ?
+		static std::once_flag once;
+		std::call_once(once, post_connect_to_notepad);
 	}
-		
 	return out_hwnd;
 	});
 }
@@ -197,4 +192,13 @@ bool notepader::hook_SetWindowTextW(HMODULE module) const
 	[](HWND hWnd, LPCWSTR lpString) -> BOOL {
 	 return FALSE;
 	});
+}
+
+void notepader::tickframe()
+{
+	world_->backbuffer->send();
+	tickable::tickframe();
+	set_window_title(L"notepadgame fps: " + std::to_wstring(get_current_frame_rate()));
+	world_->backbuffer->get();
+	
 }

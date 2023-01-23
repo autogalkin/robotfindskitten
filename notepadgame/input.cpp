@@ -7,7 +7,7 @@
 
 void input::init()
 {
-    notepader::get().get_on_tick().connect([this](float deltatime) { receive_input(); });
+    notepader::get().get_on_tick().connect([this](double deltatime) { receive_input(); });
 }
 
 void input::receive_input()

@@ -37,6 +37,9 @@
     <ClInclude Include="world_entities\character.h" />
     <ClInclude Include="world_entities\projectile.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\mainlog.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
