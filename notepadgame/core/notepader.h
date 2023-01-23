@@ -28,13 +28,12 @@ public:
     tickable& operator=(const tickable& other) = delete;
     tickable(tickable&& other) noexcept = delete;
     tickable& operator=(tickable&& other) noexcept = delete;
-
     
     using clock = std::chrono::steady_clock;
+    // fixed time step
+    static auto constexpr dt = std::chrono::duration<long long, std::ratio<1, 60>>{1};
     
-    static auto constexpr timestep = std::chrono::duration<long long, std::ratio<1, 60>>{1};
-    
-    using duration = decltype(clock::duration{} + timestep);
+    using duration = decltype(clock::duration{} + dt);
     using time_point = std::chrono::time_point<clock, duration>;
 
     virtual void reset_to_start()
@@ -63,16 +62,16 @@ public:
         
         current_time = new_t;
         
-        lag_accumulator_ += timestep - frametime;
+        lag_accumulator_ += dt - frametime;
         
         if(lag_accumulator_ > 0ms)
         {
-            const auto sleepStartTime = clock::now();
+            const auto sleep_start_time = clock::now();
             std::this_thread::sleep_for(lag_accumulator_);
-            lag_accumulator_ -= clock::now() - sleepStartTime;
+            lag_accumulator_ -= clock::now() - sleep_start_time;
         }
         
-        // compute frame rate
+        // compute frames per second
         const auto pt = seconds_tstep;
         seconds_tstep = time_point_cast<std::chrono::seconds>(std::chrono::steady_clock::now());
         ++frame_count;
@@ -81,20 +80,20 @@ public:
             frame_rate = frame_count;
             frame_count = 0;
         }
-        // TODO правильно ли?
-        const double alpha = std::chrono::duration<double>{lag_accumulator_} / timestep;
-        on_tick_(alpha);
+        
+        //const double alpha = std::chrono::duration<double>{lag_accumulator_} / dt;
+        on_tick_();
         
     }
     
     [[nodiscard]] int get_current_frame_rate() const { return frame_rate;}
-    virtual [[nodiscard]] boost::signals2::signal<void(const double deltatime)>& get_on_tick()
+    virtual [[nodiscard]] boost::signals2::signal<void()>& get_on_tick()
     {
         return on_tick_;
     }
 
 private:
-    boost::signals2::signal<void(const double deltatime)> on_tick_{};
+    boost::signals2::signal<void()> on_tick_{};
     duration lag_accumulator_{};
     time_point current_time = clock::now();
     // compute fps

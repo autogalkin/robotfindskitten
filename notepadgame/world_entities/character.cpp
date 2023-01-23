@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include "character.h"
-
-
+#include "../input.h"
+#include "../core/notepader.h"
 
 
 #ifdef  max
@@ -11,7 +11,18 @@
 #endif
 
 
-
+void character::bind_input()
+{
+    connections.reserve(4);
+    auto& input = notepader::get().get_input_manager();
+    connections.push_back(  input->get_signals().on_d.connect([this](const input::direction d)
+    {
+        if(d == input::direction::down) h_move(direction::forward);
+    }  ));
+    connections.push_back(  input->get_signals().on_a.connect([this](const input::direction d){ if(d == input::direction::down) h_move(direction::backward); }  ));
+    connections.push_back( input->get_signals().on_w.connect([this](const input::direction d){ if(d == input::direction::down) v_move(direction::backward);  }      ));
+    connections.push_back(  input->get_signals().on_s.connect([this](const input::direction d){ if(d == input::direction::down) v_move(direction::forward);    }  ));
+}
 
 void character::del_old()
 {
@@ -37,6 +48,7 @@ bool character::spawn_new(const int64_t dest)
 
 void character::h_move(const direction d)
 {
+    outlog::get().print("move");
     const int64_t p = notepader::get().get_world()->get_caret_index();
     set_position(p);
     const int64_t new_pos = std::max(p + static_cast<int64_t>(d), 0LL);

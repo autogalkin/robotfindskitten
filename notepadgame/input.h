@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <queue>
+
 #include "boost/signals2.hpp"
 #include <Windows.h>
 
@@ -51,6 +53,8 @@ public:
 
 private:
     key_signals signals_;
+    // TODO queue?
+   // std::queue<WPARAM> pressed_keys_;
     WPARAM curr_input_code_;
     direction curr_direction_;
 

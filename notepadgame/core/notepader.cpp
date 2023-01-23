@@ -39,6 +39,11 @@ void notepader::post_connect_to_notepad()
 	world->set_background_color(RGB(37,37,38));
 	world->set_all_text_color(RGB(240,240,240));
 	get().on_open_();
+	//world->characters_.emplace_back('f');
+	//world->characters_.back().bind_input();
+	//world->character_.bind_input();
+	static character ch{'f'};
+	ch.bind_input();
 	
 }
 
@@ -174,7 +179,7 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 	{
 	     get().init(out_hwnd);
 	}
-		
+	
 	if(get().get_main_window() && get().get_world() && get().get_world()->get_native_window())
 	{
 		static std::once_flag once;
@@ -196,9 +201,9 @@ bool notepader::hook_SetWindowTextW(HMODULE module) const
 
 void notepader::tickframe()
 {
-	world_->backbuffer->send();
+	//world_->backbuffer->send();
 	tickable::tickframe();
 	set_window_title(L"notepadgame fps: " + std::to_wstring(get_current_frame_rate()));
-	world_->backbuffer->get();
+	//world_->backbuffer->get();
 	
 }

@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include "actor.h"
+#include <vector>
+#include  "boost/signals2/signal.hpp"
 
-#include "../input.h"
-#include "../core/notepader.h"
 
 
 class character : public movable
@@ -33,15 +33,7 @@ public:
         unbind_input();
     }
     
-    void bind_input()
-    {
-        connections.reserve(4);
-        auto& input = notepader::get().get_input_manager();
-        connections.push_back(  input->get_signals().on_d.connect([this](const input::direction d){ if(d == input::direction::down) h_move(direction::forward);  }  ));
-        connections.push_back(  input->get_signals().on_a.connect([this](const input::direction d){ if(d == input::direction::down) h_move(direction::backward); }  ));
-        connections.push_back( input->get_signals().on_w.connect([this](const input::direction d){ if(d == input::direction::down) v_move(direction::backward);  }      ));
-        connections.push_back(  input->get_signals().on_s.connect([this](const input::direction d){ if(d == input::direction::down) v_move(direction::forward);    }  ));
-    }
+    void bind_input();
 
     void unbind_input()
     {

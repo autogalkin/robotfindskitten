@@ -7,15 +7,21 @@
 
 void input::init()
 {
-    notepader::get().get_on_tick().connect([this](double deltatime) { receive_input(); });
+    notepader::get().get_on_tick().connect([this]() { receive_input(); });
 }
 
 void input::receive_input()
 {
     // wParam is a keycode VK_...
-    // The repeat count, scan code, extended-key flag, context code, https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
+    // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
     if(0ul == curr_input_code_) return;
 
+    //for (size_t i = 0; i < queue_input_codes_.size(); ++i)
+    
+   // WPARAM elem = pressed_keys_.front();
+    
+    //pressed_keys_.pop();
+    
     switch (static_cast<key>(curr_input_code_))
     {
     case key::w: signals_.on_w(curr_direction_); break;
@@ -23,6 +29,7 @@ void input::receive_input()
     case key::s: signals_.on_s(curr_direction_); break;
     case key::d: signals_.on_d(curr_direction_); break;
     }
+    
     curr_input_code_ = 0;
     curr_direction_ = direction::undefined;
 }
