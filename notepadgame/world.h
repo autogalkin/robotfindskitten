@@ -14,8 +14,11 @@
 
 #include <cassert>
 
-#include "core/outlog.h"
+#include <boost/signals2.hpp>
 
+#include "core/gamelog.h"
+
+#include "world_entities/level.h"
 
 
 #ifdef max
@@ -34,19 +37,22 @@ concept is_container_of_chars = requires(T t)
 
 class backbuffer;
 
-// this is the EDIT Control window of the notepad :)
+// this is the EDIT Control window of the notepad
 class world final : public std::enable_shared_from_this<world>
 {
     friend class notepader;
     
 public:
     
+    
     world(world &other) = delete;
     world& operator=(const world& other) = delete;
     world(world&& other) noexcept = delete;
     world& operator=(world&& other) noexcept = delete;
+
     
     [[nodiscard]] const HWND& get_native_window() const noexcept                 { return edit_window_;}
+    [[nodiscard]] const std::unique_ptr<level>& get_level()                      {return  level;}
     void set_caret_index(const int64_t index) const noexcept                     { dcall1(SCI_GOTOPOS, index); }
     void enable_multi_selection(const bool enable) const noexcept                { dcall1(SCI_SETMULTIPLESELECTION, enable);}
     void set_multi_paste_type(const int type=SC_MULTIPASTE_EACH) const noexcept  { dcall1(SCI_SETMULTIPASTE, type);         }
@@ -96,8 +102,7 @@ public:
     template<is_container_of_chars T>
     std::pair<int64_t, int64_t> get_selection_text(T& out) const noexcept;
     
-    template<is_container_of_chars T>
-    void replace_selection(const T& new_str) const noexcept { dcall1_l(SCI_REPLACESEL,  reinterpret_cast<sptr_t>(new_str.data()));};
+    void replace_selection(const std::string_view new_str) const noexcept { dcall1_l(SCI_REPLACESEL,  reinterpret_cast<sptr_t>(new_str.data()));}
     
     ~world()
     {
@@ -105,7 +110,7 @@ public:
     }
     
 protected:
-
+    
     
     // calls from the notepad class
     [[nodiscard]] static std::shared_ptr<world> make()  { return std::shared_ptr<world>{new world()};}
@@ -116,57 +121,24 @@ protected:
     void init_direct_access();
     
     using direct_function = int64_t(*)(sptr_t, int, uptr_t, sptr_t);
-    [[nodiscard]] direct_function choose_direct_function() const noexcept
-    {
-        if(GetCurrentThreadId() == ::GetWindowThreadProcessId(get_native_window(), nullptr)) return direct_function_;
-        else return thread_safe_function_;
-    }
-
-    [[nodiscard]] sptr_t choose_window_pointer() const
-    {
-        if(GetCurrentThreadId() == ::GetWindowThreadProcessId(get_native_window(), nullptr)) return direct_wnd_ptr_;
-        else return reinterpret_cast<sptr_t>(edit_window_);
-    }
     
-    int64_t dcall0(const int message) const                                   { return choose_direct_function()(choose_window_pointer(), message, 0, 0);}  // NOLINT(modernize-use-nodiscard)
-    int64_t dcall1(const int message, const uptr_t w) const                   { return choose_direct_function()(choose_window_pointer(), message, w, 0);}  // NOLINT(modernize-use-nodiscard)
-    int64_t dcall1_l(const int message, const sptr_t l) const                 { return choose_direct_function()(choose_window_pointer(), message, 0, l);}  // NOLINT(modernize-use-nodiscard)
-    int64_t dcall2(const int message, const uptr_t w, const sptr_t l) const   { return choose_direct_function()(choose_window_pointer(), message, w, l);}  // NOLINT(modernize-use-nodiscard)
+    int64_t dcall0(const int message) const                                   { return direct_function_(direct_wnd_ptr_, message, 0, 0);}  // NOLINT(modernize-use-nodiscard)
+    int64_t dcall1(const int message, const uptr_t w) const                   { return direct_function_(direct_wnd_ptr_, message, w, 0);}  // NOLINT(modernize-use-nodiscard)
+    int64_t dcall1_l(const int message, const sptr_t l) const                 { return direct_function_(direct_wnd_ptr_, message, 0, l);}  // NOLINT(modernize-use-nodiscard)
+    int64_t dcall2(const int message, const uptr_t w, const sptr_t l) const   { return direct_function_(direct_wnd_ptr_, message, w, l);}  // NOLINT(modernize-use-nodiscard)
 
 private:
     world() = default;
     HWND edit_window_{nullptr};
-    std::unique_ptr<backbuffer> backbuffer{nullptr};
     HMODULE native_dll_{nullptr};
-    
+    std::unique_ptr<level> level{nullptr};
     sptr_t direct_wnd_ptr_{0};
     int64_t(*direct_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
-    
     int64_t(*thread_safe_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
     
 };
 
 
-class backbuffer
-{
-public:
-    friend class world;
-    explicit backbuffer(world* owner): world_(owner){}
-    [[nodiscard]] char& at(const int64_t line, const int64_t index) const { return (*buffer)[line][index];}
-    void init(const int window_width);
-    void send() const;
-    void get() const;
-    [[nodiscard]] int get_line_size() const noexcept { return line_lenght_;} 
-
-protected:
-    //[[nodiscard]] const std::unique_ptr< std::vector< std::vector<char> > >& get_buffer() const noexcept { return buffer;}
-private:
-    static constexpr int endl = 1;
-    int line_lenght_{0};
-    int lines_count_{0};
-    std::unique_ptr< std::vector< std::vector<char> > > buffer;
-    world* world_;
-};
 
 
 

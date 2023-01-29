@@ -2,32 +2,32 @@
 #include <Windows.h>
 #include <memory>
 #include <thread>
+
+#include "tick.h"
+
 #include "boost/signals2.hpp"
 
 #include "../input.h"
 #include "../world.h"
-#include <chrono>
 
 
 
-
-class tickable
+class ticker
 {
 public:
-   
     
-    explicit tickable()
+    explicit ticker()
     {
         
         using namespace std::chrono_literals;
         lag_accumulator_ = 0ns;
     }
-    virtual ~tickable() = default;
+    virtual ~ticker() = default;
     
-    tickable(tickable &other) = delete;
-    tickable& operator=(const tickable& other) = delete;
-    tickable(tickable&& other) noexcept = delete;
-    tickable& operator=(tickable&& other) noexcept = delete;
+    ticker(ticker &other) = delete;
+    ticker& operator=(const ticker& other) = delete;
+    ticker(ticker&& other) noexcept = delete;
+    ticker& operator=(ticker&& other) noexcept = delete;
     
     using clock = std::chrono::steady_clock;
     // fixed time step
@@ -105,7 +105,8 @@ private:
 
 
 
-class notepader final : public tickable // notepad.exe wrapper
+
+class notepader final : public ticker // notepad.exe wrapper
 {
 public:
 
@@ -188,5 +189,4 @@ private:
     HWND main_window_;
     LONG_PTR original_proc_; // notepad.exe window proc 
 };
-
 

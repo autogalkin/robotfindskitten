@@ -13,6 +13,8 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
     {
         // Ignore thread notifications
         DisableThreadLibraryCalls(h_module);
+
+        gamelog::get(); // alloc a console for the cout
         
         // run the notepad singleton
         notepader& np = notepader::get();

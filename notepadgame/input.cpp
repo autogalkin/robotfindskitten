@@ -3,47 +3,38 @@
 #include "core/notepader.h"
 
 
-
-
-void input::init()
+void input::tick()
 {
-    notepader::get().get_on_tick().connect([this]() { receive_input(); });
+    send_input();
 }
 
-void input::receive_input()
+void input::send_input()
 {
-    // wParam is a keycode VK_...
-    // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
-    if(0ul == curr_input_code_) return;
-
-    //for (size_t i = 0; i < queue_input_codes_.size(); ++i)
-    
-   // WPARAM elem = pressed_keys_.front();
-    
-    //pressed_keys_.pop();
-    
-    switch (static_cast<key>(curr_input_code_))
+    if(!down_key_state_.empty())
     {
-    case key::w: signals_.on_w(curr_direction_); break;
-    case key::a: signals_.on_a(curr_direction_); break;
-    case key::s: signals_.on_s(curr_direction_); break;
-    case key::d: signals_.on_d(curr_direction_); break;
+        on_down(down_key_state_);
+        on_up(up_key_state_);
     }
-    
-    curr_input_code_ = 0;
-    curr_direction_ = direction::undefined;
+    down_key_state_.clear();
+    up_key_state_.clear();
 }
 
-void input::set_input_message(const LPMSG msg)
+void input::receive(const LPMSG msg)
 {
     switch (msg->message)
     {
     case WM_KEYDOWN: 
-    case WM_SYSKEYDOWN: curr_direction_ = direction::down; break;
+    case WM_SYSKEYDOWN:{
+            down_key_state_.push_back(static_cast<key>(msg->wParam));
+            break;
+        }
     case WM_KEYUP:   
-    case WM_SYSKEYUP:curr_direction_ = direction::up; break;
+    case WM_SYSKEYUP:{
+            up_key_state_.push_back(static_cast<key>(msg->wParam));
+            break;
+        }
     default: return;
     }
-    curr_input_code_ = msg->wParam;
 
 }
+

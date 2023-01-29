@@ -8,7 +8,7 @@
 
 #include <mutex>
 
-
+#include "../world_entities/character.h"
 #include "iat_hook.h"
 
 
@@ -28,7 +28,6 @@ void notepader::init(const HWND& main_window)
 void notepader::post_connect_to_notepad() 
 {
 	get().input_ = std::make_unique<input>();
-	get().get_input_manager()->init();
 	
 	//SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETVIRTUALSPACEOPTIONS, SCVS_USERACCESSIBLE|SCVS_NOWRAPLINESTART, 0);
 	//SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETADDITIONALSELECTIONTYPING, 1, 0);
@@ -39,11 +38,23 @@ void notepader::post_connect_to_notepad()
 	world->set_background_color(RGB(37,37,38));
 	world->set_all_text_color(RGB(240,240,240));
 	get().on_open_();
-	//world->characters_.emplace_back('f');
-	//world->characters_.back().bind_input();
-	//world->character_.bind_input();
-	static character ch{'f'};
-	ch.bind_input();
+
+	
+	//get().get_input_manager()->get_down_signal().connect([](const input::key_state_type state)
+	//{
+	//	if(state.size() && state[0] == input::key::d)
+	//	{
+			
+			//char* ptr = reinterpret_cast<char*>(SendMessage(get().get_world()->get_native_window(), SCI_GETRANGEPOINTER, 1, 5));
+			//ptr[1] = 'g';
+			//auto ch = "Hello World";
+			//SendMessage(get().get_world()->get_native_window(), SCI_GETRANGEPOINTER, 1, reinterpret_cast<LPARAM>(ch));
+			
+	//	}
+	//});
+	const auto ch = get().get_world()->level->spawn_actor<character>(translation{1,2}, 'f');
+	ch->bind_input();  //auto [id, ch] = 
+	
 	
 }
 
@@ -64,7 +75,30 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 		}
 	case WM_NOTIFY:
 		{
-			// обработка scintilla auto* n =reinterpret_cast<SCNotification *>(lp);
+			
+			// scintilla notifications
+			if(const auto* n =reinterpret_cast<SCNotification *>(lp))
+			{
+				switch (n->updated)
+				{
+				case SC_UPDATE_H_SCROLL:
+					{
+						auto& w = get().get_world();
+						const auto& scroll = w->level->scroll.get();
+						w->level->scroll.pin().index_in_line(w->get_horizontal_scroll_offset() / w->get_char_width());
+						
+						break;
+					}
+				case SC_UPDATE_V_SCROLL:
+					{
+						get().get_world()->level->scroll.pin().line(get().get_world()->get_first_visible_line());
+						break;
+					}
+				default: break;
+				}
+				
+			}
+			
 			break;
 		}
 	default:
@@ -86,6 +120,7 @@ bool notepader::hook_GetMessageW(const HMODULE module) const
 		
 		while(PeekMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, PM_REMOVE))
 		{
+			//TODO switch
 			if (lpMsg->message == WM_QUIT)    
 				return 0;
 			
@@ -98,7 +133,7 @@ bool notepader::hook_GetMessageW(const HMODULE module) const
 					&&  lpMsg->wParam != VK_BACK
 					&&  lpMsg->wParam != VK_DELETE)
 				{
-					if(auto& input = get().get_input_manager()) input->set_input_message(lpMsg);
+					if(auto& input = get().get_input_manager()) input->receive(lpMsg);
 					// Block messages
 					lpMsg->message = WM_NULL;
 				}
@@ -117,6 +152,8 @@ bool notepader::hook_GetMessageW(const HMODULE module) const
 					lpMsg->message = WM_NULL;
 				}
 			}
+			
+			
 			TranslateMessage(lpMsg);                                     
 			DispatchMessage(lpMsg);
 			lpMsg->message = WM_NULL; // send null to original dispatch loop
@@ -201,8 +238,8 @@ bool notepader::hook_SetWindowTextW(HMODULE module) const
 
 void notepader::tickframe()
 {
-	//world_->backbuffer->send();
-	tickable::tickframe();
+	world_->level->send();
+	ticker::tickframe();
 	set_window_title(L"notepadgame fps: " + std::to_wstring(get_current_frame_rate()));
 	//world_->backbuffer->get();
 	

@@ -4,58 +4,43 @@
 #include "boost/signals2.hpp"
 #include <Windows.h>
 
+#include "core/tick.h"
 
 
-
-
-class input
+class input: tickable
 {
 public:
     
     // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-    enum class key{
-        w = 0x57,
-        a = 0x41,
-        s = 0x53,
-        d = 0x44,
+    enum class key : WPARAM {
+          w = 0x57
+        , a = 0x41
+        , s = 0x53
+        , d = 0x44
+        , space = VK_SPACE
     };
-
-    enum class direction{
-        up,
-        down,
-        undefined
-    };
-
-    struct key_signals
-    {
-        boost::signals2::signal<void (direction)> on_w;
-        boost::signals2::signal<void (direction)> on_a;
-        boost::signals2::signal<void (direction)> on_s;
-        boost::signals2::signal<void (direction)> on_d;
-    };
-    
-    input() : curr_input_code_(0), curr_direction_(direction::undefined){}
-    ~input() = default;
+   
+    input()  = default;
+    ~input() override = default;
 
     input(input& other) noexcept = delete;
     input(input&& other) noexcept = delete;
     input& operator=(const input& other) = delete;
-    input& operator=(input&& other) noexcept // move assignment
-    {
-        std::swap(signals_, other.signals_);
-        return *this;
-    }
-   
-    [[nodiscard]] key_signals& get_signals() {return signals_; }
-    void init();
-    void receive_input();
-    void set_input_message(const LPMSG msg);
+    input& operator=(input&& other) noexcept = delete;
+
+    virtual void tick() override;
+    void send_input();
+    void receive(const LPMSG msg);
+    
+    using key_state_type = std::vector<input::key>;
+    using signal_type = boost::signals2::signal<void (const key_state_type& key_state)>;
+    
+    [[nodiscard]] input::signal_type& get_down_signal() {return on_down; }
 
 private:
-    key_signals signals_;
-    // TODO queue?
-   // std::queue<WPARAM> pressed_keys_;
-    WPARAM curr_input_code_;
-    direction curr_direction_;
+    signal_type on_down;
+    signal_type on_up;
+    key_state_type down_key_state_;
+    key_state_type up_key_state_;
 
 };

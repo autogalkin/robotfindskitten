@@ -20,25 +20,26 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\notepader.cpp" />
+    <ClCompile Include="core\tick.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="world.cpp" />
     <ClCompile Include="world_entities\actor.cpp" />
     <ClCompile Include="world_entities\character.cpp" />
+    <ClCompile Include="world_entities\level.cpp" />
     <ClCompile Include="world_entities\projectile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\iat_hook.h" />
     <ClInclude Include="core\notepader.h" />
-    <ClInclude Include="core\outlog.h" />
+    <ClInclude Include="core\gamelog.h" />
+    <ClInclude Include="core\tick.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="world.h" />
     <ClInclude Include="world_entities\actor.h" />
     <ClInclude Include="world_entities\character.h" />
+    <ClInclude Include="world_entities\level.h" />
     <ClInclude Include="world_entities\projectile.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="..\mainlog.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
