@@ -4,10 +4,10 @@
 #include "character.h"
 
 #include "projectile.h"
-#include "../input.h"
+#include "../core/input.h"
 #include "../core/notepader.h"
-
-
+#include "../core/world.h"
+#include "level.h"
 #ifdef  max
 #undef max
 #endif

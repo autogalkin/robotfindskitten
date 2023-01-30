@@ -1,7 +1,7 @@
 ﻿#include "input.h"
 
-#include "core/notepader.h"
 
+input::~input() = default;
 
 void input::tick()
 {

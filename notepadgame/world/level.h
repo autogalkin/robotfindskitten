@@ -122,30 +122,33 @@ public:
         if (t == actors.end()) return std::nullopt;
         return t->second.get();
     }
+
+   // class spawn_error final :  public std::runtime_error{
+    //public: explicit spawn_error(const std::string& message) : std::runtime_error(message.c_str()) {}
+    //};
     
     // the factory method for create a new actor
+    // throw spawn_error if failed
     template <std::derived_from<actor> T, typename ...Args>
     requires requires(Args&& ... args){ T(spawner{}, std::forward<Args>(args)...);}
-    T* spawn_actor(const translation& spawn_location, Args&&... args)
+    T* spawn_actor(const translation& spawn_location, Args&&... args) noexcept(false)
     {
         std::unique_ptr<actor> spawned =std::make_unique<T>(spawner{}, std::forward<Args>(args)...);
         spawned->set_position(spawn_location);
         spawned->set_level(this);
         auto [It, success] = actors.emplace(std::make_pair(spawned->get_id(), std::move( spawned )));
-        if(success)
+
+        assert(success && "the level failed to allocate a new actor while spawning, actor with the given actor::tag is already exists");
+        
+        It->second->connect_to_collision(&get_collision());
+        if(const auto pos = global_position_to_buffer_position(spawn_location); is_in_buffer(pos))
         {
-            It->second->connect_to_collision(&get_collision());
-            if(const auto pos = global_position_to_buffer_position(spawn_location); is_in_buffer(pos))
-            {
-               at(pos) = It->second->getmesh();
-            }
+           at(pos) = It->second->getmesh();
         }
-        //{
-        //}  // TODO  exeption if fail
         return static_cast<T*>(It->second.get());
     }
-    
-    void destroy_actor(const actor::tag_type tag);
+
+    bool destroy_actor(const actor::tag_type tag);
     bool set_actor_location(const actor::tag_type tag, const translation new_position);
     collision& get_collision() noexcept {return collision_;}
 

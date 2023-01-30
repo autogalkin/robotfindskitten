@@ -8,7 +8,6 @@
 #include "boost/uuid/uuid.hpp"
 #include <boost/uuid/uuid_generators.hpp>
 
-#include "../core/gamelog.h"
 
 
 class translation
@@ -52,7 +51,7 @@ public:
     using hasher = boost::hash<boost::uuids::uuid>;
     using collision_response = actor::tag_type;
     
-    explicit actor(spawner sp, const char mesh=whitespace) noexcept: position_(),
+    explicit actor(spawner key, const char mesh=whitespace) noexcept: position_(),
         tag_(boost::uuids::random_generator()()), mesh_(mesh), level_(nullptr)
     {}
     virtual ~actor()

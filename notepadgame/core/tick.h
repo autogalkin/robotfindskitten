@@ -11,26 +11,10 @@ public:
     explicit tickable() { connect_to_tick();}
     tickable(const tickable& other) : tickable() {}
     tickable(tickable&& other) noexcept : tickable() { other.tick_connection.disconnect();}
-    virtual ~tickable(){ tick_connection.disconnect();}
-    
-    tickable& operator=(const tickable& other)
-    {
-        if (this == &other)
-            return *this;
-        connect_to_tick();
-        return *this;
-    }
+    virtual ~tickable();
+    tickable& operator=(const tickable& other);
+    tickable& operator=(tickable&& other) noexcept;
 
-    tickable& operator=(tickable&& other) noexcept
-    {
-        if (this == &other)
-            return *this;
-        other.tick_connection.disconnect();
-        connect_to_tick();
-        return *this;
-    }
-
-    
 protected:
     virtual void tick() = 0;
     boost::signals2::connection tick_connection;

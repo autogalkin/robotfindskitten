@@ -4,10 +4,11 @@
 #include "boost/signals2.hpp"
 #include <Windows.h>
 
-#include "core/tick.h"
+#include "tick.h"
 
 
-class input: tickable
+
+class input final : tickable
 {
 public:
     
@@ -19,9 +20,9 @@ public:
         , d = 0x44
         , space = VK_SPACE
     };
-   
-    input()  = default;
-    ~input() override = default;
+
+    explicit input() = default;
+    ~input() override;
 
     input(input& other) noexcept = delete;
     input(input&& other) noexcept = delete;
@@ -38,6 +39,7 @@ public:
     [[nodiscard]] input::signal_type& get_down_signal() {return on_down; }
 
 private:
+    
     signal_type on_down;
     signal_type on_up;
     key_state_type down_key_state_;

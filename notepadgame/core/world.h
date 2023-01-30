@@ -11,14 +11,9 @@
 #include <vector>
 
 #include "Scintilla.h"
-
-#include <cassert>
-
 #include <boost/signals2.hpp>
 
-#include "core/gamelog.h"
 
-#include "world_entities/level.h"
 
 
 #ifdef max
@@ -29,22 +24,22 @@
 #endif
 
 
+
 template<typename T>
 concept is_container_of_chars = requires(T t)
 {
     {t.data()} -> std::convertible_to<char*>;
 };
 
-class backbuffer;
 
+class level;
 // this is the EDIT Control window of the notepad
 class world final : public std::enable_shared_from_this<world>
 {
     friend class notepader;
     
 public:
-    
-    
+    world() = delete;
     world(world &other) = delete;
     world& operator=(const world& other) = delete;
     world(world&& other) noexcept = delete;
@@ -52,7 +47,7 @@ public:
 
     
     [[nodiscard]] const HWND& get_native_window() const noexcept                 { return edit_window_;}
-    [[nodiscard]] const std::unique_ptr<level>& get_level()                      {return  level;}
+    [[nodiscard]] const std::unique_ptr<level>& get_level()                      { return  level;}
     void set_caret_index(const int64_t index) const noexcept                     { dcall1(SCI_GOTOPOS, index); }
     void enable_multi_selection(const bool enable) const noexcept                { dcall1(SCI_SETMULTIPLESELECTION, enable);}
     void set_multi_paste_type(const int type=SC_MULTIPASTE_EACH) const noexcept  { dcall1(SCI_SETMULTIPASTE, type);         }
@@ -104,16 +99,13 @@ public:
     
     void replace_selection(const std::string_view new_str) const noexcept { dcall1_l(SCI_REPLACESEL,  reinterpret_cast<sptr_t>(new_str.data()));}
     
-    ~world()
-    {
-        if(native_dll_) FreeLibrary(native_dll_);
-    }
-    
+    ~world();
+
 protected:
     
     
     // calls from the notepad class
-    [[nodiscard]] static std::shared_ptr<world> make()  { return std::shared_ptr<world>{new world()};}
+    [[nodiscard]] static std::shared_ptr<world> make(const uint8_t start_options=0)  { return std::shared_ptr<world>{new world(start_options)};}
     HWND create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU
                               hMenu, HINSTANCE hInstance, LPVOID lpParam);
 
@@ -128,7 +120,9 @@ protected:
     int64_t dcall2(const int message, const uptr_t w, const sptr_t l) const   { return direct_function_(direct_wnd_ptr_, message, w, l);}  // NOLINT(modernize-use-nodiscard)
 
 private:
-    world() = default;
+    uint8_t start_options_;
+    explicit world(const uint8_t init_options = 0/*notepad::options*/): start_options_(init_options) {}
+   
     HWND edit_window_{nullptr};
     HMODULE native_dll_{nullptr};
     std::unique_ptr<level> level{nullptr};

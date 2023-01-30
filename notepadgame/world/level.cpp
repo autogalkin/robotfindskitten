@@ -1,8 +1,8 @@
 ﻿#include "level.h"
 
 #include <boost/range/adaptor/indexed.hpp>
-#include "../world.h"
-
+#include "../core/world.h"
+#include <stdexcept>
 backbuffer::backbuffer(backbuffer&& other) noexcept: line_lenght_(other.line_lenght_),
                                                      lines_count_(other.lines_count_),
                                                      buffer(std::move(other.buffer)),
@@ -111,24 +111,25 @@ void backbuffer::get() const
 }
 
 
-void level::destroy_actor(const actor::tag_type tag)
+bool level::destroy_actor(const actor::tag_type tag)
 {
     if(auto& pos = actors.at(tag)->get_position(); is_in_buffer(pos))
     {
         at(global_position_to_buffer_position(pos)) = actor::whitespace;
     }
     
-    size_t res = actors.erase(tag);
-    // TODO success
+    if(actors.erase(tag)) return true;
+    return false;
 }
 
 bool level::set_actor_location(const actor::tag_type tag, const translation new_position)
 {
+    // TODO bug collision does not work!!!
     const auto opt = find_actor(tag);
     if(!opt)
     {
-        // TODO exeption
-        return false;
+        // TODO exception?
+        throw std::logic_error{"attempt to access to a not existing actor, the actor::tag_type is invalid"};
     }
     actor* act = *opt;
     uint8_t move_block_flag = 0;
@@ -144,7 +145,6 @@ bool level::set_actor_location(const actor::tag_type tag, const translation new_
             return false ;
         }
     }
-    
     
     if(const auto bpos =global_position_to_buffer_position(new_position);
         is_in_buffer(bpos))

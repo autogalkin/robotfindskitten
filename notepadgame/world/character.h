@@ -1,10 +1,5 @@
 ﻿#pragma once
 #include "actor.h"
-#include <vector>
-
-
-
-#include  "boost/signals2/signal.hpp"
 #include "../core/tick.h"
 
 

@@ -3,14 +3,10 @@
 #include <memory>
 #include <thread>
 
-#include "tick.h"
 
 #include "boost/signals2.hpp"
 
-#include "../input.h"
-#include "../world.h"
-
-
+#include "input.h"
 
 class ticker
 {
@@ -104,12 +100,12 @@ private:
 };
 
 
-
+class world;
 
 class notepader final : public ticker // notepad.exe wrapper
 {
 public:
-
+    
     static notepader& get()
     {
         static notepader notepad{};
@@ -121,6 +117,8 @@ public:
         , kill_focus            =0x1 << 0
         , hide_selection        =0x1 << 1
         , disable_mouse         =0x1 << 2
+        , show_eol              =0x1 << 3
+        , show_spaces           =0x1 << 4
         
     };
     
@@ -157,8 +155,7 @@ protected:
     virtual ~notepader() override = default;
 
     void init(const HWND& main_window); // calls from hook_CreateWindowExW
-    const std::shared_ptr<world>& make_world() {world_ = world::make(); return world_;}
-    static void WINAPI post_connect_to_notepad(); // calls after the first catch hook_GetMessageW
+    const std::shared_ptr<world>& make_world();
     void close();
 
     // custom WindowProc

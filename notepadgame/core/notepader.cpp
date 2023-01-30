@@ -8,9 +8,11 @@
 
 #include <mutex>
 
-#include "../world_entities/character.h"
+#include "../world/character.h"
 #include "iat_hook.h"
-
+#include "world.h"
+#include "input.h"
+#include "../world/level.h"
 
 
 
@@ -25,40 +27,11 @@ void notepader::init(const HWND& main_window)
 	
 }
 
-void notepader::post_connect_to_notepad() 
+const std::shared_ptr<world>& notepader::make_world()
 {
-	get().input_ = std::make_unique<input>();
-	
-	//SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETVIRTUALSPACEOPTIONS, SCVS_USERACCESSIBLE|SCVS_NOWRAPLINESTART, 0);
-	//SendMessage(notepader::get().get_world()->get_native_window(), SCI_SETADDITIONALSELECTIONTYPING, 1, 0);
-        
-	auto& world = notepader::get().get_world();
-	world->show_spaces(true);
-	world->show_eol(true);
-	world->set_background_color(RGB(37,37,38));
-	world->set_all_text_color(RGB(240,240,240));
-	get().on_open_();
-
-	
-	//get().get_input_manager()->get_down_signal().connect([](const input::key_state_type state)
-	//{
-	//	if(state.size() && state[0] == input::key::d)
-	//	{
-			
-			//char* ptr = reinterpret_cast<char*>(SendMessage(get().get_world()->get_native_window(), SCI_GETRANGEPOINTER, 1, 5));
-			//ptr[1] = 'g';
-			//auto ch = "Hello World";
-			//SendMessage(get().get_world()->get_native_window(), SCI_GETRANGEPOINTER, 1, reinterpret_cast<LPARAM>(ch));
-			
-	//	}
-	//});
-	
-	const auto ch = get().get_world()->level->spawn_actor<character>(translation{1,2}, 'f');
-	const auto ch2 = get().get_world()->level->spawn_actor<character>(translation{7,15}, 's');
-	ch->bind_input();
-	
-	
+	world_ = world::make(options_); return world_;
 }
+
 
 void notepader::close()
 {
@@ -221,8 +194,17 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 	
 	if(get().get_main_window() && get().get_world() && get().get_world()->get_native_window())
 	{
+		
 		static std::once_flag once;
-		std::call_once(once, post_connect_to_notepad);
+		std::call_once(once, []
+		{
+			get().input_ = std::make_unique<input>();
+			get().on_open_();
+			// disable
+			boost::signals2::signal<void()> empty {} ;
+			std::swap(get().on_open_, empty);
+		});
+		
 	}
 	return out_hwnd;
 	});
@@ -240,7 +222,7 @@ bool notepader::hook_SetWindowTextW(HMODULE module) const
 
 void notepader::tickframe()
 {
-	world_->level->send();
+	//world_->get_level()->send();
 	ticker::tickframe();
 	set_window_title(L"notepadgame fps: " + std::to_wstring(get_current_frame_rate()));
 	//world_->backbuffer->get();
