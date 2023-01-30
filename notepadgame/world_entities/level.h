@@ -74,43 +74,80 @@ private:
 };
 
 
+class collision
+{
+public: 
+    
+    struct query_combiner
+    {
+        typedef std::vector<actor::collision_response> result_type;
+        template <typename InputIterator>
+        std::vector<actor::collision_response> operator()(InputIterator first, InputIterator last) const
+        {
+            
+            std::vector<actor::collision_response> v;
+            while (first != last)
+            {
+                if((*first).has_value())
+                {
+                    v.push_back((*first).value());
+                }
+                ++first;
+            }
+            return v;
+        }
+    };
+    
+    using signal_type = boost::signals2::signal< std::optional<actor::collision_response> (const actor::tag_type asker, const translation& position), query_combiner>;
+    const std::unique_ptr<signal_type>& get_query() const {return query;}
+    
+private:
+    std::unique_ptr<signal_type> query = std::make_unique<signal_type>();
+    
+};
 
 
 class level final : public backbuffer
 {
     
 public:
+    explicit level(world* owner) noexcept
+       : backbuffer(owner)
+    {
+    }
     
-    std::unordered_map< actor::tag_type, std::unique_ptr<actor>, actor::hasher > actors{};
-
+    std::optional<actor*> find_actor(const actor::tag_type tag)
+    {
+        const auto t = actors.find(tag);
+        if (t == actors.end()) return std::nullopt;
+        return t->second.get();
+    }
+    
+    // the factory method for create a new actor
     template <std::derived_from<actor> T, typename ...Args>
-    requires  std::constructible_from<T, Args...>
+    requires requires(Args&& ... args){ T(spawner{}, std::forward<Args>(args)...);}
     T* spawn_actor(const translation& spawn_location, Args&&... args)
     {
-        std::unique_ptr<actor> spawned =std::make_unique<T>(args...);
+        std::unique_ptr<actor> spawned =std::make_unique<T>(spawner{}, std::forward<Args>(args)...);
         spawned->set_position(spawn_location);
+        spawned->set_level(this);
         auto [It, success] = actors.emplace(std::make_pair(spawned->get_id(), std::move( spawned )));
         if(success){}
         //{
         //}  // TODO  exeption if fail
         return static_cast<T*>(It->second.get());
     }
-
-    void destroy_actor(const actor::tag_type tag)
-    {
-        auto& pos = actors.at(tag)->get_position();
-        if(is_in_buffer(pos))
-        {
-            at(global_position_to_buffer_position(pos)) = mesh_actor::whitespace;
-        }
-        size_t res = actors.erase(tag);
-        // TODO success
-    }
     
-    explicit level(world* owner) noexcept
-        : backbuffer(owner)
-    {
-    }
+    void destroy_actor(const actor::tag_type tag);
+    bool set_actor_location(const actor::tag_type tag, const translation new_position);
+    collision& get_collision() noexcept {return collision_;}
+
+protected:
+private:
+    std::unordered_map< actor::tag_type, std::unique_ptr<actor>, actor::hasher > actors{};
+    collision collision_{};
 
 };
+
+
 

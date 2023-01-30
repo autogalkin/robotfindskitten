@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\gamelog.cpp" />
     <ClCompile Include="core\notepader.cpp" />
     <ClCompile Include="core\tick.cpp" />
     <ClCompile Include="dllmain.cpp" />

@@ -13,18 +13,24 @@ translation translation::from_index(const int64_t index) noexcept
     return {w->get_line_index(index), index - w->get_first_char_index_in_line( w->get_line_index(index)) };
 }
 
-mesh_actor& mesh_actor::operator=(const mesh_actor& other)
+
+
+
+bool actor::on_hit(const actor * const other)
 {
-    if (this == &other)
-        return *this;
-    mesh_ = other.mesh_;
-    return *this;
+    return true;
 }
 
-mesh_actor& mesh_actor::operator=(mesh_actor&& other) noexcept
+void actor::connect_to_collision() const
 {
-    if (this == &other)
-        return *this;
-    mesh_ = other.mesh_;
-    return *this;
+    notepader::get().get_world()->get_level()->get_collision().get_query()->connect(
+        [this](const actor::tag_type asker, const translation& position) -> std::optional<actor::collision_response>
+        {
+            if(asker != get_id() && get_position() == position)
+            {
+                return get_id();
+            }
+            return std::nullopt;
+        });
 }
+

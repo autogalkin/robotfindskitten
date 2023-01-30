@@ -28,6 +28,8 @@ char backbuffer::at(translation char_on_screen) const
     return (*buffer)[char_on_screen.line()].pin()[char_on_screen.index_in_line()];
 }
 
+
+
 char& backbuffer::at(translation char_on_screen)
 {
     (*buffer)[char_on_screen.line()].mark_dirty();
@@ -109,3 +111,51 @@ void backbuffer::get() const
 }
 
 
+void level::destroy_actor(const actor::tag_type tag)
+{
+    if(auto& pos = actors.at(tag)->get_position(); is_in_buffer(pos))
+    {
+        at(global_position_to_buffer_position(pos)) = actor::whitespace;
+    }
+    size_t res = actors.erase(tag);
+    // TODO success
+}
+
+bool level::set_actor_location(const actor::tag_type tag, const translation new_position)
+{
+    const auto opt = find_actor(tag);
+    if(!opt)
+    {
+        // TODO exeption
+        return false;
+    }
+    actor* act = *opt;
+    uint8_t move_block_flag = 0;
+    for(const std::vector<actor::collision_response> responces = collision_.get_query()->operator()(act->get_id(), act->get_position());
+        auto& res : responces)
+    {
+        actor* other = actors.at(res).get();
+        act->on_hit(other);
+        if(other && other->on_hit(act))
+        {
+            move_block_flag ++ ;
+        }
+    }
+    if(!act || move_block_flag) return false;
+
+    
+    if(const auto bpos =global_position_to_buffer_position(new_position);
+        is_in_buffer(bpos))
+    {
+        at(bpos) = act->getmesh();
+    }
+    if(const auto b_old = global_position_to_buffer_position(act->get_position());
+        is_in_buffer(b_old))
+    {
+        at(b_old) = actor::whitespace;
+    }
+    act->set_position(new_position);
+        
+    return true;
+        
+}

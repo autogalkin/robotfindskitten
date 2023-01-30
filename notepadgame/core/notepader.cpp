@@ -52,8 +52,9 @@ void notepader::post_connect_to_notepad()
 			
 	//	}
 	//});
+	
 	const auto ch = get().get_world()->level->spawn_actor<character>(translation{1,2}, 'f');
-	ch->bind_input();  //auto [id, ch] = 
+	ch->bind_input();
 	
 	
 }

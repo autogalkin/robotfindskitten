@@ -4,7 +4,6 @@
 #include "character.h"
 
 #include "projectile.h"
-
 #include "../input.h"
 #include "../core/notepader.h"
 
@@ -14,24 +13,7 @@
 #endif
 
 
-character& character::operator=(const character& other)
-{
-    if (this == &other)
-        return *this;
-    mesh_actor::operator =(other);
-    return *this;
-}
-
-character& character::operator=(character&& other) noexcept
-{
-    if (this == &other)
-        return *this;
-    input_connection = std::move(other.input_connection);
-    mesh_actor::operator =(std::move(other));
-    return *this;
-}
-
-void character::bind_input()
+void character::bind_input() const
 {
     
     auto& input = notepader::get().get_input_manager();
@@ -54,28 +36,16 @@ void character::bind_input()
                 default: break;
             }
         }
-        move(transform);
-        
+        notepader::get().get_world()->get_level()->set_actor_location(get_id(), get_position() + transform);
     }  );
 }
 
-void character::move(const translation& offset)
+bool character::on_hit(const actor* const other)
 {
-    if(offset.is_null()) return;
-    
-    auto& level = notepader::get().get_world()->get_level();
-    if(level->is_in_buffer(get_position()))
-    {
-        level->at(level->global_position_to_buffer_position(get_position())) = mesh_actor::whitespace;
-    }
-    
-    add_position(offset);
-    
-    if(level->is_in_buffer(get_position()))
-    {
-        level->at(level->global_position_to_buffer_position(get_position())) = getmesh();
-    }
+    //gamelog::cout(other->getmesh());
+    return false;
 }
+
 
 
 
