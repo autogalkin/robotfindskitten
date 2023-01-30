@@ -117,6 +117,7 @@ void level::destroy_actor(const actor::tag_type tag)
     {
         at(global_position_to_buffer_position(pos)) = actor::whitespace;
     }
+    
     size_t res = actors.erase(tag);
     // TODO success
 }
@@ -131,18 +132,19 @@ bool level::set_actor_location(const actor::tag_type tag, const translation new_
     }
     actor* act = *opt;
     uint8_t move_block_flag = 0;
-    for(const std::vector<actor::collision_response> responces = collision_.get_query()->operator()(act->get_id(), act->get_position());
+    
+    for(const std::vector<actor::collision_response> responces = collision_.get_query()(act->get_id(), act->get_position());
         auto& res : responces)
     {
+        
         actor* other = actors.at(res).get();
         act->on_hit(other);
         if(other && other->on_hit(act))
         {
-            move_block_flag ++ ;
+            return false ;
         }
     }
-    if(!act || move_block_flag) return false;
-
+    
     
     if(const auto bpos =global_position_to_buffer_position(new_position);
         is_in_buffer(bpos))

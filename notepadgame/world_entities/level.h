@@ -99,10 +99,10 @@ public:
     };
     
     using signal_type = boost::signals2::signal< std::optional<actor::collision_response> (const actor::tag_type asker, const translation& position), query_combiner>;
-    const std::unique_ptr<signal_type>& get_query() const {return query;}
+    [[nodiscard]] signal_type& get_query() {return query;}
     
 private:
-    std::unique_ptr<signal_type> query = std::make_unique<signal_type>();
+    signal_type query;
     
 };
 
@@ -132,7 +132,14 @@ public:
         spawned->set_position(spawn_location);
         spawned->set_level(this);
         auto [It, success] = actors.emplace(std::make_pair(spawned->get_id(), std::move( spawned )));
-        if(success){}
+        if(success)
+        {
+            It->second->connect_to_collision(&get_collision());
+            if(const auto pos = global_position_to_buffer_position(spawn_location); is_in_buffer(pos))
+            {
+               at(pos) = It->second->getmesh();
+            }
+        }
         //{
         //}  // TODO  exeption if fail
         return static_cast<T*>(It->second.get());

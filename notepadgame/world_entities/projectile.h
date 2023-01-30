@@ -13,8 +13,7 @@ public:
     projectile& operator=(projectile&& other) = delete;
     projectile(const projectile& other) = delete;
     projectile(projectile&& other) = delete;
-    ~projectile() override {}
-
+    ~projectile() override = default;
 
 protected:
     void tick() override;

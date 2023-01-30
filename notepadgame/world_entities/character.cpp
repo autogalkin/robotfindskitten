@@ -36,14 +36,18 @@ void character::bind_input() const
                 default: break;
             }
         }
-        notepader::get().get_world()->get_level()->set_actor_location(get_id(), get_position() + transform);
+        if(!transform.is_null())
+        {
+            notepader::get().get_world()->get_level()->set_actor_location(get_id(), get_position() + transform); 
+        }
+        
     }  );
 }
 
 bool character::on_hit(const actor* const other)
 {
     //gamelog::cout(other->getmesh());
-    return false;
+    return true;
 }
 
 

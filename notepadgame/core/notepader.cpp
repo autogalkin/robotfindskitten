@@ -54,6 +54,7 @@ void notepader::post_connect_to_notepad()
 	//});
 	
 	const auto ch = get().get_world()->level->spawn_actor<character>(translation{1,2}, 'f');
+	const auto ch2 = get().get_world()->level->spawn_actor<character>(translation{7,15}, 's');
 	ch->bind_input();
 	
 	

@@ -2,10 +2,13 @@
 #include <cstdint>
 #include <utility>
 
+#include <boost/signals2.hpp>
 #include <boost/container_hash/hash.hpp>
 
 #include "boost/uuid/uuid.hpp"
 #include <boost/uuid/uuid_generators.hpp>
+
+#include "../core/gamelog.h"
 
 
 class translation
@@ -38,7 +41,7 @@ private:
     spawner() = default;
     friend class level;
 };
-
+class collision;
 class actor
 {
 public:
@@ -52,7 +55,10 @@ public:
     explicit actor(spawner sp, const char mesh=whitespace) noexcept: position_(),
         tag_(boost::uuids::random_generator()()), mesh_(mesh), level_(nullptr)
     {}
-    virtual ~actor() = default;
+    virtual ~actor()
+    {
+        if(collision_query_connection.connected()) {collision_query_connection.disconnect();}
+    }
     
     bool operator==(actor const& rhs) const {return tag_ == rhs.tag_;}
     
@@ -69,15 +75,17 @@ public:
     
 protected:
     
-    
+    void connect_to_collision(collision* collision);
+    [[nodiscard]] std::optional<actor::collision_response> collision_query_responce(const actor::tag_type asker, const translation& position) const;
     virtual bool on_hit(const actor * const other);
     
     [[nodiscard]] level* get_level() const {return level_;}
     virtual void  set_position(const translation position) noexcept {position_ = position;}
     virtual void add_position(const translation& add) noexcept {position_ += add;}
 private:
-    void connect_to_collision() const;
+    
     void set_level(level* owner){level_ = owner;}
+    boost::signals2::connection collision_query_connection;
     translation position_;
     tag_type tag_ ;
     char mesh_ = whitespace;
