@@ -196,6 +196,8 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 	{
 		
 		static std::once_flag once;
+		//std::call_once(once, post_connect_to_notepad);
+		
 		std::call_once(once, []
 		{
 			get().input_ = std::make_unique<input>();
@@ -210,6 +212,7 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 	});
 }
 
+
 bool notepader::hook_SetWindowTextW(HMODULE module) const
 {
 	static decltype(&SetWindowTextW) original = nullptr;
@@ -222,7 +225,7 @@ bool notepader::hook_SetWindowTextW(HMODULE module) const
 
 void notepader::tickframe()
 {
-	//world_->get_level()->send();
+	world_->get_level()->send();
 	ticker::tickframe();
 	set_window_title(L"notepadgame fps: " + std::to_wstring(get_current_frame_rate()));
 	//world_->backbuffer->get();

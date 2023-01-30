@@ -38,11 +38,6 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
         
         np.get_on_open().connect([]
         {
-            notepader::get().get_input_manager()->get_down_signal().connect([](const input::key_state_type& key_state)
-            {
-                notepader::get().get_world()->get_level()->send();
-            });
-            
             auto& w = notepader::get().get_world();
             w->set_background_color(RGB(37,37,38));
             w->set_all_text_color(RGB(240,240,240));

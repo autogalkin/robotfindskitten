@@ -1,7 +1,7 @@
 ﻿#include "actor.h"
 #include "../core/notepader.h"
 #include "level.h"
-
+#include "../core/world.h"
 int64_t translation::to_index() noexcept
 {
     return  notepader::get().get_world()->get_first_char_index_in_line( line() ) + index_in_line();

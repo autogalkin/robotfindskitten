@@ -1,8 +1,8 @@
 ﻿#include "projectile.h"
 
 #include "../core/notepader.h"
-
-
+#include "../core/world.h"
+#include "level.h"
 
 
 void projectile::tick()
