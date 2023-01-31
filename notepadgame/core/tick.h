@@ -128,18 +128,19 @@ public:
     explicit timer(T&& what_do, const std::chrono::milliseconds rate, const bool looped=false) : do_(std::forward<T>(what_do)),
         rate_(rate), looping_(looped) {}
     
-    timer(const timer& other)                 = default;
+    timer(const timer& other)                 = delete;
     timer(timer&& other) noexcept             = default;
-    timer& operator=(const timer& other)      = default;
+    timer& operator=(const timer& other)      = delete;
     timer& operator=(timer&& other) noexcept  = default;
     ~timer() override                         = default;
     
     virtual void tick() override;
     void start() noexcept ;
+    [[nodiscard]] boost::signals2::signal<void()>& get_on_finished() { return on_finish;}
     [[nodiscard]] bool is_loopping() const noexcept {return looping_;}
     [[nodiscard]] bool is_started()  const noexcept {return started_;}
     [[nodiscard]] bool is_finished() const noexcept {return stopped_;}
-    void invalidate() noexcept {stopped_ = true;}
+    void stop() noexcept {stopped_ = true; on_finish();}
     void restart() noexcept {stopped_ = false; started_ = false; start();}
     [[nodiscard]] const ticker::time_point& get_start_time() const {return start_time_;}
     [[nodiscard]] const ticker::time_point& get_last_time()  const {return last_time_;}
@@ -149,6 +150,7 @@ protected:
     void call_do() const noexcept {do_();}
 private:
     std::function<void()> do_;
+    boost::signals2::signal<void()> on_finish;
     std::chrono::milliseconds rate_;
     ticker::time_point start_time_;
     ticker::time_point last_time_;
@@ -174,13 +176,14 @@ public:
     timeline(T&& what_do, const std::chrono::milliseconds rate, const bool looped=false, const timeline::direction start_direction=direction::forward)
     : timer(std::forward<T>(what_do), rate, looped), direction_(start_direction){}
     
-    timeline(const timeline& other)                 = default;
+    timeline(const timeline& other)                 = delete;
     timeline(timeline&& other) noexcept             = default;
-    timeline& operator=(const timeline& other)      = default;
+    timeline& operator=(const timeline& other)      = delete;
     timeline& operator=(timeline&& other) noexcept  = default;
     ~timeline() override                            = default;
     void tick() override;
     [[nodiscard]] direction get_current_direction() const noexcept {return direction_;}
+    void invert_direction() noexcept {direction_= invert(direction_);}
 private:
     
     direction direction_ = direction::forward;

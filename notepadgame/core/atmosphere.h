@@ -7,6 +7,7 @@
 class atmosphere final : public actor
 {
 public:
+    
     struct color_range
     {
         COLORREF start{RGB(0, 0, 0)};
@@ -21,6 +22,7 @@ public:
     ~atmosphere() override;
 private:
     void update() const;
+    timer timer_;
     timeline timeline_;
     color_range background;
     color_range foreground;

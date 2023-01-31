@@ -47,7 +47,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             const auto atm = w->get_level()->spawn_actor<atmosphere>(translation{0,0}
                 , 30s
                 ,  atmosphere::color_range{RGB(37,37,38),RGB(240,240,240) }
-                ,  atmosphere::color_range{RGB(220,220,220),RGB(70,70,75) });
+                ,  atmosphere::color_range{RGB(220,220,220),RGB(37,37,38) });
             ch->bind_input();
         });
     }

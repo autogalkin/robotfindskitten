@@ -61,7 +61,8 @@ private:
 class collision
 {
 public: 
-    
+    friend class level;
+ 
     struct query_combiner
     {
         typedef std::vector<actor::collision_response> result_type;
@@ -83,6 +84,7 @@ public:
     };
     
     using signal_type = boost::signals2::signal< std::optional<actor::collision_response> (const actor::tag_type asker, const translation& position), query_combiner>;
+
     [[nodiscard]] signal_type& get_query() {return query;}
     
 private:
@@ -106,10 +108,6 @@ public:
         if (t == actors.end()) return std::nullopt;
         return t->second.get();
     }
-
-   // class spawn_error final :  public std::runtime_error{
-    //public: explicit spawn_error(const std::string& message) : std::runtime_error(message.c_str()) {}
-    //};
     
     // the factory method for create a new actor
     // throw spawn_error if failed

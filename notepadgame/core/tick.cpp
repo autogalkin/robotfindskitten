@@ -35,7 +35,7 @@ void timer::tick()
             if(is_loopping()) restart();
             else
             {
-                invalidate();
+                stop();
             }
         }
     }
@@ -52,12 +52,12 @@ void timeline::tick()
         {
             if(is_loopping())
             {
-                direction_ = invert(direction_) ;
+                invert_direction();
                 restart();
             } 
             else
             {
-                invalidate();
+                stop();
             }
         }
     }
