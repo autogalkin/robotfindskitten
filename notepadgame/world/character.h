@@ -9,7 +9,7 @@ class character final : public actor
 {
 public:
     
-    explicit character(const spawner key, const char& mesh): actor(key, mesh) {}
+    explicit character(const spawner _, const char& mesh): actor(_, mesh) {}
     virtual ~character() override{ unbind_input(); }
     
     void bind_input() const;

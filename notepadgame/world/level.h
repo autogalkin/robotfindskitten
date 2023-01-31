@@ -5,26 +5,10 @@
 #include "actor.h"
 #include "character.h"
 
+#include "../core/base_types.h"
 
 
 
-class gamelog;
-
-template<typename T>
-struct dirty_flag
-{
-    [[nodiscard]] const T& get() const noexcept {return value_.second;}
-    [[nodiscard]] T& pin()  noexcept
-    {
-        mark_dirty();
-        return value_.second;
-    }
-    void mark_dirty() noexcept { value_.first = true;} 
-    void reset_flag() noexcept {value_.first = false;}
-    [[nodiscard]] bool is_changed() const noexcept {return value_.first;}
-private:
-    std::pair<bool, T> value_;
-};
 
 class world;
 
@@ -40,7 +24,7 @@ public:
     backbuffer& operator=(backbuffer&& other) noexcept;
 
     explicit backbuffer(world* owner): world_(owner){}
-    virtual ~backbuffer() = default;
+    virtual ~backbuffer();
     
     void init(const int window_width);
     
@@ -115,7 +99,7 @@ public:
        : backbuffer(owner)
     {
     }
-    
+    ~level() override;
     std::optional<actor*> find_actor(const actor::tag_type tag)
     {
         const auto t = actors.find(tag);

@@ -12,7 +12,7 @@
 
 #include "Scintilla.h"
 #include <boost/signals2.hpp>
-
+#include "../world/level.h"
 
 
 
@@ -34,7 +34,7 @@ concept is_container_of_chars = requires(T t)
 
 class level;
 // this is the EDIT Control window of the notepad
-class world final : public std::enable_shared_from_this<world>
+class world final
 {
     friend class notepader;
     
@@ -85,7 +85,12 @@ public:
     
     void show_spaces(const bool enable) const noexcept;
     void set_background_color(const COLORREF c) const noexcept;
+
+    void force_set_background_color(const COLORREF c) const noexcept;
+    
+    [[nodiscard]] COLORREF get_background_color() const noexcept { return static_cast<COLORREF>(dcall1(SCI_STYLESETBACK, STYLE_DEFAULT));}
     void set_all_text_color(COLORREF c) const noexcept;
+    void force_set_all_text_color(COLORREF c) const noexcept;
     [[nodiscard]] int64_t get_caret_index_in_line() const noexcept;
     
     template<is_container_of_chars T>
@@ -103,9 +108,12 @@ public:
 
 protected:
     
+    // ~Constructor
+    explicit world(const uint8_t init_options = 0/*notepad::options*/): start_options_(init_options)
+                                                                       , native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary } {}
+    // helper
+    [[nodiscard]] static std::unique_ptr<world> create_new(const uint8_t init_options=0)  { return std::unique_ptr<world>{new world(init_options)};}
     
-    // calls from the notepad class
-    [[nodiscard]] static std::shared_ptr<world> make(const uint8_t start_options=0)  { return std::shared_ptr<world>{new world(start_options)};}
     HWND create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU
                               hMenu, HINSTANCE hInstance, LPVOID lpParam);
 
@@ -121,10 +129,9 @@ protected:
 
 private:
     uint8_t start_options_;
-    explicit world(const uint8_t init_options = 0/*notepad::options*/): start_options_(init_options) {}
-   
+    
     HWND edit_window_{nullptr};
-    HMODULE native_dll_{nullptr};
+    std::unique_ptr<std::remove_pointer_t<HMODULE>, decltype(&::FreeLibrary)> native_dll_;
     std::unique_ptr<level> level{nullptr};
     sptr_t direct_wnd_ptr_{0};
     int64_t(*direct_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
@@ -149,6 +156,15 @@ inline void world::set_background_color(const COLORREF c) const noexcept
     PostMessage(get_native_window(), SCI_STYLESETBACK, 0, c);  //
 }
 
+inline void world::force_set_background_color(const COLORREF c) const noexcept
+{
+    dcall2(SCI_STYLESETBACK, STYLE_DEFAULT,c);
+    dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
+    dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
+    dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
+    dcall2(SCI_STYLESETBACK, 0, c);
+}
+
 inline void world::set_all_text_color(const COLORREF c) const noexcept
 {
     PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_DEFAULT,c);  // set back-color of window
@@ -157,6 +173,16 @@ inline void world::set_all_text_color(const COLORREF c) const noexcept
     PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_ANSI, c); 
     PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
     PostMessage(get_native_window(), SCI_STYLESETFORE, 0, c);  
+}
+
+inline void world::force_set_all_text_color(const COLORREF c) const noexcept
+{
+    dcall2(SCI_STYLESETFORE, STYLE_DEFAULT,c);
+    dcall2(SCI_STYLESETFORE, STYLE_LINENUMBER, c);
+    dcall2(SCI_STYLESETFORE, SC_CHARSET_DEFAULT, c);
+    dcall2(SCI_STYLESETFORE, SC_CHARSET_ANSI, c);
+    dcall2(SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
+    dcall2(SCI_STYLESETFORE, 0, c);
 }
 
 template<is_container_of_chars T>

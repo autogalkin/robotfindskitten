@@ -16,21 +16,6 @@
 
 
 
-void notepader::init(const HWND& main_window)
-{
-	
-	main_window_ = main_window;
-	
-	// patch wnd proc
-	original_proc_ = GetWindowLongPtr(main_window_, GWLP_WNDPROC);
-	SetWindowLongPtr(main_window_, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(hook_wnd_proc));
-	
-}
-
-const std::shared_ptr<world>& notepader::make_world()
-{
-	world_ = world::make(options_); return world_;
-}
 
 
 void notepader::close()
@@ -177,7 +162,8 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 		
 	if (!lstrcmp(lpClassName, WC_EDIT)) // handles the edit control creation and create custom window
 	{
-		out_hwnd = get().make_world()->create_native_window(dwExStyle,lpWindowName, dwStyle,
+		get().world_ = world::create_new(get().options_);
+		out_hwnd = get().world_->create_native_window(dwExStyle,lpWindowName, dwStyle,
 		X,Y,nWidth,nHeight,hWndParent,hMenu, hInstance,lpParam);
 	}
 	else
@@ -189,15 +175,16 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 	// catch notepad.exe window
 	if (!lstrcmp(lpClassName, L"Notepad"))
 	{
-	     get().init(out_hwnd);
+		get().main_window_ = out_hwnd;
+		// patch wnd proc
+		get().original_proc_ = GetWindowLongPtr(get().main_window_, GWLP_WNDPROC);
+		SetWindowLongPtr(get().main_window_, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(hook_wnd_proc));
 	}
 	
 	if(get().get_main_window() && get().get_world() && get().get_world()->get_native_window())
 	{
 		
 		static std::once_flag once;
-		//std::call_once(once, post_connect_to_notepad);
-		
 		std::call_once(once, []
 		{
 			get().input_ = std::make_unique<input>();

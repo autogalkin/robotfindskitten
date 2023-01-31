@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\atmosphere.cpp" />
+    <ClCompile Include="core\base_types.cpp" />
     <ClCompile Include="core\gamelog.cpp" />
     <ClCompile Include="core\input.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
@@ -177,6 +179,8 @@
     <ClCompile Include="world\projectile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="core\atmosphere.h" />
+    <ClInclude Include="core\base_types.h" />
     <ClInclude Include="core\iat_hook.h" />
     <ClInclude Include="core\input.h" />
     <ClInclude Include="core\notepader.h" />

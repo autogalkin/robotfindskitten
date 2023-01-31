@@ -36,6 +36,8 @@ char& backbuffer::at(translation char_on_screen)
     return (*buffer)[char_on_screen.line()].pin()[char_on_screen.index_in_line()];
 }
 
+backbuffer::~backbuffer() = default;
+
 void backbuffer::init(const int window_width)
 {
     const int char_width = world_->get_char_width();
@@ -110,6 +112,8 @@ void backbuffer::get() const
     world_->set_caret_index(pos);
 }
 
+
+level::~level() = default;
 
 bool level::destroy_actor(const actor::tag_type tag)
 {

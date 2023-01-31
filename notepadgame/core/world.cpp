@@ -8,17 +8,12 @@
 #include "../world/level.h"
 
 
-world::~world()
-{
-    if(native_dll_) FreeLibrary(native_dll_);
-}
 
+world::~world() = default;
 HWND world::create_native_window(const DWORD dwExStyle, const LPCWSTR lpWindowName, const DWORD dwStyle,
                                  const int X, const int Y, const int nWidth, const int nHeight, const HWND hWndParent, const HMENU hMenu,
                                  const HINSTANCE hInstance, const LPVOID lpParam)
 {
-    native_dll_ = LoadLibrary(TEXT("Scintilla.dll"));
-    
     edit_window_ = CreateWindowEx(dwExStyle,
     L"Scintilla",lpWindowName, dwStyle,
     X,Y,nWidth,nHeight,hWndParent,hMenu, hInstance,lpParam);

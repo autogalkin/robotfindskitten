@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 
+#include "core/atmosphere.h"
 #include "core/gamelog.h"
 #include "core/notepader.h"
 #include "core/world.h"
@@ -39,10 +40,14 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
         np.get_on_open().connect([]
         {
             auto& w = notepader::get().get_world();
-            w->set_background_color(RGB(37,37,38));
-            w->set_all_text_color(RGB(240,240,240));
             const auto ch = w->get_level()->spawn_actor<character>(translation{1,2}, 'f');
             const auto ch2 = w->get_level()->spawn_actor<character>(translation{7,15}, 's');
+           
+            using namespace std::chrono_literals;
+            const auto atm = w->get_level()->spawn_actor<atmosphere>(translation{0,0}
+                , 30s
+                ,  atmosphere::color_range{RGB(37,37,38),RGB(240,240,240) }
+                ,  atmosphere::color_range{RGB(220,220,220),RGB(70,70,75) });
             ch->bind_input();
         });
     }
