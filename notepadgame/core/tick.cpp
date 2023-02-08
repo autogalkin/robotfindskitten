@@ -23,7 +23,7 @@ void timer::start() noexcept
     
 }
 
-
+// TODO last time можно оптимизировать убрать
 void timer::tick()
 {
     if(is_started() && !is_finished())

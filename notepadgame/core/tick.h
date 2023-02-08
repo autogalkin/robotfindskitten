@@ -113,10 +113,48 @@ protected: // prevent slicing
 private:
     boost::signals2::scoped_connection tick_connection;
 };
+// TODO asio timer or tick function? https://stackoverflow.com/questions/49769347/boostasiodeadline-timer-1ms-lags-after-some-time
+/*
+class asio_timer
+{
+public:
+    asio_timer(boost::asio::io_context& io, const ticker::clock::duration i, std::function<void()> cb)
+        : interval(i), callback(std::move(cb)), timer(io)
+    { }
+    void start()
+    {
+        timer.expires_from_now(interval);
+        timer.async_wait([this](const boost::system::error_code ec) {
+            if (!ec) {
+                callback();
+                // if loop -> run();
+            }
+        });
+    }
+private:
+    
+    ticker::clock::duration const interval; 
+    std::function<void()> callback;
+    boost::asio::high_resolution_timer timer;
+boost::asio::io_service io;
 
-struct C {
-   
+  boost::asio::deadline_timer timer(io, boost::posix_time::seconds(5));
+
+  // work_for_io_service() will be called 
+  // when async operation (async_wait()) finishes  
+  // note: Though the async_wait() immediately returns
+  //       but the callback function will be called when time expires
+  timer.async_wait(&work;_for_io_service);
+
+  std::cout << " If we see this before the callback function, we know async_wait() returns immediately.\n This confirms async_wait() is non-blocking call!\n";
+
+  // the callback function, work_for_io_service(), will be called 
+  // from the thread where io.run() is running. 
+  io.run(); https://www.bogotobogo.com/cplusplus/Boost/boost_AsynchIO_asio_tcpip_socket_server_client_timer_A.php
+Библиотека asio гарантирует, что обработчики обратного вызова будут вызываться только из потоков, которые в данный момент вызывают io_service::run() . Поэтому, если функция io_service::run() не вызывается, обратный вызов для завершения асинхронного ожидания никогда не будет вызван.
 };
+Если выполнение приложения не должно быть заблокировано, run() следует вызывать в новом потоке, так как он естественным образом блокирует только текущий поток.
+*/
 
 // waits for the end time and call a given function
 class timer : public tickable

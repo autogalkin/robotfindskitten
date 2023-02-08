@@ -8,7 +8,7 @@
 
 #include "tick.h"
 #include "input.h"
-#include "world.h"
+#include "engine.h"
 
 
 class notepader final : public ticker // notepad.exe wrapper
@@ -50,14 +50,14 @@ public:
     [[nodiscard]] boost::signals2::signal<void ()>& get_on_close()            { return on_close_; }
     [[nodiscard]] HWND get_main_window() const                                { return main_window_;}
     [[nodiscard]] const std::unique_ptr<input>& get_input_manager() const     { return input_; }
-    [[nodiscard]] const std::unique_ptr<world>& get_world() const             { return world_; }
+    [[nodiscard]] const std::unique_ptr<engine>& get_world() const             { return engine_; }
     
     void set_window_title(const std::wstring_view title) const { SetWindowText(main_window_, title.data()); }
     
     
 protected:
     
-    explicit notepader() : world_(nullptr), input_(nullptr),  main_window_(), original_proc_(0)
+    explicit notepader() : engine_(nullptr), input_(nullptr),  main_window_(), original_proc_(0)
     {
     }
 
@@ -87,7 +87,7 @@ private:
     boost::signals2::signal<void ()> on_open_{};
     boost::signals2::signal<void ()> on_close_{};
     
-    std::unique_ptr<world> world_{};
+    std::unique_ptr<engine> engine_{};
     std::unique_ptr<input> input_{};
     HWND main_window_;
     LONG_PTR original_proc_; // notepad.exe window proc 

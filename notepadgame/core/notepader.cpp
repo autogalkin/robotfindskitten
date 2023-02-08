@@ -10,9 +10,9 @@
 
 #include "../world/character.h"
 #include "iat_hook.h"
-#include "world.h"
+#include "engine.h"
 #include "input.h"
-#include "../world/level.h"
+#include "../world/world.h"
 
 
 
@@ -44,14 +44,14 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 				case SC_UPDATE_H_SCROLL:
 					{
 						auto& w = get().get_world();
-						const auto& scroll = w->level->scroll.get();
-						w->level->scroll.pin().index_in_line(w->get_horizontal_scroll_offset() / w->get_char_width());
+						const auto& scroll = w->world_->scroll.get();
+						w->world_->scroll.pin().index_in_line = w->get_horizontal_scroll_offset() / w->get_char_width();
 						
 						break;
 					}
 				case SC_UPDATE_V_SCROLL:
 					{
-						get().get_world()->level->scroll.pin().line(get().get_world()->get_first_visible_line());
+						get().get_world()->world_->scroll.pin().line = get().get_world()->get_first_visible_line();
 						break;
 					}
 				default: break;
@@ -162,8 +162,8 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 		
 	if (!lstrcmp(lpClassName, WC_EDIT)) // handles the edit control creation and create custom window
 	{
-		get().world_ = world::create_new(get().options_);
-		out_hwnd = get().world_->create_native_window(dwExStyle,lpWindowName, dwStyle,
+		get().engine_ = engine::create_new(get().options_);
+		out_hwnd = get().engine_->create_native_window(dwExStyle,lpWindowName, dwStyle,
 		X,Y,nWidth,nHeight,hWndParent,hMenu, hInstance,lpParam);
 	}
 	else
@@ -212,7 +212,7 @@ bool notepader::hook_SetWindowTextW(HMODULE module) const
 
 void notepader::tickframe()
 {
-	world_->get_level()->send();
+	engine_->get_world()->send();
 	ticker::tickframe();
 	set_window_title(L"notepadgame fps: " + std::to_wstring(get_current_frame_rate()));
 	//world_->backbuffer->get();

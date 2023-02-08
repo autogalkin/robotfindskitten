@@ -1,227 +1,114 @@
 ﻿#pragma once
 
-
-#include <algorithm>
-#include <string>
-#include <Windows.h>
-#include <CommCtrl.h>
 #include <memory>
-
-#include <Richedit.h>
 #include <vector>
 
-#include "Scintilla.h"
-#include <boost/signals2.hpp>
-#include "../world/level.h"
+
+#include "../core/base_types.h"
+#include "../entities/actor.h"
 
 
 
-#ifdef max
-#undef max
-#endif
-#ifdef min
-#undef min
-#endif
 
 
 
-template<typename T>
-concept is_container_of_chars = requires(T t)
+class engine;
+
+// the array of chars on the screen
+class backbuffer 
 {
-    {t.data()} -> std::convertible_to<char*>;
+    friend class world;
+    friend class notepader; // for update the scroll
+public:
+    backbuffer(const backbuffer& other) = delete;
+    backbuffer(backbuffer&& other) noexcept;
+    backbuffer& operator=(const backbuffer& other) = delete;
+    backbuffer& operator=(backbuffer&& other) noexcept;
+
+    explicit backbuffer(engine* owner): world_(owner){}
+    virtual ~backbuffer();
+    
+    void init(const int window_width);
+    
+    // tick operations
+    void send();
+    void get() const;
+    
+    [[nodiscard]] virtual char& at(const location& char_on_screen);
+    [[nodiscard]] virtual char at(const location& char_on_screen) const;
+    [[nodiscard]] int get_line_size() const noexcept { return line_lenght_;}
+    [[nodiscard]] const location& get_scroll() const noexcept {return scroll.get();}
+    
+    [[nodiscard]] location global_position_to_buffer_position(const location& position) const noexcept
+    {
+        return {position.line - get_scroll().line, position.index_in_line - get_scroll().index_in_line };
+    }
+    
+    [[nodiscard]] bool is_in_buffer(const location& position) const noexcept
+    {
+        return position.line > get_scroll().line || position.index_in_line > get_scroll().index_in_line;
+    }
+    
+private:
+    static constexpr int endl = 1;
+    int line_lenght_{0};
+    int lines_count_{0};
+    using line_type = dirty_flag< std::vector<char> >;
+    std::unique_ptr< std::vector< line_type > > buffer;
+    engine* world_;
+    
+    dirty_flag<location> scroll;
 };
 
 
-class level;
-// this is the EDIT Control window of the notepad
-class world final
+
+
+class world final : public backbuffer
 {
-    friend class notepader;
     
 public:
-    world() = delete;
-    world(world &other) = delete;
-    world& operator=(const world& other) = delete;
-    world(world&& other) noexcept = delete;
-    world& operator=(world&& other) noexcept = delete;
+    explicit world(engine* owner) noexcept
+       : backbuffer(owner)
+    {
+    }
+    ~world() override;
+    std::optional<actor*> find_actor(const actor::tag_type tag)
+    {
+        const auto t = actors.find(tag);
+        if (t == actors.end()) return std::nullopt;
+        return t->second.get();
+    }
+    
+    // the factory method for create a new actor
+    // throw spawn_error if failed
+    template <std::derived_from<actor> T, typename ...Args>
+    requires requires(world* l, Args&& ... args){ T(spawn_construct_tag{}, l, std::forward<Args>(args)...);}
+    T* spawn_actor(Args&&... args) noexcept
+    {
+        std::unique_ptr<actor> spawned =std::make_unique<T>(spawn_construct_tag{}, this, std::forward<Args>(args)...);
+        auto [It, success] = actors.emplace(std::make_pair(spawned->get_id(), std::move( spawned )));
 
+        assert(success && "the level failed to allocate a new actor while spawning, actor with the given actor::tag is already exists");
+        
+        if(const auto pos = global_position_to_buffer_position(It->second->get_pivot()); is_in_buffer(pos))
+        {
+            //TODO draw shape
+           at(pos) = It->second->getmesh();
+        }
+        return static_cast<T*>(It->second.get());
+    }
     
-    [[nodiscard]] const HWND& get_native_window() const noexcept                 { return edit_window_;}
-    [[nodiscard]] const std::unique_ptr<level>& get_level()                      { return  level;}
-    void set_caret_index(const int64_t index) const noexcept                     { dcall1(SCI_GOTOPOS, index); }
-    void enable_multi_selection(const bool enable) const noexcept                { dcall1(SCI_SETMULTIPLESELECTION, enable);}
-    void set_multi_paste_type(const int type=SC_MULTIPASTE_EACH) const noexcept  { dcall1(SCI_SETMULTIPASTE, type);         }
-    void clear_multi_selection() const noexcept                                  { dcall0(SCI_CLEARSELECTIONS);             }
-    void add_selection(const int64_t start, const int64_t end) const noexcept    { dcall2(SCI_ADDSELECTION,start, end );    }
-    [[nodiscard]] int64_t get_first_visible_line() const noexcept                { return dcall0(SCI_GETFIRSTVISIBLELINE);  }
-    [[nodiscard]] int get_lines_on_screen() const noexcept                       { return static_cast<int>(dcall0(SCI_LINESONSCREEN));        } 
-    [[nodiscard]] int get_char_width() const noexcept                            { return static_cast<int>(dcall2(SCI_TEXTWIDTH,STYLE_DEFAULT, reinterpret_cast<sptr_t>(" "))); }
-    [[nodiscard]] int get_line_height() const noexcept                           { return static_cast<int>(dcall1(SCI_TEXTHEIGHT ,STYLE_DEFAULT )); }
-    bool get_window_rect(RECT& outrect) const noexcept                           { return GetClientRect(get_native_window(), &outrect);}
-    [[nodiscard]] int get_zoom()const noexcept                                   { return static_cast<int>(dcall0(SCI_GETZOOM));}
-    [[nodiscard]] int get_font_size() const noexcept                             { return static_cast<int>(dcall1(SCI_STYLEGETSIZE, STYLE_DEFAULT));}
-    [[nodiscard]] int64_t get_horizontal_scroll_offset() const noexcept          { return dcall0(SCI_GETXOFFSET);}
-    void insert_text(const int64_t index, const std::string& s) const noexcept   { dcall2(SCI_INSERTTEXT, index, reinterpret_cast<sptr_t>(s.data()));}
-    void show_eol(const bool enable) const noexcept                              { PostMessage(get_native_window(), SCI_SETVIEWEOL, enable ,0 );}
-    [[nodiscard]] wchar_t get_char_at_index(const int64_t index) const noexcept  { return static_cast<wchar_t>(dcall1(SCI_GETCHARAT, index));}
-    void append_at_caret_position(const std::string& s) const noexcept           { dcall2(SCI_ADDTEXT, s.size(), reinterpret_cast<sptr_t>(s.data()));}
-    [[nodiscard]] int64_t get_caret_index() const noexcept                       { return dcall0(SCI_GETCURRENTPOS);}
-    [[nodiscard]] int64_t get_all_text_length() const noexcept                   { return  dcall0(SCI_GETTEXTLENGTH);}
-    [[nodiscard]] int64_t get_selected_text_lenght() const noexcept              { return dcall0(SCI_GETSELTEXT);}
-    void set_selection(const int64_t start, const int64_t end) const noexcept    { dcall2(SCI_SETSEL, start, end );}
-    void select_text_end() const noexcept                                        { set_selection(-1 ,-1);}
-    [[nodiscard]] int64_t get_lines_count() const noexcept                       { return dcall0(SCI_GETLINECOUNT);}
-    [[nodiscard]] int64_t get_last_line_length() const noexcept                  { return get_line_lenght(get_lines_count()-1);}
-    void set_new_all_text(const std::string& new_text) const noexcept            { dcall1_l(SCI_SETTEXT,  reinterpret_cast<sptr_t>(new_text.c_str()));}
-    void clear_selection(const int64_t caret_pos) const                          { dcall1(SCI_SETEMPTYSELECTION, caret_pos);}
-    void cursor_to_end() const noexcept                                          { set_caret_index(get_all_text_length());}
-    [[nodiscard]] std::pair<int64_t, int64_t> get_selection_range()const noexcept{return std::make_pair(dcall0(SCI_GETSELECTIONSTART), dcall0(SCI_GETSELECTIONEND));}
-    // between -10 and 50
-    void set_zoom(const int zoom) const noexcept                                 { dcall1(SCI_SETZOOM,  std::clamp(zoom, -10, 50));}
-    [[nodiscard]] int64_t get_first_char_index_in_line(const int64_t line_number) const noexcept       { return dcall1(SCI_POSITIONFROMLINE, line_number);}
-    [[nodiscard]] int64_t get_last_char_index_in_line(const int64_t line_number) const noexcept        { return dcall1(SCI_GETLINEENDPOSITION, line_number);}
-    [[nodiscard]] int64_t get_line_lenght(const int64_t line_index) const noexcept                     { return dcall1(SCI_LINELENGTH, line_index );}
-    [[nodiscard]] int64_t get_line_index(const int64_t any_char_index_in_expected_line) const noexcept { return dcall1(SCI_LINEFROMPOSITION, any_char_index_in_expected_line);}
     
-    void show_spaces(const bool enable) const noexcept;
-    void set_background_color(const COLORREF c) const noexcept;
-
-    void force_set_background_color(const COLORREF c) const noexcept;
+    bool destroy_actor(const actor::tag_type tag);
+    bool set_actor_location(const actor::tag_type tag, const location new_position);
     
-    [[nodiscard]] COLORREF get_background_color() const noexcept { return static_cast<COLORREF>(dcall1(SCI_STYLESETBACK, STYLE_DEFAULT));}
-    void set_all_text_color(COLORREF c) const noexcept;
-    void force_set_all_text_color(COLORREF c) const noexcept;
-    [[nodiscard]] int64_t get_caret_index_in_line() const noexcept;
-    
-    template<is_container_of_chars T>
-    void get_line_text(int64_t line_index, T& buffer) const noexcept;
-    
-    template <is_container_of_chars T>
-    void get_all_text(T& buffer) const noexcept;
-    
-    template<is_container_of_chars T>
-    std::pair<int64_t, int64_t> get_selection_text(T& out) const noexcept;
-    
-    void replace_selection(const std::string_view new_str) const noexcept { dcall1_l(SCI_REPLACESEL,  reinterpret_cast<sptr_t>(new_str.data()));}
-    
-    ~world();
 
 protected:
-    
-    // ~Constructor
-    explicit world(const uint8_t init_options = 0/*notepad::options*/): start_options_(init_options)
-                                                                       , native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary } {}
-    // helper
-    [[nodiscard]] static std::unique_ptr<world> create_new(const uint8_t init_options=0)  { return std::unique_ptr<world>{new world(init_options)};}
-    
-    HWND create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU
-                              hMenu, HINSTANCE hInstance, LPVOID lpParam);
-
-    
-    void init_direct_access();
-    
-    using direct_function = int64_t(*)(sptr_t, int, uptr_t, sptr_t);
-    
-    int64_t dcall0(const int message) const                                   { return direct_function_(direct_wnd_ptr_, message, 0, 0);}  // NOLINT(modernize-use-nodiscard)
-    int64_t dcall1(const int message, const uptr_t w) const                   { return direct_function_(direct_wnd_ptr_, message, w, 0);}  // NOLINT(modernize-use-nodiscard)
-    int64_t dcall1_l(const int message, const sptr_t l) const                 { return direct_function_(direct_wnd_ptr_, message, 0, l);}  // NOLINT(modernize-use-nodiscard)
-    int64_t dcall2(const int message, const uptr_t w, const sptr_t l) const   { return direct_function_(direct_wnd_ptr_, message, w, l);}  // NOLINT(modernize-use-nodiscard)
-
 private:
-    uint8_t start_options_;
-    
-    HWND edit_window_{nullptr};
-    std::unique_ptr<std::remove_pointer_t<HMODULE>, decltype(&::FreeLibrary)> native_dll_;
-    std::unique_ptr<level> level{nullptr};
-    sptr_t direct_wnd_ptr_{0};
-    int64_t(*direct_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
-    int64_t(*thread_safe_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
-    
+    std::unordered_map< actor::tag_type, std::unique_ptr<actor>, actor::hasher > actors{};
+
+    entt::registry reg;
 };
 
 
 
-
-
-
-// inlines
-
-inline void world::set_background_color(const COLORREF c) const noexcept
-{
-    PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_DEFAULT,c);  // set back-color of window
-    PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_LINENUMBER, c);  // set back-color of margin
-    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);  // char back
-    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_ANSI, c);  //
-    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_SYMBOL, c);  //
-    PostMessage(get_native_window(), SCI_STYLESETBACK, 0, c);  //
-}
-
-inline void world::force_set_background_color(const COLORREF c) const noexcept
-{
-    dcall2(SCI_STYLESETBACK, STYLE_DEFAULT,c);
-    dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
-    dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
-    dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
-    dcall2(SCI_STYLESETBACK, 0, c);
-}
-
-inline void world::set_all_text_color(const COLORREF c) const noexcept
-{
-    PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_DEFAULT,c);  // set back-color of window
-    PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_LINENUMBER, c);  // set back-color of margin
-    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_DEFAULT, c);  // char back
-    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_ANSI, c); 
-    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
-    PostMessage(get_native_window(), SCI_STYLESETFORE, 0, c);  
-}
-
-inline void world::force_set_all_text_color(const COLORREF c) const noexcept
-{
-    dcall2(SCI_STYLESETFORE, STYLE_DEFAULT,c);
-    dcall2(SCI_STYLESETFORE, STYLE_LINENUMBER, c);
-    dcall2(SCI_STYLESETFORE, SC_CHARSET_DEFAULT, c);
-    dcall2(SCI_STYLESETFORE, SC_CHARSET_ANSI, c);
-    dcall2(SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
-    dcall2(SCI_STYLESETFORE, 0, c);
-}
-
-template<is_container_of_chars T>
-std::pair<int64_t, int64_t> world::get_selection_text(T& out) const noexcept
-{
-    const auto range = get_selection_range();
-    out.reserve(range.second - range.first);
-    dcall1_l(SCI_GETSELTEXT, reinterpret_cast<sptr_t>(out.data()));
-    return range; 
-}
-
-
-inline int64_t world::get_caret_index_in_line() const noexcept
-{
-    const auto ci = get_caret_index();
-    return ci - get_first_char_index_in_line(get_line_index(ci));
-}
-
-
-template<is_container_of_chars T>
-void world::get_line_text(const int64_t line_index, T& buffer) const noexcept
-{
-    const int64_t line_length = get_line_lenght(line_index);
-    buffer.reserve(line_length+1);
-    dcall2(SCI_GETLINE, line_index, reinterpret_cast<sptr_t>( buffer.data()) );
-}
-
-template<is_container_of_chars T>
-void world::get_all_text(T& buffer) const noexcept
-{
-    const int64_t len = get_all_text_length();
-    buffer.reserve(len+1);
-    dcall2(SCI_GETTEXT, len+1, reinterpret_cast<sptr_t>( buffer.data()) );
-}
-
-
-inline void world::show_spaces(const bool enable) const noexcept
-{
-    int flag = SCWS_INVISIBLE;
-    if(enable) flag = SCWS_VISIBLEALWAYS;
-    PostMessage(get_native_window(), SCI_SETVIEWWS, flag ,0 );
-}
