@@ -29,7 +29,7 @@ public:
         if (first_free_ != end_of_list){
             const index ind = first_free_;
             first_free_ = std::get<next_free_index>(data_[first_free_]);
-            std::get<T>(data_[ind]) = elt;
+            data_[ind] = elt;
             return ind;
         }
         else{
@@ -39,7 +39,7 @@ public:
     }
     
     void erase(size_t n){
-        std::get<next_free_index>(data_[n]) = first_free_;
+        data_[n] = first_free_;
         first_free_ = static_cast<index>(n);
     }
     
@@ -176,7 +176,7 @@ struct agent
 class query final : public ecs_processor
 {
 public:
-    explicit query(world* w);
+    explicit query(world* w, entt::registry& reg);
 
     virtual void execute(entt::registry& reg) override;
 private:

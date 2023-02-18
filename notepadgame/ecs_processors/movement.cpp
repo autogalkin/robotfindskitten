@@ -11,13 +11,13 @@ void movement::execute(entt::registry& reg)
     {
             
         auto& vel = view.get<velocity>(entity);
-        //if(vel.isZero()) continue;
-
+        //if(!vel.isZero())
+        
         const auto& [sh] = view.get<shape>(entity);
         auto& loc = view.get<location>(entity);
 
-        auto des_loc = location{loc.line() + vel.line(), loc.index_in_line() + vel.index_in_line()};
-        vel = velocity::null();
+        auto des_loc = loc + vel;
+        
         // draw
         for(auto rows = sh.rowwise();
             auto [line, row] : rows | ranges::views::enumerate)
@@ -29,6 +29,9 @@ void movement::execute(entt::registry& reg)
                 if(des_loc != loc) get_world()->at(loc) = shape::whitespace;
             }
         }
+        
         loc = des_loc;
+        vel = velocity::null();
+        
     }
 }

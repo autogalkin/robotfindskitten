@@ -46,20 +46,17 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             auto& exec =  w->get_ecs_executor();
             
             exec.emplace_back(std::make_unique<input_passer>(w.get(), notepader::get().get_input_manager().get()));
-            //exec.emplace_back(std::make_unique<collision::query>(w.get()));
+            exec.emplace_back(std::make_unique<collision::query>(w.get(), w->get_registry()));
             exec.emplace_back(std::make_unique<movement>(w.get()));
             
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
                 reg.emplace<shape>(entity, shape::initializer_from_data{"f", 1, 1});
                 character::make(reg, entity, location{3, 3});
-                //reg.emplace<input_passer::down_signal>(entity, &character::process_input<>);
-                reg.emplace<input_passer::down_signal>(entity, [](entt::registry&, entt::entity, const input::key_state_type& state)
-                {
-                    if(state.size() && state[0] == input::key::a) notepader::get().get_engine()->get_world()->send();
-                });
+                reg.emplace<input_passer::down_signal>(entity, &character::process_input<>);
+                
             });
-            /*
+            
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
                 reg.emplace<shape>(entity, shape::initializer_from_data{"d", 1, 1});
@@ -71,7 +68,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                                             , input::key::right>);
                 
             });
-            */
+            
         });
     }
     return TRUE;

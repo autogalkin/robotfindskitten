@@ -221,11 +221,10 @@ bool notepader::hook_SetWindowTextW(HMODULE module) const
 
 void notepader::tickframe()
 {
-	
-	//engine_->get_world()->send();
+	engine_->get_world()->send();
 	ticker::tickframe();
 	set_window_title(L"notepadgame fps: " + std::to_wstring(get_current_frame_rate()));
 	get().get_input_manager()->clear_input();
-	//world_->backbuffer->get();
+	
 	
 }

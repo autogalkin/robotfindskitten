@@ -61,7 +61,7 @@ void backbuffer::send()
 {
     const auto pos = engine_->get_caret_index();
     bool buffer_is_changed = false;
-    const npi_t fi = engine_->get_first_char_index_in_line(0);
+    
     for(int enumerate{-1}; auto& line : *buffer // | ranges::views::enumerate
         | ranges::views::filter([this, &enumerate](auto& l){++enumerate; return l.is_changed() || scroll.is_changed() ;}))
     {

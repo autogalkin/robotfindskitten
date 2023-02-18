@@ -29,22 +29,30 @@ private:
 
 
 template<typename SizeType>
+requires std::is_arithmetic_v<SizeType>
 struct location_t : public Eigen::Vector2<SizeType>
 {
     location_t(){*this << 0, 0;}
     location_t(const SizeType& line, const SizeType& index_in_line): Eigen::Vector2<SizeType>{line, index_in_line} {}
+
+    // ReSharper disable CppNonExplicitConvertingConstructor
     
     template<typename OtherDerived>
-    // ReSharper disable CppNonExplicitConvertingConstructor
     location_t(const Eigen::EigenBase<OtherDerived>& other): Eigen::Vector2<SizeType>{other}{}
     template<typename OtherDerived>
     location_t(const Eigen::EigenBase<OtherDerived>&& other): Eigen::Vector2<SizeType>{other}{}
+    
     // ReSharper restore CppNonExplicitConvertingConstructor
+    
     [[nodiscard]] SizeType& line()                      {return this->operator()(0);}
     [[nodiscard]] SizeType& index_in_line()             {return this->operator()(1);}
     [[nodiscard]] const SizeType& line() const          {return this->operator()(0);}
     [[nodiscard]] const SizeType& index_in_line() const {return this->operator()(1);}
-    
+
+    template<typename T>
+    location_t<std::common_type_t<SizeType, T>> operator+(const location_t<T>& rhs) const {
+        return  location_t<std::common_type_t<SizeType, T>>{line() + rhs.line(), index_in_line() + rhs.index_in_line()};
+    }
 };
 
 

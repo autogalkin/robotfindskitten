@@ -120,7 +120,7 @@ public:
         executor_.execute(reg_);
     }
     ecs_processors_executor& get_ecs_executor() {return executor_;}
-    
+    entt::registry& get_registry() {return reg_;}
     void spawn_actor(const std::function<void(entt::registry&, const entt::entity)>& for_add_components)
     {
         const auto entity = reg_.create();

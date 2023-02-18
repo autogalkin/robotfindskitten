@@ -41,6 +41,7 @@ void collision::quad_tree::remove(const size_t indx)
 
 void collision::quad_tree::query(const boundbox& rect, std::vector<size_t>& intersect_result)
 {
+    // TODO ab и ba?
     /*
             for each leaf in leaves:
             {
@@ -55,13 +56,14 @@ void collision::quad_tree::query(const boundbox& rect, std::vector<size_t>& inte
             }
          */
     std::vector<bool> traversed(entities_.size(), false);
-
+    // TODO сам с собой сейчас коллайдится
+    // Find the leaves that intersect the specified query rectangle.
     // For each leaf node, look for elements that intersect.
     for (const auto leaves = find_leaves(root_data(), rect)
-         ; const auto& nd : leaves)
+         ; const auto& leaf : leaves)
     {
-        const quadnode& node = nodes_[nd.i];
- 
+        const quadnode& node = nodes_[leaf.i];
+        
         // Walk the list and add elements that intersect.
         auto elt_node_index = node.first_child;
         while (elt_node_index != end_of_list)
@@ -264,11 +266,12 @@ std::vector<collision::quad_tree::quad_node_data> collision::quad_tree::find_lea
     return leaves;
 }
 
-collision::query::query(world* w): ecs_processor{w}
+collision::query::query(world* w, entt::registry& reg): ecs_processor{w}
 {
     notepader::get().get_engine()->get_on_scroll_changed().connect([this](const location& new_scroll){
         on_scroll_changed(new_scroll);
     });
+    reg.on_construct<collision::agent>().connect<&entt::registry::emplace_or_replace<need_update_entity>>();
 }
 
 void collision::query::execute(entt::registry& reg)
@@ -278,38 +281,46 @@ void collision::query::execute(entt::registry& reg)
         ; const auto entity : view){
         auto& sh = view.get<shape>(entity);
         const auto& loc = view.get<location>(entity);
-        auto& [index_in_quad_tree] = view.get<collision::agent>(entity);
-        index_in_quad_tree = tree.insert(entity, sh.bound_box()+loc);
+        view.get<collision::agent>(entity).index_in_quad_tree = tree.insert(entity, sh.bound_box()+loc);
         reg.remove<need_update_entity>(entity);
     }
-
-    const auto view = reg.view<const location,const shape, collision::agent, velocity>();
-        
-    // compute collision
-    for(const auto entity : view)
-    {
-        std::vector<size_t> collides;
-        const auto& loc = view.get<location>(entity);
-        tree.query(view.get<shape>(entity).bound_box()+loc, collides);
-        if(!collides.empty()){
-            // TODO on collide func
-            view.get<velocity>(entity) = velocity::null();
-            for (const auto collide : collides){
-                view.get<velocity>(tree.get_entity(collide).id) = velocity::null();
+    
+    {// query
+        const auto view = reg.view<const location,const shape, collision::agent, velocity>();
+            
+        // compute collision
+        for(const auto entity : view)
+        {
+            auto& vel = view.get<velocity>(entity);
+            
+            if(vel.is_null()) continue; // check only dynamic
+            const auto& loc = view.get<location>(entity);
+            
+            std::vector<size_t> collides;
+            tree.query(view.get<shape>(entity).bound_box()+(loc+vel), collides);
+            if(!collides.empty()){
+                // TODO on collide func
+                //
+                for (const auto collide : collides){
+                    if(tree.get_entity(collide).id != entity)
+                    {
+                        view.get<velocity>(entity) = velocity::null();
+                        view.get<velocity>(tree.get_entity(collide).id) = velocity::null();
+                    }
+                }
             }
         }
-    }
-    // remove actors witch will move, insert it again in the next tick 
-    for(const auto entity : view)
-    {
-        if(!view.get<velocity>(entity).is_null()){
-            auto& [index_in_quad_tree] = view.get<collision::agent>(entity);
-            tree.remove(index_in_quad_tree);
-            index_in_quad_tree = collision::invalid_index;
-            reg.emplace<need_update_entity>(entity);
+        // remove actors witch will move, insert it again in the next tick 
+        for(const auto entity : view)
+        {
+            if(!view.get<velocity>(entity).is_null()){
+                auto& [index_in_quad_tree] = view.get<collision::agent>(entity);
+                tree.remove(index_in_quad_tree);
+                index_in_quad_tree = collision::invalid_index;
+                reg.emplace_or_replace<need_update_entity>(entity);
+            }
         }
-    }
-        
+    } 
     tree.cleanup();
 }
 
