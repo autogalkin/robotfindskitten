@@ -1,8 +1,6 @@
 ﻿#include "actor.h"
 #include "../core/notepader.h"
-#include "world.h"
-#include "../core/engine.h"
-
+#include "../core/world.h"
 
 //void actor::connect_to_collision(collision* collision)
 //{

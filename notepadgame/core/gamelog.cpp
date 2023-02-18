@@ -1,5 +1,10 @@
-﻿#include "gamelog.h"
-#include "Windows.h"
+﻿
+#include "gamelog.h"
+
+
+#define NOMINMAX
+#include <Windows.h>
+#undef NOMINMAX
 
 gamelog& gamelog::get()
 {
@@ -15,7 +20,7 @@ gamelog::gamelog()
     err = freopen_s(&fdummy, "CONOUT$", "w", stderr);
     std::cout.clear();
     std::clog.clear();
-    const HANDLE hConOut = CreateFile(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    const HANDLE hConOut = CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
     SetStdHandle(STD_ERROR_HANDLE, hConOut);
     std::wcout.clear();

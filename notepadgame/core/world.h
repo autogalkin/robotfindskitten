@@ -4,10 +4,12 @@
 #include <vector>
 
 
+
+
 #include "../core/base_types.h"
-#include "../entities/actor.h"
 
-
+#include "../ecs_processors/collision.h"
+#include "tick.h"
 
 
 
@@ -25,7 +27,7 @@ public:
     backbuffer& operator=(const backbuffer& other) = delete;
     backbuffer& operator=(backbuffer&& other) noexcept;
 
-    explicit backbuffer(engine* owner): world_(owner){}
+    explicit backbuffer(engine* owner): engine_(owner){}
     virtual ~backbuffer();
     
     void init(const int window_width);
@@ -41,12 +43,12 @@ public:
     
     [[nodiscard]] location global_position_to_buffer_position(const location& position) const noexcept
     {
-        return {position.line - get_scroll().line, position.index_in_line - get_scroll().index_in_line };
+        return {position.line() - get_scroll().line(), position.index_in_line() - get_scroll().index_in_line()};
     }
     
     [[nodiscard]] bool is_in_buffer(const location& position) const noexcept
     {
-        return position.line > get_scroll().line || position.index_in_line > get_scroll().index_in_line;
+        return position.line() > get_scroll().line() || position.index_in_line() > get_scroll().index_in_line();
     }
     
 private:
@@ -54,60 +56,82 @@ private:
     int line_lenght_{0};
     int lines_count_{0};
     using line_type = dirty_flag< std::vector<char> >;
-    std::unique_ptr< std::vector< line_type > > buffer;
-    engine* world_;
+    std::unique_ptr< std::vector< line_type > > buffer{};
+    engine* engine_;
     
     dirty_flag<location> scroll;
 };
 
+class ecs_processors_executor: public std::list< std::unique_ptr<ecs_processor>>
+{
+    enum class insert_order : int8_t
+    {
+        before = 0
+      , after  = 1
+    };
+    
+public:
+    bool insert_processor_at(std::unique_ptr<ecs_processor> who
+        , const std::type_info& near_with /* typeid(ecs_processor) */
+        , const insert_order where=insert_order::before)
+    {
+        if(auto it = std::ranges::find_if(*this
+                                          , [&near_with]( const std::unique_ptr<ecs_processor>& n)
+                                          {
+                                              return  near_with == typeid(*n);
+                                          });
+        it != end())
+        {
+            switch (where)
+            {
+            case insert_order::before:        break;
+            case insert_order::after:  ++it ; break;
+            }
+            insert(it, std::move(who));
+            return true;
+        }
+        return false;
+    }
+    void execute(entt::registry& reg) const
+    {
+        for(const auto& i : *this){
+            i->execute(reg);
+        }
+    }
+};
 
 
-
-class world final : public backbuffer
+class world final : public backbuffer, public tickable  // NOLINT(cppcoreguidelines-special-member-functions)
 {
     
 public:
-    explicit world(engine* owner) noexcept
-       : backbuffer(owner)
+    // TODO запретить перемещение и копирование
+    
+    explicit world(engine* owner) noexcept: backbuffer(owner)
     {
+        //scroll_changed_connection = owner->get_on_scroll_changed().connect([this](const location& new_scroll){scroll = new_scroll;});
+        // declare dependencies
+        //reg_.on_construct<velocity>().connect<&entt::registry::emplace<movement_force>>();
     }
+
     ~world() override;
-    std::optional<actor*> find_actor(const actor::tag_type tag)
-    {
-        const auto t = actors.find(tag);
-        if (t == actors.end()) return std::nullopt;
-        return t->second.get();
-    }
-    
-    // the factory method for create a new actor
-    // throw spawn_error if failed
-    template <std::derived_from<actor> T, typename ...Args>
-    requires requires(world* l, Args&& ... args){ T(spawn_construct_tag{}, l, std::forward<Args>(args)...);}
-    T* spawn_actor(Args&&... args) noexcept
-    {
-        std::unique_ptr<actor> spawned =std::make_unique<T>(spawn_construct_tag{}, this, std::forward<Args>(args)...);
-        auto [It, success] = actors.emplace(std::make_pair(spawned->get_id(), std::move( spawned )));
 
-        assert(success && "the level failed to allocate a new actor while spawning, actor with the given actor::tag is already exists");
-        
-        if(const auto pos = global_position_to_buffer_position(It->second->get_pivot()); is_in_buffer(pos))
-        {
-            //TODO draw shape
-           at(pos) = It->second->getmesh();
-        }
-        return static_cast<T*>(It->second.get());
+    void tick() override{
+        executor_.execute(reg_);
     }
+    ecs_processors_executor& get_ecs_executor() {return executor_;}
     
-    
-    bool destroy_actor(const actor::tag_type tag);
-    bool set_actor_location(const actor::tag_type tag, const location new_position);
-    
-
-protected:
+    void spawn_actor(const std::function<void(entt::registry&, const entt::entity)>& for_add_components)
+    {
+        const auto entity = reg_.create();
+        for_add_components(reg_, entity);
+    }
 private:
-    std::unordered_map< actor::tag_type, std::unique_ptr<actor>, actor::hasher > actors{};
-
-    entt::registry reg;
+    
+    boost::signals2::scoped_connection scroll_changed_connection;
+    ecs_processors_executor executor_{};
+    entt::registry reg_;
+    
 };
 
 

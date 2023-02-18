@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    auto dll_path = std::filesystem::absolute("notepadgame.dll").string();
+    auto dll_path = std::filesystem::absolute("notepadgamedll.dll").string();
     
     auto buffer = VirtualAllocEx(proc_handle, NULL, MAX_PATH,
         MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);

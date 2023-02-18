@@ -9,12 +9,12 @@ void projectile::tick()
 {
     if(lifetime_ > 0)
     {
-        notepader::get().get_world()->get_world()->set_actor_location(get_id(), get_pivot() + direction_);
+        //notepader::get().get_engine()->get_world()->set_actor_location(get_id(), get_pivot() + direction_);
         --lifetime_ ;
     }
     else
     {
-        notepader::get().get_world()->get_world()->destroy_actor(get_id()); 
+        //notepader::get().get_engine()->get_world()->destroy_actor(get_id()); 
     }
     
 }

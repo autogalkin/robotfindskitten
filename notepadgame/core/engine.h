@@ -1,26 +1,24 @@
 ﻿#pragma once
 
-
+#include <memory>
 #include <algorithm>
 #include <string>
-#include <Windows.h>
-#include <CommCtrl.h>
-#include <memory>
-
-#include <Richedit.h>
-
 #include "Scintilla.h"
-#include <boost/signals2.hpp>
+
+#include "base_types.h"
+#include "boost/signals2/signal.hpp"
 #include "world.h"
 
+#define NOMINMAX
+#include <Windows.h>
+#include <CommCtrl.h>
+#include <Richedit.h>
+#undef NOMINMAX
 
 
-#ifdef max
-#undef max
-#endif
-#ifdef min
-#undef min
-#endif
+
+
+
 
 
 
@@ -31,7 +29,6 @@ concept is_container_of_chars = requires(T t)
 };
 
 
-class world;
 // this is the EDIT Control window of the notepad
 class engine final
 {
@@ -44,7 +41,7 @@ public:
     engine(engine&& other) noexcept = delete;
     engine& operator=(engine&& other) noexcept = delete;
 
-    
+    [[nodiscard]] boost::signals2::signal<void (const location& new_scroll)>& get_on_scroll_changed()   { return on_scroll_changed_; }
     [[nodiscard]] const HWND& get_native_window() const noexcept                 { return edit_window_;}
     [[nodiscard]] const std::unique_ptr<world>& get_world()                      { return  world_;}
     void set_caret_index(const npi_t index) const noexcept                     { dcall1(SCI_GOTOPOS, index); }
@@ -131,7 +128,7 @@ private:
     
     HWND edit_window_{nullptr};
     std::unique_ptr<std::remove_pointer_t<HMODULE>, decltype(&::FreeLibrary)> native_dll_;
-    
+    boost::signals2::signal<void (const location& new_scroll)> on_scroll_changed_{};
     std::unique_ptr<world> world_{nullptr};
     
     sptr_t direct_wnd_ptr_{0};

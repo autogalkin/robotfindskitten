@@ -1,19 +1,24 @@
-﻿#include <algorithm>
+﻿
+#include <algorithm>
 #include <locale>
 
-#include <Windows.h>
-#include "Richedit.h"
-#include "CommCtrl.h"
+
 #include "notepader.h"
 
 #include <mutex>
 
-#include "../world/character.h"
+
 #include "iat_hook.h"
 #include "engine.h"
 #include "input.h"
-#include "../world/world.h"
+#include "world.h"
 
+#define NOMINMAX
+
+#include "Richedit.h"
+#include "CommCtrl.h"
+#include <Windows.h>
+#undef NOMINMAX
 
 
 
@@ -43,15 +48,15 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 				{
 				case SC_UPDATE_H_SCROLL:
 					{
-						auto& w = get().get_world();
+						auto& w = get().get_engine();
 						const auto& scroll = w->world_->scroll.get();
-						w->world_->scroll.pin().index_in_line = w->get_horizontal_scroll_offset() / w->get_char_width();
+						w->world_->scroll.pin().index_in_line() = w->get_horizontal_scroll_offset() / w->get_char_width();
 						
 						break;
 					}
 				case SC_UPDATE_V_SCROLL:
 					{
-						get().get_world()->world_->scroll.pin().line = get().get_world()->get_first_visible_line();
+						get().get_engine()->world_->scroll.pin().line() = get().get_engine()->get_first_visible_line();
 						break;
 					}
 				default: break;
@@ -88,12 +93,11 @@ bool notepader::hook_GetMessageW(const HMODULE module) const
 			if (lpMsg->message == WM_KEYDOWN || lpMsg->message == WM_KEYUP)
 			{
 
-				if(		lpMsg->wParam != VK_UP
-					&&  lpMsg->wParam != VK_DOWN
-					&&  lpMsg->wParam != VK_BACK
+				if(	
+					  lpMsg->wParam != VK_BACK
 					&&  lpMsg->wParam != VK_DELETE)
 				{
-					if(auto& input = get().get_input_manager()) input->receive(lpMsg);
+					if(auto& input = get().get_input_manager(); input.get()) input->receive(lpMsg);
 					// Block messages
 					lpMsg->message = WM_NULL;
 				}
@@ -162,9 +166,12 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 		
 	if (!lstrcmp(lpClassName, WC_EDIT)) // handles the edit control creation and create custom window
 	{
+		
 		get().engine_ = engine::create_new(get().options_);
+		
 		out_hwnd = get().engine_->create_native_window(dwExStyle,lpWindowName, dwStyle,
 		X,Y,nWidth,nHeight,hWndParent,hMenu, hInstance,lpParam);
+		
 	}
 	else
 	{
@@ -181,14 +188,16 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 		SetWindowLongPtr(get().main_window_, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(hook_wnd_proc));
 	}
 	
-	if(get().get_main_window() && get().get_world() && get().get_world()->get_native_window())
+	if(get().get_main_window() && get().get_engine() && get().get_engine()->get_native_window())
 	{
 		
 		static std::once_flag once;
 		std::call_once(once, []
 		{
+			
 			get().input_ = std::make_unique<input>();
 			get().on_open_();
+			
 			// disable
 			boost::signals2::signal<void()> empty {} ;
 			std::swap(get().on_open_, empty);
@@ -212,9 +221,11 @@ bool notepader::hook_SetWindowTextW(HMODULE module) const
 
 void notepader::tickframe()
 {
-	engine_->get_world()->send();
+	
+	//engine_->get_world()->send();
 	ticker::tickframe();
 	set_window_title(L"notepadgame fps: " + std::to_wstring(get_current_frame_rate()));
+	get().get_input_manager()->clear_input();
 	//world_->backbuffer->get();
 	
 }

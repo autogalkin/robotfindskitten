@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <array>
 
 #include <boost/signals2.hpp>
 #include <boost/container_hash/hash.hpp>
@@ -8,16 +7,7 @@
 #include "boost/uuid/uuid.hpp"
 #include <boost/uuid/uuid_generators.hpp>
 #include "../core/base_types.h"
-#include <Eigen/Dense>
 
-
-struct shape
-{
-    static constexpr char whitespace = ' ';
-    using type                  = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-    using initializer_from_data = Eigen::Map<const shape::type,   Eigen::RowMajor>;
-    type data{};
-};
 
 
 // prevent to construct actor without going through the spawn factory level::spawn_actor

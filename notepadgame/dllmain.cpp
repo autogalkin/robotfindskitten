@@ -1,26 +1,18 @@
 
-
-
-#include <Windows.h>
-
-
-
-
-
 #include "core/gamelog.h"
 #include "core/notepader.h"
 #include "core/engine.h"
 
-
-#include "range/v3/view/enumerate.hpp"
-
-#include "range/v3/view/join.hpp"
-
-
-#include <range/v3/view/filter.hpp>
-
 #include "entities/atmosphere.h"
-#include "entities/character.h"
+#include "core/base_types.h"
+
+
+#include <Windows.h>
+
+#include "ecs_processors/movement.h"
+#include "core/world.h"
+#include "entities/factories.h"
+
 
 BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, LPVOID lp_reserved)
 {
@@ -35,7 +27,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
         
         // run the notepad singleton
         notepader& np = notepader::get();
-        const auto np_module = GetModuleHandle(nullptr); // get the module handle of the notepad.exe
+        const auto np_module = GetModuleHandleW(nullptr); // get the module handle of the notepad.exe
         
         [[maybe_unused]] constexpr uint8_t start_options =
             0
@@ -49,25 +41,37 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
         
         np.get_on_open().connect([]
         {
-            auto& w = notepader::get().get_world();
-            const auto ch = w->get_world()->spawn_actor<character>(location{1,2}, 'f');
-            const auto ch2 = w->get_world()->spawn_actor<character>(location{7,15}, 's');
-            using namespace std::chrono_literals;
-             const auto atm = w->get_world()->spawn_actor<atmosphere>(30s
-                 ,  color_range{RGB(37,37,38),RGB(240,240,240) }
-                 ,  color_range{RGB(220,220,220),RGB(37,37,38) });
             
-            ch->bind_input();
-            notepader::get().get_input_manager()->get_down_signal().connect([](const input::key_state_type& state)
+            const auto& w = notepader::get().get_engine()->get_world();
+            auto& exec =  w->get_ecs_executor();
+            
+            exec.emplace_back(std::make_unique<input_passer>(w.get(), notepader::get().get_input_manager().get()));
+            //exec.emplace_back(std::make_unique<collision::query>(w.get()));
+            exec.emplace_back(std::make_unique<movement>(w.get()));
+            
+            w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
-                auto& w = notepader::get().get_world();
-                std::string s{"👀"};
-                //notepader::get().get_world()->insert_text(2, s);
-               
-                //
+                reg.emplace<shape>(entity, shape::initializer_from_data{"f", 1, 1});
+                character::make(reg, entity, location{3, 3});
+                //reg.emplace<input_passer::down_signal>(entity, &character::process_input<>);
+                reg.emplace<input_passer::down_signal>(entity, [](entt::registry&, entt::entity, const input::key_state_type& state)
+                {
+                    if(state.size() && state[0] == input::key::a) notepader::get().get_engine()->get_world()->send();
+                });
             });
-            //const auto ch3 = w->get_level()->spawn_actor<animated_mesh>({7,15}, 'f', 'd', 'h');
-            
+            /*
+            w->spawn_actor([](entt::registry& reg, const entt::entity entity)
+            {
+                reg.emplace<shape>(entity, shape::initializer_from_data{"d", 1, 1});
+                character::make(reg, entity, location{5, 8});
+                reg.emplace<input_passer::down_signal>(entity,
+                    &character::process_input<input::key::up
+                                            , input::key::left
+                                            , input::key::down
+                                            , input::key::right>);
+                
+            });
+            */
         });
     }
     return TRUE;

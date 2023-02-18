@@ -1,14 +1,17 @@
 ﻿#pragma once
-#include <Windows.h>
+
 #include <memory>
 #include <thread>
-
 
 #include "boost/signals2.hpp"
 
 #include "tick.h"
 #include "input.h"
 #include "engine.h"
+
+#define NOMINMAX
+#include <Windows.h>
+#undef NOMINMAX
 
 
 class notepader final : public ticker // notepad.exe wrapper
@@ -50,9 +53,9 @@ public:
     [[nodiscard]] boost::signals2::signal<void ()>& get_on_close()            { return on_close_; }
     [[nodiscard]] HWND get_main_window() const                                { return main_window_;}
     [[nodiscard]] const std::unique_ptr<input>& get_input_manager() const     { return input_; }
-    [[nodiscard]] const std::unique_ptr<engine>& get_world() const             { return engine_; }
+    [[nodiscard]] const std::unique_ptr<engine>& get_engine() const           { return engine_; }
     
-    void set_window_title(const std::wstring_view title) const { SetWindowText(main_window_, title.data()); }
+    void set_window_title(const std::wstring_view title) const { SetWindowTextW(main_window_, title.data()); }
     
     
 protected:

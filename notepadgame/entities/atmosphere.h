@@ -1,9 +1,20 @@
 ﻿#pragma once
+
 #include "../core/tick.h"
 #include "../core/base_types.h"
-#include "../world/actor.h"
+#include "actor.h"
+
+#define NOMINMAX
+#include <Windows.h>
+#undef NOMINMAX
 
 
+
+struct color_range
+{
+    COLORREF start{RGB(0, 0, 0)};
+    COLORREF end{RGB(255, 255, 255)};
+};
 class atmosphere final : public actor
 {
 public:

@@ -20,29 +20,34 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
-    <ProjectGuid>{7110213C-5D4D-4076-AAD4-0664F4BB76B8}</ProjectGuid>
+    <ProjectGuid>{803733D3-A01A-433C-975B-0CF242287543}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -75,11 +80,14 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>W:\raw-c++_projects\notepadgame\extern\range-v3-0.12.0\include;W:\raw-c++_projects\notepadgame\extern\entt-3.11.1\single_include;W:\raw-c++_projects\notepadgame\extern\scintilla\include;W:\raw-c++_projects\notepadgame\extern\eigen-3.4.0;C:\Program Files\boost\boost_1_81_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>C:\Program Files\boost\boost_1_81_0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -88,6 +96,8 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>W:\raw-c++_projects\notepadgame\extern\range-v3-0.12.0\include;W:\raw-c++_projects\notepadgame\extern\entt-3.11.1\single_include;W:\raw-c++_projects\notepadgame\extern\scintilla\include;W:\raw-c++_projects\notepadgame\extern\eigen-3.4.0;C:\Program Files\boost\boost_1_81_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -95,44 +105,61 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Program Files\boost\boost_1_81_0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>W:\raw-c++_projects\notepadgame\extern\range-v3-0.12.0\include;W:\raw-c++_projects\notepadgame\extern\entt-3.11.1\single_include;W:\raw-c++_projects\notepadgame\extern\scintilla\include;W:\raw-c++_projects\notepadgame\extern\eigen-3.4.0;C:\Program Files\boost\boost_1_81_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>C:\Program Files\boost\boost_1_81_0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>W:\raw-c++_projects\notepadgame\extern\range-v3-0.12.0\include;W:\raw-c++_projects\notepadgame\extern\entt-3.11.1\single_include;W:\raw-c++_projects\notepadgame\extern\scintilla\include;W:\raw-c++_projects\notepadgame\extern\eigen-3.4.0;C:\Program Files\boost\boost_1_81_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>C:\Program Files\boost\boost_1_81_0;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cmake-build-debug\cmakefiles\3.24.2\compileridcxx\CMakeCXXCompilerId.cpp" />
-    <ClCompile Include="cmake-build-debug\cmakefiles\3.24.2\compileridc\CMakeCCompilerId.c" />
-    <ClCompile Include="loader\main.cpp" />
-    <ClCompile Include="notepadgame\core\iat_hook.cpp" />
-    <ClCompile Include="notepadgame\core\notepader.cpp" />
-    <ClCompile Include="notepadgame\dllmain.cpp" />
-    <ClCompile Include="notepadgame\input.cpp" />
-    <ClCompile Include="notepadgame\notepadgame\pch.cpp" />
-    <ClCompile Include="notepadgame\world.cpp" />
-    <ClCompile Include="notepadgame\world_entities\actor.cpp" />
-    <ClCompile Include="notepadgame\world_entities\character.cpp" />
-    <ClCompile Include="notepadgame\world_entities\projectile.cpp" />
-    <ClCompile Include="out\build\x64-debug\cmakefiles\3.24.202208181-msvc_2\compileridcxx\CMakeCXXCompilerId.cpp" />
-    <ClCompile Include="out\build\x64-debug\cmakefiles\3.24.202208181-msvc_2\compileridc\CMakeCCompilerId.c" />
-    <ClCompile Include="out\build\x64-debug\cmakefiles\showincludes\main.c" />
+    <ClCompile Include="core\base_types.cpp" />
+    <ClCompile Include="core\engine.cpp" />
+    <ClCompile Include="core\gamelog.cpp" />
+    <ClCompile Include="core\input.cpp" />
+    <ClCompile Include="core\notepader.cpp" />
+    <ClCompile Include="core\tick.cpp" />
+    <ClCompile Include="core\world.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="ecs_processors\collision.cpp" />
+    <ClCompile Include="ecs_processors\movement.cpp" />
+    <ClCompile Include="ecs_processors\tick_new.cpp" />
+    <ClCompile Include="entities\actor.cpp" />
+    <ClCompile Include="entities\atmosphere.cpp" />
+    <ClCompile Include="entities\factories.cpp" />
+    <ClCompile Include="entities\projectile.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="notepadgame\core\iat_hook.h" />
-    <ClInclude Include="notepadgame\core\notepader.h" />
-    <ClInclude Include="notepadgame\core\outlog.h" />
-    <ClInclude Include="notepadgame\input.h" />
-    <ClInclude Include="notepadgame\notepadgame\framework.h" />
-    <ClInclude Include="notepadgame\notepadgame\pch.h" />
-    <ClInclude Include="notepadgame\world.h" />
-    <ClInclude Include="notepadgame\world_entities\actor.h" />
-    <ClInclude Include="notepadgame\world_entities\character.h" />
-    <ClInclude Include="notepadgame\world_entities\projectile.h" />
-    <ClInclude Include="out\build\x64-debug\cmakefiles\showincludes\foo.h" />
-    <ClInclude Include="resource.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cmake-build-debug\cmakefiles\3.24.2\CMakeDetermineCompilerABI_C.bin" />
-    <None Include="cmake-build-debug\cmakefiles\3.24.2\CMakeDetermineCompilerABI_CXX.bin" />
-    <None Include="out\build\x64-debug\cmakefiles\3.24.202208181-msvc_2\CMakeDetermineCompilerABI_C.bin" />
-    <None Include="out\build\x64-debug\cmakefiles\3.24.202208181-msvc_2\CMakeDetermineCompilerABI_CXX.bin" />
+    <ClInclude Include="core\base_types.h" />
+    <ClInclude Include="core\engine.h" />
+    <ClInclude Include="core\gamelog.h" />
+    <ClInclude Include="core\iat_hook.h" />
+    <ClInclude Include="core\input.h" />
+    <ClInclude Include="core\notepader.h" />
+    <ClInclude Include="core\tick.h" />
+    <ClInclude Include="core\world.h" />
+    <ClInclude Include="ecs_processors\collision.h" />
+    <ClInclude Include="ecs_processors\movement.h" />
+    <ClInclude Include="ecs_processors\tick_new.h" />
+    <ClInclude Include="entities\actor.h" />
+    <ClInclude Include="entities\atmosphere.h" />
+    <ClInclude Include="entities\factories.h" />
+    <ClInclude Include="entities\projectile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
