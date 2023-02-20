@@ -4,15 +4,30 @@
 #include "../ecs_processors/collision.h"
 #include "../core/input.h"
 
+struct projectile
+{
+    static void make(entt::registry& reg, const entt::entity e, location start, velocity direction,  const std::chrono::milliseconds life_time=std::chrono::seconds{1})
+    {
+        reg.emplace<shape>(e, shape::initializer_from_data{"-", 1, 1});
+        
+        reg.emplace<location_buffer>(e, std::move(start), location{});
+        reg.emplace<non_uniform_movement_tag>(e);
+        reg.emplace<velocity>(e, direction);
+        reg.emplace<collision::agent>(e);
+        
+        reg.emplace<lifetime>(e, life_time);
+        
+    }
+};
 
 struct character final
 {
     static void make(entt::registry& reg, const entt::entity e, location l)
     {
-        reg.emplace<location>(e, std::move(l));
+        reg.emplace<location_buffer>(e, std::move(l), location{});
+        reg.emplace<uniform_movement_tag>(e);
         reg.emplace<velocity>(e);
         reg.emplace<collision::agent>(e);
-        reg.emplace<acceleration>(e);
         
     }
 
@@ -20,21 +35,30 @@ struct character final
             , input::key LEFT =input::key::a
             , input::key DOWN =input::key::s
             , input::key RIGHT=input::key::d
+            , input::key ACTION=input::key::space
     >
-    static void process_input(entt::registry& registry, const entt::entity e, const input::key_state_type& state)
+    static void process_input(entt::registry& reg, const entt::entity e, const input::key_state_type& state)
     {
-        auto& vel = registry.get<velocity>(e);
-        const auto& [force] = registry.get<const acceleration>(e);
+        auto& vel = reg.get<velocity>(e);
+       
         for(auto& key : state)
         {
             switch (key)
             {
-            case UP: vel.line()             -= force; break;
-            case LEFT: vel.index_in_line()  -= force; break;
-            case DOWN: vel.line()           += force; break;
-            case RIGHT: vel.index_in_line() += force; break;
+            case UP: vel.line()             -= 1; break;
+            case LEFT: vel.index_in_line()  -= 1; break;
+            case DOWN: vel.line()           += 1; break;
+            case RIGHT: vel.index_in_line() += 1; break;
+            case ACTION:
+                {
+                    auto& loc = reg.get<location_buffer>(e);
+                    const auto proj = reg.create();
+                    projectile::make(reg, proj,loc.current + location{0, 1},  velocity{0, 15}, std::chrono::seconds{4});
+                    
+                }
             default: break;
             }
         }
     }
 };
+

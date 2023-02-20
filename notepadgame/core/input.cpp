@@ -3,7 +3,7 @@
 
 input::~input() = default;
 
-void input::tick()
+void input::tick(gametime::duration)
 {
     send_input();
 }

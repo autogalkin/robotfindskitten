@@ -4,6 +4,21 @@
 #include <chrono>
 #include "boost/signals2.hpp"
 
+
+namespace gametime
+{
+    using clock = std::chrono::steady_clock;
+    // fixed time step
+    static auto constexpr dt = std::chrono::duration<long long, std::ratio<1, 60>>{1};
+    using duration = decltype(clock::duration{} + dt);
+    using time_point = std::chrono::time_point<clock, duration>;
+    
+}
+struct lifetime
+{
+    gametime::duration value = std::chrono::seconds{1};
+};
+
 class ticker
 {
 public:
@@ -21,13 +36,6 @@ public:
     ticker(ticker&& other) noexcept = delete;
     ticker& operator=(ticker&& other) noexcept = delete;
     
-    using clock = std::chrono::steady_clock;
-    // fixed time step
-    static auto constexpr dt = std::chrono::duration<long long, std::ratio<1, 60>>{1};
-    
-    using duration = decltype(clock::duration{} + dt);
-    using time_point = std::chrono::time_point<clock, duration>;
-
     virtual void reset_to_start()
     {
         using namespace std::chrono_literals;
@@ -35,7 +43,7 @@ public:
         frame_rate = 0;
         frame_count = 0;
         seconds_tstep = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::steady_clock::now());
-        last_time = clock::now();
+        last_time = gametime::clock::now();
         
     }
     
@@ -43,7 +51,7 @@ public:
     {
         using namespace std::literals;
         
-        const time_point new_t = clock::now();
+        const gametime::time_point new_t = gametime::clock::now();
         
         auto frametime = new_t - last_time;
         
@@ -54,13 +62,14 @@ public:
         
         last_time = new_t;
         
-        lag_accumulator_ += dt - frametime;
+        lag_accumulator_ += gametime::dt - frametime;
         
         while(lag_accumulator_ > 0ms)
         {
-            const auto sleep_start_time = clock::now();
+            const auto sleep_start_time = gametime::clock::now();
             std::this_thread::sleep_until(sleep_start_time + lag_accumulator_);
-            lag_accumulator_ -= clock::now() - sleep_start_time;
+            auto nt = gametime::clock::now();
+            lag_accumulator_ -= nt - sleep_start_time;
         }
         
         // compute frames per second
@@ -74,20 +83,20 @@ public:
         }
         
         //const double alpha = std::chrono::duration<double>{lag_accumulator_} / dt;
-        on_tick_();
+        on_tick_(gametime::dt);
         
     }
     
     [[nodiscard]] int get_current_frame_rate() const { return frame_rate;}
-    virtual [[nodiscard]] boost::signals2::signal<void()>& get_on_tick()
+    virtual [[nodiscard]] boost::signals2::signal<void(gametime::duration)>& get_on_tick()
     {
         return on_tick_;
     }
 
 private:
-    boost::signals2::signal<void()> on_tick_{};
-    duration lag_accumulator_{};
-    time_point last_time = clock::now();
+    boost::signals2::signal<void(gametime::duration)> on_tick_{};
+    gametime::duration lag_accumulator_{};
+    gametime::time_point last_time = gametime::clock::now();
     // compute fps
     int frame_rate = 0;
     int frame_count = 0;
@@ -108,7 +117,7 @@ protected: // prevent slicing
     tickable(tickable&& other)                 noexcept : tickable() {other.tick_connection.disconnect();}
     tickable& operator=(tickable&& other)      noexcept  {other.tick_connection.disconnect(); return *this;}
     
-    virtual void tick() = 0;
+    virtual void tick(gametime::duration delta) = 0;
     
 private:
     boost::signals2::scoped_connection tick_connection;
@@ -172,7 +181,7 @@ public:
     timer& operator=(timer&& other) noexcept  = default;
     ~timer() override                         = default;
     
-    virtual void tick() override;
+    virtual void tick(gametime::duration delta) override;
     void start() noexcept ;
     [[nodiscard]] boost::signals2::signal<void()>& get_on_finished() { return on_finish;}
     [[nodiscard]] bool is_loopping() const noexcept {return looping_;}
@@ -180,19 +189,19 @@ public:
     [[nodiscard]] bool is_finished() const noexcept {return stopped_;}
     void stop() noexcept {stopped_ = true; on_finish();}
     void restart() noexcept {stopped_ = false; started_ = false; start();}
-    [[nodiscard]] const ticker::time_point& get_start_time() const {return start_time_;}
-    [[nodiscard]] const ticker::time_point& get_last_time()  const {return last_time_;}
-    [[nodiscard]] const ticker::time_point& get_stop_time()  const {return stop_time_;}
+    [[nodiscard]] const gametime::time_point& get_start_time() const {return start_time_;}
+    [[nodiscard]] const gametime::time_point& get_last_time()  const {return last_time_;}
+    [[nodiscard]] const gametime::time_point& get_stop_time()  const {return stop_time_;}
 protected:
-    void update_last_time() noexcept {last_time_ = ticker::clock::now();}
+    void update_last_time() noexcept {last_time_ = gametime::clock::now();}
     void call_do() const noexcept {do_();}
 private:
     std::function<void()> do_;
     boost::signals2::signal<void()> on_finish;
     std::chrono::milliseconds rate_;
-    ticker::time_point start_time_;
-    ticker::time_point last_time_;
-    ticker::time_point stop_time_;
+    gametime::time_point start_time_;
+    gametime::time_point last_time_;
+    gametime::time_point stop_time_;
     bool started_ = false;
     bool stopped_ = false;
     bool looping_  = false;
@@ -219,7 +228,7 @@ public:
     timeline& operator=(const timeline& other)      = delete;
     timeline& operator=(timeline&& other) noexcept  = default;
     ~timeline() override                            = default;
-    void tick() override;
+    void tick(gametime::duration delta) override;
     [[nodiscard]] direction get_current_direction() const noexcept {return direction_;}
     void invert_direction() noexcept {direction_= invert(direction_);}
 private:

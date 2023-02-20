@@ -9,8 +9,12 @@
 
 #include <Windows.h>
 
-#include "ecs_processors/movement.h"
+#include "ecs_processors/motion.h"
 #include "core/world.h"
+
+#include "ecs_processors/drawer.h"
+#include "ecs_processors/lifetime_timer.h"
+
 #include "entities/factories.h"
 
 
@@ -44,10 +48,13 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             
             const auto& w = notepader::get().get_engine()->get_world();
             auto& exec =  w->get_ecs_executor();
-            
+            // TODO запретить сортировку и другие медоты у контейнера!
             exec.emplace_back(std::make_unique<input_passer>(w.get(), notepader::get().get_input_manager().get()));
+            exec.emplace_back(std::make_unique<uniform_motion>(w.get()));
+            exec.emplace_back(std::make_unique<non_uniform_motion>(w.get()));
             exec.emplace_back(std::make_unique<collision::query>(w.get(), w->get_registry()));
-            exec.emplace_back(std::make_unique<movement>(w.get()));
+            exec.emplace_back(std::make_unique<drawer>(w.get()));
+            exec.emplace_back(std::make_unique<lifetime_ticker>(w.get()));
             
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
@@ -65,7 +72,8 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                     &character::process_input<input::key::up
                                             , input::key::left
                                             , input::key::down
-                                            , input::key::right>);
+                                            , input::key::right
+                                            , input::key::l>);
                 
             });
             

@@ -5,7 +5,7 @@
 #include "../core/notepader.h"
 
 #undef max
-
+/*
 atmosphere::atmosphere(const spawn_construct_tag _, world* l, const std::chrono::seconds cycle, const color_range backgroung, const color_range foreground)
     : actor(_, l, {}, shape::whitespace)
     , timer_([this]
@@ -56,3 +56,4 @@ void atmosphere::update() const
     notepader::get().get_engine()->force_set_all_text_color(new_front_color);
     
 }
+*/

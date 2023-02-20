@@ -5,9 +5,9 @@
 
 tickable::tickable():
         tick_connection(notepader::get().get_on_tick().connect(
-            [this]
+            [this](gametime::duration delta)
             {
-                tick();
+                tick(delta);
             }
             ))
 {
@@ -17,14 +17,14 @@ void timer::start() noexcept
 {
     assert(!started_ || !stopped_ && "timer::start: the timer has already beed started or finished");
     started_ = true;
-    last_time_ = ticker::clock::now();
+    last_time_ = gametime::clock::now();
     start_time_ = last_time_;
     stop_time_ =  start_time_ + rate_;
     
 }
 
 // TODO last time можно оптимизировать убрать
-void timer::tick()
+void timer::tick(gametime::duration delta)
 {
     if(is_started() && !is_finished())
     {
@@ -42,7 +42,7 @@ void timer::tick()
 }
 
 
-void timeline::tick()
+void timeline::tick(gametime::duration delta)
 {
     if(is_started() && !is_finished())
     {

@@ -170,6 +170,8 @@ private:
     
 struct agent
 {
+private:
+    friend class query;
     index index_in_quad_tree = invalid_index;
 };
     
@@ -178,16 +180,23 @@ class query final : public ecs_processor
 public:
     explicit query(world* w, entt::registry& reg);
 
-    virtual void execute(entt::registry& reg) override;
+    virtual void execute(entt::registry& reg, gametime::duration delta) override;
 private:
     // TODO update scroll and resize Need traverse method
-    void on_scroll_changed(const location& new_scroll){
+    void on_scroll_changed(const position& new_scroll){
         tree = quad_tree{tree.get_root_rect() + new_scroll, 8};
+    }
+    void remove_on_destroy(const entt::registry& reg, const entt::entity e){
+        if(const auto& agent =reg.get<collision::agent>(e)
+            ; agent.index_in_quad_tree != collision::invalid_index){
+            tree.remove(agent.index_in_quad_tree);
+        }
+        
     }
     // mark entity to remove from tree and insert again
     struct need_update_entity{};
     quad_tree tree{boundbox{{0, 0}, {100, 100}}, 8}; 
-    
+    entt::scoped_connection on_destroy_entity;
 };
 }
 

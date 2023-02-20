@@ -36,21 +36,20 @@ public:
     void send();
     void get() const;
     
-    [[nodiscard]] virtual char& at(const location& char_on_screen);
-    [[nodiscard]] virtual char at(const location& char_on_screen) const;
+    [[nodiscard]] virtual char& at(const position& char_on_screen);
+    [[nodiscard]] virtual char at(const position& char_on_screen) const;
     [[nodiscard]] int get_line_size() const noexcept { return line_lenght_;}
-    [[nodiscard]] const location& get_scroll() const noexcept {return scroll.get();}
+    [[nodiscard]] const position& get_scroll() const noexcept {return scroll.get();}
     
-    [[nodiscard]] location global_position_to_buffer_position(const location& position) const noexcept
-    {
+    [[nodiscard]] position global_position_to_buffer_position(const position& position) const noexcept{
         return {position.line() - get_scroll().line(), position.index_in_line() - get_scroll().index_in_line()};
     }
     
-    [[nodiscard]] bool is_in_buffer(const location& position) const noexcept
-    {
+    [[nodiscard]] bool is_in_buffer(const position& position) const noexcept{
         return position.line() > get_scroll().line() || position.index_in_line() > get_scroll().index_in_line();
     }
-    
+    void redraw(const position& src, const position& dest, const shape& sh);
+    void erase(const position& src, const shape& sh);
 private:
     static constexpr int endl = 1;
     int line_lenght_{0};
@@ -59,7 +58,7 @@ private:
     std::unique_ptr< std::vector< line_type > > buffer{};
     engine* engine_;
     
-    dirty_flag<location> scroll;
+    dirty_flag<position> scroll;
 };
 
 class ecs_processors_executor: public std::list< std::unique_ptr<ecs_processor>>
@@ -92,10 +91,10 @@ public:
         }
         return false;
     }
-    void execute(entt::registry& reg) const
+    void execute(entt::registry& reg, gametime::duration delta) const
     {
         for(const auto& i : *this){
-            i->execute(reg);
+            i->execute(reg, delta);
         }
     }
 };
@@ -116,8 +115,8 @@ public:
 
     ~world() override;
 
-    void tick() override{
-        executor_.execute(reg_);
+    void tick(gametime::duration delta) override{
+        executor_.execute(reg_, delta);
     }
     ecs_processors_executor& get_ecs_executor() {return executor_;}
     entt::registry& get_registry() {return reg_;}

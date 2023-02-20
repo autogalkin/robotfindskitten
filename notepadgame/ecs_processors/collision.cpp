@@ -238,7 +238,7 @@ collision::quad_tree::quadrant collision::quad_tree::get_quadrant(const boundbox
 
 boundbox collision::quad_tree::compute_child_box(const boundbox& parent, const quadrant child)
 {
-    location child_size = parent.size / 2;
+    position child_size = parent.size / 2;
     switch (child)
     {
     case quadrant::top_left:
@@ -268,49 +268,53 @@ std::vector<collision::quad_tree::quad_node_data> collision::quad_tree::find_lea
 
 collision::query::query(world* w, entt::registry& reg): ecs_processor{w}
 {
-    notepader::get().get_engine()->get_on_scroll_changed().connect([this](const location& new_scroll){
+    notepader::get().get_engine()->get_on_scroll_changed().connect([this](const position& new_scroll){
         on_scroll_changed(new_scroll);
     });
     reg.on_construct<collision::agent>().connect<&entt::registry::emplace_or_replace<need_update_entity>>();
+    auto rem = []{};
+    on_destroy_entity = reg.on_destroy<collision::agent>().connect<&query::remove_on_destroy>(*this);
 }
 
-void collision::query::execute(entt::registry& reg)
+void collision::query::execute(entt::registry& reg, gametime::duration delta)
 {
     // insert moved actors into tree
-    for(const auto view = reg.view<const location,const shape, need_update_entity, collision::agent>()
+    for(const auto view = reg.view<const location_buffer, const shape, need_update_entity, collision::agent>()
         ; const auto entity : view){
         auto& sh = view.get<shape>(entity);
-        const auto& loc = view.get<location>(entity);
-        view.get<collision::agent>(entity).index_in_quad_tree = tree.insert(entity, sh.bound_box()+loc);
+        const auto& [current_location, translation] = view.get<location_buffer>(entity);
+        view.get<collision::agent>(entity).index_in_quad_tree = tree.insert(entity, sh.bound_box()+position_converter::from_location(current_location));
         reg.remove<need_update_entity>(entity);
     }
     
-    {// query
-        const auto view = reg.view<const location,const shape, collision::agent, velocity>();
+    {// query 
+        const auto view = reg.view<location_buffer, const shape, collision::agent, velocity>();
             
         // compute collision
         for(const auto entity : view)
         {
             auto& vel = view.get<velocity>(entity);
             
-            if(vel.is_null()) continue; // check only dynamic
-            const auto& loc = view.get<location>(entity);
+            
+            auto& [current_location, translation] = view.get<location_buffer>(entity);
+
+            if(translation.is_null()) continue; // check only dynamic
             
             std::vector<size_t> collides;
-            tree.query(view.get<shape>(entity).bound_box()+(loc+vel), collides);
+            tree.query(view.get<shape>(entity).bound_box()+(position_converter::from_location(current_location+translation)), collides);
             if(!collides.empty()){
                 // TODO on collide func
                 //
                 for (const auto collide : collides){
                     if(tree.get_entity(collide).id != entity)
                     {
-                        view.get<velocity>(entity) = velocity::null();
-                        view.get<velocity>(tree.get_entity(collide).id) = velocity::null();
+                        translation = location::null();
+                        view.get<location_buffer>(tree.get_entity(collide).id).translation = location::null();
                     }
                 }
             }
         }
-        // remove actors witch will move, insert it again in the next tick 
+        // remove actors which will move, insert it again in the next tick 
         for(const auto entity : view)
         {
             if(!view.get<velocity>(entity).is_null()){

@@ -1,24 +1,24 @@
 ﻿#pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <utility>
 #include <entt/entt.hpp>
 #include <Eigen/Dense>
 
-
-
-
-
+#include "tick.h"
 
 
 using npi_t = int64_t; // notepad index size
+
+
 class world;
 class ecs_processor  // NOLINT(cppcoreguidelines-special-member-functions)
 {
     
 public:
     explicit ecs_processor(world* w): w_(w){}
-    virtual void execute(entt::registry& reg) = 0;
+    virtual void execute(entt::registry& reg, gametime::duration delta) = 0;
     
     virtual ~ecs_processor() = default;
 protected:
@@ -30,61 +30,98 @@ private:
 
 template<typename SizeType>
 requires std::is_arithmetic_v<SizeType>
-struct location_t : public Eigen::Vector2<SizeType>
+struct np_vector_t : public Eigen::Vector2<SizeType>
 {
-    location_t(){*this << 0, 0;}
-    location_t(const SizeType& line, const SizeType& index_in_line): Eigen::Vector2<SizeType>{line, index_in_line} {}
+    constexpr np_vector_t(){*this << 0, 0;}
+    constexpr np_vector_t(const SizeType& line, const SizeType& index_in_line): Eigen::Vector2<SizeType>{line, index_in_line} {}
 
     // ReSharper disable CppNonExplicitConvertingConstructor
     
     template<typename OtherDerived>
-    location_t(const Eigen::EigenBase<OtherDerived>& other): Eigen::Vector2<SizeType>{other}{}
+    np_vector_t(const Eigen::EigenBase<OtherDerived>& other): Eigen::Vector2<SizeType>{other}{}
     template<typename OtherDerived>
-    location_t(const Eigen::EigenBase<OtherDerived>&& other): Eigen::Vector2<SizeType>{other}{}
+    np_vector_t(const Eigen::EigenBase<OtherDerived>&& other): Eigen::Vector2<SizeType>{other}{}
     
     // ReSharper restore CppNonExplicitConvertingConstructor
+
+    template<typename T>
+    requires std::is_convertible_v<T, SizeType>
+    np_vector_t<SizeType>& operator=(const np_vector_t<T>& rhs) {
+        line() = rhs.line(); index_in_line() = rhs.index_in_line(); return *this;
+    }
     
     [[nodiscard]] SizeType& line()                      {return this->operator()(0);}
     [[nodiscard]] SizeType& index_in_line()             {return this->operator()(1);}
     [[nodiscard]] const SizeType& line() const          {return this->operator()(0);}
     [[nodiscard]] const SizeType& index_in_line() const {return this->operator()(1);}
 
+    
     template<typename T>
-    location_t<std::common_type_t<SizeType, T>> operator+(const location_t<T>& rhs) const {
-        return  location_t<std::common_type_t<SizeType, T>>{line() + rhs.line(), index_in_line() + rhs.index_in_line()};
+    np_vector_t<std::common_type_t<SizeType, T>> operator+(const np_vector_t<T>& rhs) const {
+        return  np_vector_t<std::common_type_t<SizeType, T>>{line() + rhs.line(), index_in_line() + rhs.index_in_line()};
     }
+    template<typename T>
+    np_vector_t<std::common_type_t<SizeType, T>> operator*(const np_vector_t<T>& rhs) const {
+        return  np_vector_t<std::common_type_t<SizeType, T>>{line() * rhs.line(), index_in_line() * rhs.index_in_line()};
+    }
+    template<typename T>
+    requires std::is_arithmetic_v<T>
+    np_vector_t<std::common_type_t<SizeType, T>> operator*(const T& rhs) const {
+        return  np_vector_t<std::common_type_t<SizeType, T>>{line() * rhs, index_in_line() * rhs};
+    }
+    [[nodiscard]] bool is_null() const {return line() == static_cast<SizeType>(0) && index_in_line() == static_cast<SizeType>(0);}
+    static np_vector_t<SizeType> null(){return np_vector_t<SizeType>{static_cast<SizeType>(0), static_cast<SizeType>(0)};}
 };
 
+// notepas space position
+using position = np_vector_t<npi_t>;
 
-using location = location_t<npi_t>;
+// actor location
+using location = np_vector_t<double>;
 
-struct velocity : location_t<int8_t>{
-    explicit velocity() = default;
-    [[nodiscard]] bool is_null() const {return line() == 0 && index_in_line() == 0;}
-    static velocity null(){return velocity{};}
+struct location_buffer
+{
+    location current{};
+    location translation{};
+};
+
+struct uniform_movement_tag {};
+struct non_uniform_movement_tag {};
+
+namespace position_converter
+{
+    npi_t to_notepad_index(const position& l);
+    position from_notepad_index(npi_t i);
+    inline position from_location(const location& location) {return {std::lround(location.line()), std::lround(location.index_in_line())}; }
+}
+
+struct velocity : np_vector_t<float>{
+    velocity() = default;
+    velocity(const np_vector_t<float>& l) : np_vector_t<float>(l){}
+    template<typename T>
+    velocity(const Eigen::EigenBase<T>& other): np_vector_t<float>{other}{}
+    template<typename T>
+    velocity(const Eigen::EigenBase<T>&& other): np_vector_t<float>{other}{}
+    explicit velocity(const float line, const float index_in_line) : np_vector_t<float>{line, index_in_line}{}
+    
 };
 
 struct force{
     npi_t value = 1;
 };
-struct acceleration : force {};
 
-namespace location_converter
-{
-    npi_t to_notepad_index(const location& l);
-    location from_notepad_index(npi_t i);
-}
+
 
 struct boundbox
 {
-    location pivot{};
-    location size {};
+    position pivot{};
+    position size {};
 
-    boundbox operator +(const location& loc) const {return {pivot + loc, size};}
-    [[nodiscard]] location center() const{
+    boundbox operator +(const position& loc) const {return {pivot + loc, size};}
+    [[nodiscard]] position center() const{
         return {pivot.line() + size.line()/2, pivot.index_in_line() + size.index_in_line()/2};
     }
-    [[nodiscard]] location end() const { return {pivot + size};}
+    [[nodiscard]] position end() const { return {pivot + size};}
     [[nodiscard]] bool contains(const boundbox& b) const
     {
         return

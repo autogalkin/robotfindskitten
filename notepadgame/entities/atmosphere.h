@@ -2,14 +2,14 @@
 
 #include "../core/tick.h"
 #include "../core/base_types.h"
-#include "actor.h"
+
 
 #define NOMINMAX
 #include <Windows.h>
 #undef NOMINMAX
 
 
-
+/*
 struct color_range
 {
     COLORREF start{RGB(0, 0, 0)};
@@ -32,3 +32,4 @@ private:
     color_range background;
     color_range foreground;
 };
+*/

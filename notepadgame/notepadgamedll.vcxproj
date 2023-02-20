@@ -137,12 +137,10 @@
     <ClCompile Include="core\world.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="ecs_processors\collision.cpp" />
-    <ClCompile Include="ecs_processors\movement.cpp" />
+    <ClCompile Include="ecs_processors\drawer.cpp" />
+    <ClCompile Include="ecs_processors\motion.cpp" />
     <ClCompile Include="ecs_processors\tick_new.cpp" />
-    <ClCompile Include="entities\actor.cpp" />
     <ClCompile Include="entities\atmosphere.cpp" />
-    <ClCompile Include="entities\factories.cpp" />
-    <ClCompile Include="entities\projectile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\base_types.h" />
@@ -154,12 +152,12 @@
     <ClInclude Include="core\tick.h" />
     <ClInclude Include="core\world.h" />
     <ClInclude Include="ecs_processors\collision.h" />
-    <ClInclude Include="ecs_processors\movement.h" />
+    <ClInclude Include="ecs_processors\drawer.h" />
+    <ClInclude Include="ecs_processors\lifetime_timer.h" />
+    <ClInclude Include="ecs_processors\motion.h" />
     <ClInclude Include="ecs_processors\tick_new.h" />
-    <ClInclude Include="entities\actor.h" />
     <ClInclude Include="entities\atmosphere.h" />
     <ClInclude Include="entities\factories.h" />
-    <ClInclude Include="entities\projectile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

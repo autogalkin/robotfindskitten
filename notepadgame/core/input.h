@@ -23,11 +23,13 @@ public:
         , a = 0x41
         , s = 0x53
         , d = 0x44
+        , l = 0x49
         , space = VK_SPACE
         , up = VK_UP
         , right = VK_RIGHT
         , left = VK_LEFT
         , down = VK_DOWN
+        
     };
     
     using key_state_type = std::vector<input::key>;
@@ -41,7 +43,7 @@ public:
     input& operator=(const input& other) = delete;
     input& operator=(input&& other) noexcept = delete;
     
-    virtual void tick() override;
+    virtual void tick(gametime::duration) override;
     void send_input();
     void receive(const LPMSG msg);
     [[nodiscard]] const key_state_type& get_down_key_state() const { return down_key_state_;}
@@ -68,7 +70,7 @@ public:
     };
     struct up_signal : down_signal {};
     
-    void execute(entt::registry& reg) override
+    void execute(entt::registry& reg, gametime::duration) override
     {
         const input::key_state_type& state = input_->get_down_key_state();
         if(state.empty()) return;
