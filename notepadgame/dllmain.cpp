@@ -12,7 +12,8 @@
 #include "ecs_processors/motion.h"
 #include "core/world.h"
 
-#include "ecs_processors/drawer.h"
+#include "ecs_processors/redrawer.h"
+#include "ecs_processors/killer.h"
 #include "ecs_processors/lifetime_timer.h"
 
 #include "entities/factories.h"
@@ -49,12 +50,18 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             const auto& w = notepader::get().get_engine()->get_world();
             auto& exec =  w->get_ecs_executor();
             // TODO запретить сортировку и другие медоты у контейнера!
+            
+            exec.emplace_back(std::make_unique<lifetime_ticker>(w.get()));
+            exec.emplace_back(std::make_unique<death_last_will_executor>(w.get()));
+            
             exec.emplace_back(std::make_unique<input_passer>(w.get(), notepader::get().get_input_manager().get()));
+            exec.emplace_back(std::make_unique<timeline_executor>(w.get()));
             exec.emplace_back(std::make_unique<uniform_motion>(w.get()));
             exec.emplace_back(std::make_unique<non_uniform_motion>(w.get()));
             exec.emplace_back(std::make_unique<collision::query>(w.get(), w->get_registry()));
-            exec.emplace_back(std::make_unique<drawer>(w.get()));
-            exec.emplace_back(std::make_unique<lifetime_ticker>(w.get()));
+            exec.emplace_back(std::make_unique<redrawer>(w.get()));
+            exec.emplace_back(std::make_unique<killer>(w.get()));
+            
             
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {

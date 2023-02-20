@@ -88,6 +88,20 @@ struct location_buffer
 struct uniform_movement_tag {};
 struct non_uniform_movement_tag {};
 
+// calls a given function every tick to the end lifetime
+struct timeline_do
+{
+    
+    enum class direction : int8_t{
+        forward =  1,
+        reverse = -1
+    };
+    
+    std::function<void(timeline_do::direction)> work;
+    direction dir      {direction::forward};
+};
+
+
 namespace position_converter
 {
     npi_t to_notepad_index(const position& l);
@@ -110,6 +124,18 @@ struct force{
     npi_t value = 1;
 };
 
+struct begin_die{}
+;
+struct lifetime
+{
+    gametime::duration duration ;
+    
+};
+
+struct death_last_will
+{
+    std::function<void(entt::registry&, entt::entity)> wish;
+};
 
 
 struct boundbox
@@ -163,7 +189,7 @@ struct dirty_flag
         value_.second = other;
         mark_dirty();
         return *this;
-    };
+    }
     void mark_dirty() noexcept { value_.first = true;} 
     void reset_flag() noexcept {value_.first = false;}
     [[nodiscard]] bool is_changed() const noexcept {return value_.first;}

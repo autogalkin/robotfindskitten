@@ -14,41 +14,44 @@ public:
     explicit lifetime_ticker(world* w): ecs_processor(w){
     }
 
-    void execute(entt::registry& reg, gametime::duration delta) override
+    void execute(entt::registry& reg, const gametime::duration delta) override
     {
         using namespace std::chrono_literals;
         for(const auto view = reg.view<lifetime>();
         const auto entity: view)
         {
-            if(auto& [life_time] = view.get<lifetime>(entity)
-                ; life_time <= 0ms){
+            if(auto& [duration] = view.get<lifetime>(entity)
+                ; duration <= 0ms){
                 
-                if(reg.all_of<shape, location_buffer>(entity)){
-                    get_world()->erase(position_converter::from_location(reg.get<location_buffer>(entity).current), reg.get<shape>(entity));
-                }
-                reg.destroy(entity);
-                
+                reg.emplace<begin_die>(entity);
             }
             else
             {
-                life_time -= delta;
+                duration -= delta;
             }
             
         }
     }
 };
 
-struct timeline_
+class death_last_will_executor final : public ecs_processor
 {
-    enum class direction : int8_t{
-        forward = 1,
-        reverse = -1
-    };
-    std::function<void()> work;
-    direction d{direction::forward};
+public:
+    explicit death_last_will_executor(world* w)
+        : ecs_processor(w){
+    }
+
+    void execute(entt::registry& reg, gametime::duration delta) override
+    {
+        for(const auto view = reg.view<begin_die, death_last_will>();
+        const auto entity: view)
+        {
+            view.get<death_last_will>(entity).wish(reg, entity);
+        }
+    }
 };
 
-class timeline_executor final : ecs_processor
+class timeline_executor final : public ecs_processor
 {
 public:
     explicit timeline_executor(world* w)
@@ -57,10 +60,13 @@ public:
 
     void execute(entt::registry& reg, gametime::duration delta) override
     {
-        for(const auto view = reg.view<lifetime, timeline_>();
+        
+        for(const auto view = reg.view<const lifetime, timeline_do>();
         const auto entity: view)
         {
-            view.get<timeline_>(entity).work();
+            auto& d = view.get<const timeline_do>(entity);
+            auto& [work, dir] = view.get<const timeline_do>(entity);
+            work( dir);
         }
     }
 };

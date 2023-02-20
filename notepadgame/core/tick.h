@@ -14,10 +14,7 @@ namespace gametime
     using time_point = std::chrono::time_point<clock, duration>;
     
 }
-struct lifetime
-{
-    gametime::duration value = std::chrono::seconds{1};
-};
+
 
 class ticker
 {
@@ -207,31 +204,4 @@ private:
     bool looping_  = false;
 };
 
-// calls a given function every tick to the end time
-class timeline final : public timer
-{
-public:
-    enum class direction : int8_t
-    {
-        forward = 1,
-        reverse = -1
-    };
-    static direction invert(const direction d) { return static_cast<direction>(static_cast<int8_t>(d) * -1);}
-    
-    template<typename T, typename ...Args>
-    requires std::invocable<T, Args...>
-    timeline(T&& what_do, const std::chrono::milliseconds rate, const bool looped=false, const timeline::direction start_direction=direction::forward)
-    : timer(std::forward<T>(what_do), rate, looped), direction_(start_direction){}
-    
-    timeline(const timeline& other)                 = delete;
-    timeline(timeline&& other) noexcept             = default;
-    timeline& operator=(const timeline& other)      = delete;
-    timeline& operator=(timeline&& other) noexcept  = default;
-    ~timeline() override                            = default;
-    void tick(gametime::duration delta) override;
-    [[nodiscard]] direction get_current_direction() const noexcept {return direction_;}
-    void invert_direction() noexcept {direction_= invert(direction_);}
-private:
-    
-    direction direction_ = direction::forward;
-};
+

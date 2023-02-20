@@ -48,8 +48,8 @@ public:
     [[nodiscard]] bool is_in_buffer(const position& position) const noexcept{
         return position.line() > get_scroll().line() || position.index_in_line() > get_scroll().index_in_line();
     }
-    void redraw(const position& src, const position& dest, const shape& sh);
-    void erase(const position& src, const shape& sh);
+    void draw(const position& pivot, const shape& sh);
+    void erase(const position& pos, const shape& sh);
 private:
     static constexpr int endl = 1;
     int line_lenght_{0};

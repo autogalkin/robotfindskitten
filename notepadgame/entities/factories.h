@@ -6,7 +6,10 @@
 
 struct projectile
 {
-    static void make(entt::registry& reg, const entt::entity e, location start, velocity direction,  const std::chrono::milliseconds life_time=std::chrono::seconds{1})
+    static void make(entt::registry& reg, const entt::entity e
+        , location start
+        , velocity direction
+        ,  const std::chrono::milliseconds life_time=std::chrono::seconds{1})
     {
         reg.emplace<shape>(e, shape::initializer_from_data{"-", 1, 1});
         
@@ -16,7 +19,27 @@ struct projectile
         reg.emplace<collision::agent>(e);
         
         reg.emplace<lifetime>(e, life_time);
+        reg.emplace<death_last_will>(e, [](entt::registry& reg_, const entt::entity ent)
+        {
+            const auto newe = reg_.create();
+            reg_.emplace<location_buffer>(newe, reg_.get<location_buffer>(ent));
+            reg_.emplace<shape>( newe, shape::initializer_from_data{"*", 1, 1});
+            reg_.emplace<lifetime>(newe, std::chrono::seconds{1});
+        });
         
+    }
+};
+
+struct timeline_1
+{
+    static void make(entt::registry& reg, const entt::entity e
+        , const std::function<void(timeline_do::direction)>& what_do
+        , const std::chrono::milliseconds duration=std::chrono::seconds{1}
+        , timeline_do::direction direction      = timeline_do::direction::forward
+ )
+    {
+        reg.emplace<lifetime>(e, duration);
+        reg.emplace<timeline_do>(e, what_do, direction);
     }
 };
 
@@ -54,7 +77,9 @@ struct character final
                     auto& loc = reg.get<location_buffer>(e);
                     const auto proj = reg.create();
                     projectile::make(reg, proj,loc.current + location{0, 1},  velocity{0, 15}, std::chrono::seconds{4});
-                    
+
+                    const auto t = reg.create();
+                    timeline_1::make(reg, t, [](timeline_do::direction direction){gamelog::cout("hello time");}, std::chrono::seconds{3});
                 }
             default: break;
             }

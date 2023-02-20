@@ -31,7 +31,7 @@ char backbuffer::at(const position& char_on_screen) const
     return (*buffer)[char_on_screen.line()].pin()[char_on_screen.index_in_line()];
 }
 
-void backbuffer::redraw(const position& src, const position& dest, const shape& sh)
+void backbuffer::draw(const position& pivot, const shape& sh)
 {
     for(auto rows = sh.data.rowwise();
         auto [line, row] : rows | ranges::views::enumerate)
@@ -39,15 +39,14 @@ void backbuffer::redraw(const position& src, const position& dest, const shape& 
         for(int ind_in_line{-1}; const auto ch : row
             | ranges::views::filter([&ind_in_line](const char c){++ind_in_line; return c != shape::whitespace;}))
         {
-            position d = dest + position{static_cast<npi_t>(line), ind_in_line};
-            position s = src + position{static_cast<npi_t>(line), ind_in_line};
-            at(d) = ch;
-            if(d != s) at(s) = shape::whitespace;
+            position p = pivot + position{static_cast<npi_t>(line), ind_in_line};
+            at(p) = ch;
+            
         }
     }
 }
 
-void backbuffer::erase(const position& src, const shape& sh)
+void backbuffer::erase(const position& pos, const shape& sh)
 {
     for(auto rows = sh.data.rowwise();
         auto [line, row] : rows | ranges::views::enumerate)
@@ -55,8 +54,8 @@ void backbuffer::erase(const position& src, const shape& sh)
         for(int ind_in_line{-1}; const auto ch : row
             | ranges::views::filter([&ind_in_line](const char c){++ind_in_line; return c != shape::whitespace;}))
         {
-            position s = src + position{static_cast<npi_t>(line), ind_in_line};
-            at(s) = shape::whitespace;
+            position p = pos + position{static_cast<npi_t>(line), ind_in_line};
+            at(p) = shape::whitespace;
         }
     }
 }

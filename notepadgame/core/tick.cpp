@@ -41,25 +41,3 @@ void timer::tick(gametime::duration delta)
     }
 }
 
-
-void timeline::tick(gametime::duration delta)
-{
-    if(is_started() && !is_finished())
-    {
-        call_do();
-        
-        if(update_last_time(); get_last_time() >= get_stop_time())
-        {
-            if(is_loopping())
-            {
-                invert_direction();
-                restart();
-            } 
-            else
-            {
-                stop();
-            }
-        }
-    }
-    
-}
