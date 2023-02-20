@@ -8,8 +8,12 @@
 
 #include "tick.h"
 
+#define NOMINMAX
+#include "Windows.h"
+#undef NOMINMAX
 
 using npi_t = int64_t; // notepad index size
+
 
 
 class world;
@@ -79,27 +83,34 @@ using position = np_vector_t<npi_t>;
 // actor location
 using location = np_vector_t<double>;
 
-struct location_buffer
-{
-    location current{};
-    location translation{};
-};
 
 struct uniform_movement_tag {};
 struct non_uniform_movement_tag {};
 
-// calls a given function every tick to the end lifetime
-struct timeline_do
-{
-    
-    enum class direction : int8_t{
-        forward =  1,
-        reverse = -1
-    };
-    
-    std::function<void(timeline_do::direction)> work;
-    direction dir      {direction::forward};
+
+namespace direction_converter{
+    template<typename T>
+    requires std::is_enum_v<T>
+    static T invert(const T d){return static_cast<T>(static_cast<int>(d) * -1);}
+}
+
+enum class direction : int8_t{
+    forward =  1,
+    reverse = -1
 };
+
+namespace timeline
+{
+    // calls a given function every tick to the end lifetime
+    struct what_do{
+        std::function<void(entt::registry& , entt::entity, direction)> work;
+    };
+    struct eval_direction{
+        direction value;
+    };
+
+}
+
 
 
 namespace position_converter
@@ -166,26 +177,42 @@ struct boundbox
     }
 };
 
-struct shape
+
+
+
+namespace shape
 {
     inline static constexpr char whitespace = ' ';
-    using data_type = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-    using initializer_from_data = Eigen::Map<const data_type, Eigen::RowMajor>;
-    data_type data{};
-    [[nodiscard]] boundbox bound_box() const { return {{},{ data.rows(), data.cols()}};}
-};
+    
+    struct render_direction{
+        direction value = direction::forward;
+    };
+    
+    struct sprite{
+        
+        using data_type = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        using initializer_from_data = Eigen::Map<const data_type, Eigen::RowMajor>;
+        data_type data{};
+        [[nodiscard]] boundbox bound_box() const { return {{},{ data.rows(), data.cols()}};}
+    };
+
+    struct inverse_sprite : sprite {};
+    
+}
+
 
 
 // store a check state for ckecking changed a variable or not, automated mark as dirty when getting non const value with dirty_flag::pin()
 template<typename T>
 struct dirty_flag
 {
+    explicit dirty_flag(T&& value=T{}, bool is_dirty=true) : value_(std::make_pair(is_dirty, std::forward<T>(value))){}
     [[nodiscard]] const T& get() const noexcept {return value_.second;}
     [[nodiscard]] T& pin()  noexcept{
         mark_dirty();
         return value_.second;
     }
-    dirty_flag& operator=(const T& other){
+    dirty_flag& operator=(const T&& other){
         value_.second = other;
         mark_dirty();
         return *this;
@@ -197,3 +224,14 @@ private:
     std::pair<bool, T> value_;
 };
 
+struct color_range
+{
+    COLORREF start{RGB(0, 0, 0)};
+    COLORREF end{RGB(255, 255, 255)};
+};
+
+struct location_buffer
+{
+    location current{};
+    dirty_flag<location> translation{};
+};

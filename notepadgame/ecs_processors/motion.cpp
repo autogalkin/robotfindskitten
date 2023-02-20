@@ -6,12 +6,12 @@
 void non_uniform_motion::execute(entt::registry& reg, gametime::duration delta)
 {
     
-    for(const auto view = reg.view<location_buffer, const shape, velocity, non_uniform_movement_tag>();
+    for(const auto view = reg.view<location_buffer, const shape::sprite, velocity, non_uniform_movement_tag>();
         const auto entity: view)
     {
             
         auto& vel = view.get<velocity>(entity);
-        const auto& sh = view.get<shape>(entity);
+        const auto& sh = view.get<shape::sprite>(entity);
         auto& [current, translation] = view.get<location_buffer>(entity);
 
         constexpr float alpha = 1.f/60.f;
@@ -19,7 +19,7 @@ void non_uniform_motion::execute(entt::registry& reg, gametime::duration delta)
         velocity friction = - (vel * friction_factor);
         vel += friction * alpha;
         
-        translation = vel * alpha;
+        translation.pin() = vel * static_cast<double>(alpha);
         
         
     }
@@ -28,14 +28,15 @@ void non_uniform_motion::execute(entt::registry& reg, gametime::duration delta)
 void uniform_motion::execute(entt::registry& reg, gametime::duration delta)
 {
     
-    for(const auto view = reg.view<location_buffer, const shape, velocity, const uniform_movement_tag>();
+    for(const auto view = reg.view<location_buffer, const shape::sprite, velocity, const uniform_movement_tag>();
         const auto entity: view)
     {
         auto& vel = view.get<velocity>(entity);
-        const auto& sh = view.get<shape>(entity);
+        const auto& sh = view.get<shape::sprite>(entity);
         auto& [current, translation] = view.get<location_buffer>(entity);
         
-        translation = vel;
+        if(vel != velocity::null()) translation.pin() = vel;
+        
         vel = velocity::null();
     }
         

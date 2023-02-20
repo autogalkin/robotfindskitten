@@ -8,7 +8,6 @@
 #include <../../extern/entt-3.11.1/single_include/entt/entt.hpp>
 
 #define NOMINMAX
-#include "gamelog.h"
 #include "Windows.h"
 #undef NOMINMAX
 

@@ -48,8 +48,8 @@ public:
     [[nodiscard]] bool is_in_buffer(const position& position) const noexcept{
         return position.line() > get_scroll().line() || position.index_in_line() > get_scroll().index_in_line();
     }
-    void draw(const position& pivot, const shape& sh);
-    void erase(const position& pos, const shape& sh);
+    void draw(const position& pivot, const shape::sprite& sh);
+    void erase(const position& pos, const shape::sprite& sh);
 private:
     static constexpr int endl = 1;
     int line_lenght_{0};
@@ -58,7 +58,7 @@ private:
     std::unique_ptr< std::vector< line_type > > buffer{};
     engine* engine_;
     
-    dirty_flag<position> scroll;
+    dirty_flag<position> scroll{};
 };
 
 class ecs_processors_executor: public std::list< std::unique_ptr<ecs_processor>>

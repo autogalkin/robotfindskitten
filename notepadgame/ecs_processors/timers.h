@@ -61,12 +61,11 @@ public:
     void execute(entt::registry& reg, gametime::duration delta) override
     {
         
-        for(const auto view = reg.view<const lifetime, timeline_do>();
+        for(const auto view = reg.view<const timeline::what_do, const timeline::eval_direction>();
         const auto entity: view)
         {
-            auto& d = view.get<const timeline_do>(entity);
-            auto& [work, dir] = view.get<const timeline_do>(entity);
-            work( dir);
+            auto& [work] = view.get<const  timeline::what_do>(entity);
+            work( reg, entity, view.get<timeline::eval_direction>(entity).value);
         }
     }
 };

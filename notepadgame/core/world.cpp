@@ -31,7 +31,7 @@ char backbuffer::at(const position& char_on_screen) const
     return (*buffer)[char_on_screen.line()].pin()[char_on_screen.index_in_line()];
 }
 
-void backbuffer::draw(const position& pivot, const shape& sh)
+void backbuffer::draw(const position& pivot, const shape::sprite& sh)
 {
     for(auto rows = sh.data.rowwise();
         auto [line, row] : rows | ranges::views::enumerate)
@@ -46,7 +46,7 @@ void backbuffer::draw(const position& pivot, const shape& sh)
     }
 }
 
-void backbuffer::erase(const position& pos, const shape& sh)
+void backbuffer::erase(const position& pos, const shape::sprite& sh)
 {
     for(auto rows = sh.data.rowwise();
         auto [line, row] : rows | ranges::views::enumerate)

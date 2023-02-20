@@ -272,23 +272,23 @@ collision::query::query(world* w, entt::registry& reg): ecs_processor{w}
         on_scroll_changed(new_scroll);
     });
     reg.on_construct<collision::agent>().connect<&entt::registry::emplace_or_replace<need_update_entity>>();
-    auto rem = []{};
+   
     on_destroy_entity = reg.on_destroy<collision::agent>().connect<&query::remove_on_destroy>(*this);
 }
 
 void collision::query::execute(entt::registry& reg, gametime::duration delta)
 {
     // insert moved actors into tree
-    for(const auto view = reg.view<const location_buffer, const shape, need_update_entity, collision::agent>()
+    for(const auto view = reg.view<const location_buffer, const shape::sprite, need_update_entity, collision::agent>()
         ; const auto entity : view){
-        auto& sh = view.get<shape>(entity);
+        auto& sh = view.get<shape::sprite>(entity);
         const auto& [current_location, translation] = view.get<location_buffer>(entity);
         view.get<collision::agent>(entity).index_in_quad_tree = tree.insert(entity, sh.bound_box()+position_converter::from_location(current_location));
         reg.remove<need_update_entity>(entity);
     }
     
     {// query 
-        const auto view = reg.view<location_buffer, const shape, collision::agent, velocity>();
+        const auto view = reg.view<location_buffer, const shape::sprite, collision::agent, velocity>();
             
         // compute collision
         for(const auto entity : view)
@@ -298,10 +298,10 @@ void collision::query::execute(entt::registry& reg, gametime::duration delta)
             
             auto& [current_location, translation] = view.get<location_buffer>(entity);
 
-            if(translation.is_null()) continue; // check only dynamic
+            if(translation.get().is_null()) continue; // check only dynamic
             
             std::vector<size_t> collides;
-            tree.query(view.get<shape>(entity).bound_box()+(position_converter::from_location(current_location+translation)), collides);
+            tree.query(view.get<shape::sprite>(entity).bound_box()+(position_converter::from_location(current_location+translation.get())), collides);
             if(!collides.empty()){
                 // TODO on collide func
                 //

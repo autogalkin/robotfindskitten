@@ -3,7 +3,7 @@
 #include "core/notepader.h"
 #include "core/engine.h"
 
-#include "entities/atmosphere.h"
+
 #include "core/base_types.h"
 
 
@@ -14,7 +14,7 @@
 
 #include "ecs_processors/redrawer.h"
 #include "ecs_processors/killer.h"
-#include "ecs_processors/lifetime_timer.h"
+#include "ecs_processors/timers.h"
 
 #include "entities/factories.h"
 
@@ -51,26 +51,30 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             auto& exec =  w->get_ecs_executor();
             // TODO запретить сортировку и другие медоты у контейнера!
             
-            exec.emplace_back(std::make_unique<lifetime_ticker>(w.get()));
-            exec.emplace_back(std::make_unique<death_last_will_executor>(w.get()));
-            
             exec.emplace_back(std::make_unique<input_passer>(w.get(), notepader::get().get_input_manager().get()));
+            
             exec.emplace_back(std::make_unique<timeline_executor>(w.get()));
             exec.emplace_back(std::make_unique<uniform_motion>(w.get()));
             exec.emplace_back(std::make_unique<non_uniform_motion>(w.get()));
             exec.emplace_back(std::make_unique<collision::query>(w.get(), w->get_registry()));
+            exec.emplace_back(std::make_unique<lifetime_ticker>(w.get()));
+            exec.emplace_back(std::make_unique<death_last_will_executor>(w.get()));
             exec.emplace_back(std::make_unique<redrawer>(w.get()));
             exec.emplace_back(std::make_unique<killer>(w.get()));
             
             
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
-                reg.emplace<shape>(entity, shape::initializer_from_data{"f", 1, 1});
+                reg.emplace<shape::sprite>(entity, shape::sprite::initializer_from_data{
+                     "f-", 1, 2});
+                reg.emplace<shape::inverse_sprite>(entity, shape::sprite::initializer_from_data{
+                     "-f", 1, 2});
+                reg.emplace<shape::render_direction>(entity, direction::forward);
                 character::make(reg, entity, location{3, 3});
                 reg.emplace<input_passer::down_signal>(entity, &character::process_input<>);
                 
             });
-            
+            /*
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
                 reg.emplace<shape>(entity, shape::initializer_from_data{"d", 1, 1});
@@ -83,7 +87,10 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                                             , input::key::l>);
                 
             });
-            
+            */
+            w->spawn_actor([](entt::registry& reg, const entt::entity entity){
+                atmosphere::make(reg, entity);
+            });
         });
     }
     return TRUE;
