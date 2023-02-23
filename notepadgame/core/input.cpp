@@ -1,5 +1,7 @@
 ﻿#include "input.h"
 
+#include "notepader.h"
+
 
 input::~input() = default;
 
@@ -37,4 +39,7 @@ void input::receive(const LPMSG msg)
     }
 
 }
+
+input_passer::input_passer(world* w): ecs_processor(w), input_(notepader::get().get_input_manager().get())
+{}
 

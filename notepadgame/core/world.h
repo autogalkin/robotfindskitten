@@ -61,42 +61,51 @@ private:
     dirty_flag<position> scroll{};
 };
 
-class ecs_processors_executor: public std::list< std::unique_ptr<ecs_processor>>
+class ecs_processors_executor
 {
-    enum class insert_order : int8_t
-    {
+    enum class insert_order : int8_t{
         before = 0
       , after  = 1
     };
     
 public:
+    explicit ecs_processors_executor(world* w): w_(w){}
     bool insert_processor_at(std::unique_ptr<ecs_processor> who
         , const std::type_info& near_with /* typeid(ecs_processor) */
         , const insert_order where=insert_order::before)
     {
-        if(auto it = std::ranges::find_if(*this
+        if(auto it = std::ranges::find_if(data_
                                           , [&near_with]( const std::unique_ptr<ecs_processor>& n)
                                           {
                                               return  near_with == typeid(*n);
                                           });
-        it != end())
+        it != data_.end())
         {
             switch (where)
             {
             case insert_order::before:        break;
             case insert_order::after:  ++it ; break;
             }
-            insert(it, std::move(who));
+            data_.insert(it, std::move(who));
             return true;
         }
         return false;
     }
-    void execute(entt::registry& reg, gametime::duration delta) const
+    void execute(entt::registry& reg, const gametime::duration delta) const
     {
-        for(const auto& i : *this){
+        for(const auto& i : data_){
             i->execute(reg, delta);
         }
     }
+    
+    template<typename T, typename ...Args>
+    requires std::derived_from<T, ecs_processor> && std::is_constructible_v<T, world*, Args...>
+    void push(Args&&... args){
+        data_.emplace_back(std::make_unique<T>(w_, std::forward<Args>(args)...));
+    }
+private:
+   std::vector< std::unique_ptr<ecs_processor>> data_;
+    world* w_;
 };
 
 
@@ -128,7 +137,7 @@ public:
 private:
     
     boost::signals2::scoped_connection scroll_changed_connection;
-    ecs_processors_executor executor_{};
+    ecs_processors_executor executor_{this};
     entt::registry reg_;
     
 };

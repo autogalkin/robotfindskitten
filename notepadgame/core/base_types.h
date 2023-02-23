@@ -19,7 +19,6 @@ using npi_t = int64_t; // notepad index size
 class world;
 class ecs_processor  // NOLINT(cppcoreguidelines-special-member-functions)
 {
-    
 public:
     explicit ecs_processor(world* w): w_(w){}
     virtual void execute(entt::registry& reg, gametime::duration delta) = 0;
@@ -36,6 +35,7 @@ template<typename SizeType>
 requires std::is_arithmetic_v<SizeType>
 struct np_vector_t : public Eigen::Vector2<SizeType>
 {
+    using size_type = SizeType;
     constexpr np_vector_t(){*this << 0, 0;}
     constexpr np_vector_t(const SizeType& line, const SizeType& index_in_line): Eigen::Vector2<SizeType>{line, index_in_line} {}
 
@@ -88,16 +88,18 @@ struct uniform_movement_tag {};
 struct non_uniform_movement_tag {};
 
 
+enum class direction : int8_t{
+    forward =  1,
+    reverse = -1
+};
+
 namespace direction_converter{
     template<typename T>
     requires std::is_enum_v<T>
     static T invert(const T d){return static_cast<T>(static_cast<int>(d) * -1);}
 }
 
-enum class direction : int8_t{
-    forward =  1,
-    reverse = -1
-};
+
 
 namespace timeline
 {
@@ -111,6 +113,7 @@ namespace timeline
 
 }
 
+struct visible_in_game{};
 
 
 namespace position_converter
@@ -127,7 +130,7 @@ struct velocity : np_vector_t<float>{
     velocity(const Eigen::EigenBase<T>& other): np_vector_t<float>{other}{}
     template<typename T>
     velocity(const Eigen::EigenBase<T>&& other): np_vector_t<float>{other}{}
-    explicit velocity(const float line, const float index_in_line) : np_vector_t<float>{line, index_in_line}{}
+    velocity(const float line, const float index_in_line) : np_vector_t<float>{line, index_in_line}{}
     
 };
 
@@ -187,17 +190,25 @@ namespace shape
     struct render_direction{
         direction value = direction::forward;
     };
-    
+   
     struct sprite{
         
         using data_type = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-        using initializer_from_data = Eigen::Map<const data_type, Eigen::RowMajor>;
+        using from_data = Eigen::Map<const data_type, Eigen::RowMajor>;
         data_type data{};
         [[nodiscard]] boundbox bound_box() const { return {{},{ data.rows(), data.cols()}};}
     };
-
-    struct inverse_sprite : sprite {};
+  
+    struct sprite_animation{
+        [[nodiscard]] sprite& current_sprite() {return sprts[rendering_i];}
+        [[nodiscard]] const sprite& current_sprite() const {return sprts[rendering_i];}
+        std::vector<sprite> sprts;
+        uint8_t rendering_i = 0;
+    };
     
+    struct on_change_direction{
+        std::function<void(direction, sprite_animation&)> call;
+    };
 }
 
 

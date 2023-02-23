@@ -178,7 +178,7 @@ private:
 class query final : public ecs_processor
 {
 public:
-    explicit query(world* w, entt::registry& reg);
+    explicit query(world* w);
 
     virtual void execute(entt::registry& reg, gametime::duration delta) override;
 private:

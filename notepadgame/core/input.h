@@ -63,7 +63,8 @@ private:
 class input_passer final : public ecs_processor
 {
 public:
-    explicit input_passer(world* w, input* i): ecs_processor(w), input_(i){}
+    explicit input_passer(world* w);
+
     struct down_signal{
         std::function<void(entt::registry&, entt::entity, const input::key_state_type&)> callback{};
     };

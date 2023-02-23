@@ -142,6 +142,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\base_types.h" />
+    <ClInclude Include="core\easing.h" />
     <ClInclude Include="core\engine.h" />
     <ClInclude Include="core\gamelog.h" />
     <ClInclude Include="core\iat_hook.h" />
@@ -151,7 +152,7 @@
     <ClInclude Include="core\world.h" />
     <ClInclude Include="ecs_processors\animations.h" />
     <ClInclude Include="ecs_processors\collision.h" />
-    <ClInclude Include="ecs_processors\redrawer.h" />
+    <ClInclude Include="ecs_processors\drawers.h" />
     <ClInclude Include="ecs_processors\killer.h" />
     <ClInclude Include="ecs_processors\timers.h" />
     <ClInclude Include="ecs_processors\motion.h" />

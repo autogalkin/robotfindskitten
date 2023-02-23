@@ -12,7 +12,8 @@
 #include "ecs_processors/motion.h"
 #include "core/world.h"
 
-#include "ecs_processors/redrawer.h"
+#include "ecs_processors/animations.h"
+#include "ecs_processors/drawers.h"
 #include "ecs_processors/killer.h"
 #include "ecs_processors/timers.h"
 
@@ -49,27 +50,36 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             
             const auto& w = notepader::get().get_engine()->get_world();
             auto& exec =  w->get_ecs_executor();
-            // TODO запретить сортировку и другие медоты у контейнера!
+
+                            // the game tick pipeline of the ecs
             
-            exec.emplace_back(std::make_unique<input_passer>(w.get(), notepader::get().get_input_manager().get()));
+            exec.push<      input_passer                                                    >();
+            exec.push<      uniform_motion                                                  >();
+            exec.push<      non_uniform_motion                                              >();
+            exec.push<      timeline_executor                                               >();
+            exec.push<      rotate_animator                                                 >();
+            exec.push<      collision::query                                                >();
+            exec.push<      redrawer                                                        >();
+            exec.push<      death_last_will_executor                                        >();
+            exec.push<      killer                                                          >();
+            exec.push<      lifetime_ticker                                                 >();
             
-            exec.emplace_back(std::make_unique<timeline_executor>(w.get()));
-            exec.emplace_back(std::make_unique<uniform_motion>(w.get()));
-            exec.emplace_back(std::make_unique<non_uniform_motion>(w.get()));
-            exec.emplace_back(std::make_unique<collision::query>(w.get(), w->get_registry()));
-            exec.emplace_back(std::make_unique<lifetime_ticker>(w.get()));
-            exec.emplace_back(std::make_unique<death_last_will_executor>(w.get()));
-            exec.emplace_back(std::make_unique<redrawer>(w.get()));
-            exec.emplace_back(std::make_unique<killer>(w.get()));
-            
+            w->spawn_actor([](entt::registry& reg, const entt::entity entity){
+                atmosphere::make(reg, entity);
+            });
+
             
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
-                reg.emplace<shape::sprite>(entity, shape::sprite::initializer_from_data{
-                     "f-", 1, 2});
-                reg.emplace<shape::inverse_sprite>(entity, shape::sprite::initializer_from_data{
-                     "-f", 1, 2});
-                reg.emplace<shape::render_direction>(entity, direction::forward);
+                
+                
+                reg.emplace<shape::sprite_animation>(entity,
+                    std::vector<shape::sprite>{{{shape::sprite::from_data{ "f-", 1, 2}}  // forward mesh
+                                                    ,{shape::sprite::from_data{ "-f", 1, 2}} // reverse mesh
+                        }} 
+                    , static_cast<uint8_t>(0)
+                   );
+                
                 character::make(reg, entity, location{3, 3});
                 reg.emplace<input_passer::down_signal>(entity, &character::process_input<>);
                 
@@ -88,9 +98,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                 
             });
             */
-            w->spawn_actor([](entt::registry& reg, const entt::entity entity){
-                atmosphere::make(reg, entity);
-            });
+            
         });
     }
     return TRUE;
