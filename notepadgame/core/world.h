@@ -36,8 +36,8 @@ public:
     void send();
     void get() const;
     
-    [[nodiscard]] virtual char& at(const position& char_on_screen);
-    [[nodiscard]] virtual char at(const position& char_on_screen) const;
+    [[nodiscard]] virtual char_size& at(const position& char_on_screen);
+    [[nodiscard]] virtual char_size at(const position& char_on_screen) const;
     [[nodiscard]] int get_line_size() const noexcept { return line_lenght_;}
     [[nodiscard]] const position& get_scroll() const noexcept {return scroll.get();}
     
@@ -49,12 +49,19 @@ public:
         return position.line() > get_scroll().line() || position.index_in_line() > get_scroll().index_in_line();
     }
     void draw(const position& pivot, const shape::sprite& sh);
-    void erase(const position& pos, const shape::sprite& sh);
+    void erase(const position& pivot, const shape::sprite& sh);
 private:
     static constexpr int endl = 1;
     int line_lenght_{0};
     int lines_count_{0};
-    using line_type = dirty_flag< std::vector<char> >;
+
+    struct line
+    {
+        std::vector< char_size > chars;
+        // count of erased invisible utf bytes
+        int pasted_bytes_count=0;
+    };
+    using line_type = dirty_flag< line>;
     std::unique_ptr< std::vector< line_type > > buffer{};
     engine* engine_;
     

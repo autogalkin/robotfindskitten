@@ -110,7 +110,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>W:\raw-c++_projects\notepadgame\extern\range-v3-0.12.0\include;W:\raw-c++_projects\notepadgame\extern\entt-3.11.1\single_include;W:\raw-c++_projects\notepadgame\extern\scintilla\include;W:\raw-c++_projects\notepadgame\extern\eigen-3.4.0;C:\Program Files\boost\boost_1_81_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>W:\raw-c++_projects\notepadgame\extern\range-v3-0.12.0\include;W:\raw-c++_projects\notepadgame\extern\entt-3.11.1\single_include;W:\raw-c++_projects\notepadgame\extern\scintilla\include;W:\raw-c++_projects\notepadgame\extern\eigen-3.4.0;"W:\raw-c++_projects\notepadgame\extern\utfcpp\source";C:\Program Files\boost\boost_1_81_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8</AdditionalOptions>
     </ClCompile>

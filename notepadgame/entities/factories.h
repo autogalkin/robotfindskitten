@@ -9,6 +9,12 @@ struct actor
     static void invert_shape_direction(direction d, shape::sprite_animation& sp){
         sp.rendering_i = static_cast<uint8_t>(std::max(0, -1*static_cast<int>(d)));
     }
+    static void make_base_renderable(entt::registry& reg, const entt::entity e, location start, shape::sprite sprite)
+    {
+        reg.emplace<visible_in_game>(e);
+        reg.emplace<location_buffer>(e, std::move(start), dirty_flag<location>{});
+        reg.emplace< shape::sprite_animation>(e,  std::vector<shape::sprite>{{std::move(sprite)}}, static_cast<uint8_t>(0));
+    }
 };
 struct projectile final
 {
@@ -17,7 +23,7 @@ struct projectile final
         , velocity dir
         ,  const std::chrono::milliseconds life_time=std::chrono::seconds{1})
     {
-        reg.emplace< shape::sprite_animation>(e,  std::vector<shape::sprite>{{shape::sprite::from_data{"-", 1, 1}}}, static_cast<uint8_t>(0));
+        reg.emplace< shape::sprite_animation>(e,  std::vector<shape::sprite>{{shape::sprite::from_data{U"-", 1, 1}}}, static_cast<uint8_t>(0));
         reg.emplace<visible_in_game>(e);
         
         reg.emplace<location_buffer>(e, std::move(start), dirty_flag<location>{});
@@ -45,7 +51,7 @@ struct projectile final
             
             const auto new_e = reg_.create();
             reg_.emplace<location_buffer>(new_e, current_proj_location, dirty_flag<location>{translation});
-            reg_.emplace<shape::sprite_animation>( new_e, std::vector<shape::sprite>{ {shape::sprite::from_data{"*", 1, 1} }}, static_cast<uint8_t>(0));
+            reg_.emplace<shape::sprite_animation>( new_e, std::vector<shape::sprite>{ {shape::sprite::from_data{U"*", 1, 1} }}, static_cast<uint8_t>(0));
             reg_.emplace<visible_in_game>(new_e);
             reg_.emplace<lifetime>(new_e, std::chrono::seconds{1});
             
@@ -56,7 +62,7 @@ struct projectile final
                 auto create_fragment = [&r_, &lb](location offset, velocity dir_)
                 {
                     const entt::entity proj = r_.create();
-                    r_.emplace< shape::sprite_animation>(proj,  std::vector<shape::sprite>{{shape::sprite::from_data{".", 1, 1}}}, static_cast<uint8_t>(0));
+                    r_.emplace< shape::sprite_animation>(proj,  std::vector<shape::sprite>{{shape::sprite::from_data{U".", 1, 1}}}, static_cast<uint8_t>(0));
                     r_.emplace<location_buffer>(proj, location{lb.current.line()+offset.line(), lb.current.index_in_line()+offset.index_in_line()}, dirty_flag<location>{});
                     r_.emplace<visible_in_game>(proj);
                     r_.emplace<velocity>(proj, dir_.line(), dir_.index_in_line());
@@ -204,4 +210,36 @@ private:
     inline static auto time_between_cycle = std::chrono::seconds{20};
     inline static auto cycle_duration     = std::chrono::seconds{2};
     
+};
+
+struct monster
+{
+    static void make(entt::registry& reg, const entt::entity e, location loc)
+    {
+        actor::make_base_renderable(reg, e, std::move(loc), {shape::sprite::from_data{U"👾", 1, 1}});
+        reg.emplace<collision::agent>(e);
+        reg.emplace<velocity>(e);
+        reg.emplace<uniform_movement_tag>(e);
+
+        
+        reg.emplace<timeline::eval_direction>(e, direction::forward);
+        reg.emplace<timeline::what_do>(e, [i = 0, j = 0](entt::registry& reg_, const entt::entity e_, direction d) mutable
+        {
+            ++i;
+            
+            if(i > 30)
+            {
+                i = 0;
+                ++ j;
+                reg_.get<velocity>(e_).index_in_line() += static_cast<float>(d);
+            }
+            if(j > 15)
+            {
+                j = 0;
+                reg_.get<timeline::eval_direction>(e_).value = direction_converter::invert(d);
+            }
+            
+        });
+        
+    }
 };

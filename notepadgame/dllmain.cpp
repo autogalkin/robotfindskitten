@@ -47,7 +47,6 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
         
         np.get_on_open().connect([]
         {
-            
             const auto& w = notepader::get().get_engine()->get_world();
             auto& exec =  w->get_ecs_executor();
 
@@ -67,15 +66,19 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             w->spawn_actor([](entt::registry& reg, const entt::entity entity){
                 atmosphere::make(reg, entity);
             });
-
+            
+            w->spawn_actor([](entt::registry& reg, const entt::entity entity){
+                
+                actor::make_base_renderable(reg, entity, {6, 6},{shape::sprite::from_data{U"█", 1, 1}});
+                reg.emplace<collision::agent>(entity);
+            });
             
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
                 
-                
                 reg.emplace<shape::sprite_animation>(entity,
-                    std::vector<shape::sprite>{{{shape::sprite::from_data{ "f-", 1, 2}}  // forward mesh
-                                                    ,{shape::sprite::from_data{ "-f", 1, 2}} // reverse mesh
+                    std::vector<shape::sprite>{{{shape::sprite::from_data{ 		U"f-", 1, 2}}  // forward mesh
+                                                    ,{shape::sprite::from_data{ 		U"-f", 1, 2}} // reverse mesh
                         }} 
                     , static_cast<uint8_t>(0)
                    );
@@ -84,6 +87,12 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                 reg.emplace<input_passer::down_signal>(entity, &character::process_input<>);
                 
             });
+            
+            
+            w->spawn_actor([](entt::registry& reg, const entt::entity entity){
+                monster::make(reg, entity, {10, 3});
+            });
+            
             /*
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {

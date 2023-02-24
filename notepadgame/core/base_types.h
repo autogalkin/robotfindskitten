@@ -5,7 +5,7 @@
 #include <utility>
 #include <entt/entt.hpp>
 #include <Eigen/Dense>
-
+#include "utf8.h"
 #include "tick.h"
 
 #define NOMINMAX
@@ -14,6 +14,7 @@
 
 using npi_t = int64_t; // notepad index size
 
+using char_size = char32_t; // support utf-8
 
 
 class world;
@@ -193,10 +194,14 @@ namespace shape
    
     struct sprite{
         
-        using data_type = Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        using data_type = Eigen::Matrix< char_size, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
         using from_data = Eigen::Map<const data_type, Eigen::RowMajor>;
         data_type data{};
-        [[nodiscard]] boundbox bound_box() const { return {{},{ data.rows(), data.cols()}};}
+        [[nodiscard]] boundbox bound_box() const
+        {
+            
+            return {{},{ data.rows(), data.cols()}};
+        }
     };
   
     struct sprite_animation{
