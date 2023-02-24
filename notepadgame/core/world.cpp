@@ -25,12 +25,15 @@ position backbuffer::global_position_to_buffer_position(const position& position
 }
 
 bool backbuffer::is_in_buffer(const position& position) const noexcept{
-    return position.line() > scroll_.get().line() || position.index_in_line() > scroll_.get().index_in_line();
+    return position.line() >= scroll_.get().line()
+    && position.index_in_line() >= scroll_.get().index_in_line()
+    && position.index_in_line() < static_cast<int>(engine_->get_window_widht()) / engine_->get_char_width() + scroll_.get().index_in_line()
+    && position.line() < engine_->get_lines_on_screen() + scroll_.get().line();
 }
 
 void backbuffer::draw(const position& pivot, const shape::sprite& sh){
+    
     const position screen_pivot = global_position_to_buffer_position(pivot);
-    if(!is_in_buffer(screen_pivot)) return;
     
     for(auto rows = sh.data.rowwise();
         auto [line, row] : rows | ranges::views::enumerate)
@@ -50,7 +53,6 @@ void backbuffer::draw(const position& pivot, const shape::sprite& sh){
 void backbuffer::erase(const position& pivot, const shape::sprite& sh)
 {
     const position screen_pivot = global_position_to_buffer_position(pivot);
-    if(!is_in_buffer(screen_pivot)) return;
     
     for(auto rows = sh.data.rowwise();
         auto [line, row] : rows | ranges::views::enumerate)

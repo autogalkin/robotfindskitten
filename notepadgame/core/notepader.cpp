@@ -66,10 +66,9 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 		}
 	case WM_SIZE:
 		{
-			UINT width =  LOWORD(lp);
-			UINT height = HIWORD(lp);
-			
-			//pSimpleText->OnResize(width, height);
+			const UINT width =  LOWORD(lp);
+			const UINT height = HIWORD(lp);
+			if(get().get_engine()) get().get_engine()->get_on_resize()(width, height );
 		}
 	default:
 		break;
