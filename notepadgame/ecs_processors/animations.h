@@ -20,11 +20,11 @@ public:
 
     void execute(entt::registry& reg, gametime::duration delta) override
     {
-        for(const auto view = reg.view<shape::sprite, lifetime, easing_data>();
+        for(const auto view = reg.view<shape::sprite, life::lifetime, easing_data>();
         const auto entity: view)
         {
             
-            auto& lt = view.get<lifetime>(entity);
+            auto& lt = view.get<life::lifetime>(entity);
 
             const auto& [ease_func, data_ptr] = view.get<easing_data>(entity);
             *data_ptr = easing::easeinrange(*data_ptr, {0.,1.}, 100, ease_func);

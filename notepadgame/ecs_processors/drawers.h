@@ -47,7 +47,7 @@ public:
         for(const auto view = reg.view<const location_buffer, const shape::sprite_animation, previous_sprite>()
             ; const auto entity: view)
         {
-            const bool is_dead =  reg.all_of<begin_die>(entity);
+            const bool is_dead =  reg.all_of<life::begin_die>(entity);
             if(const auto& [current, translation] = view.get<location_buffer>(entity); translation.is_changed() || is_dead){
                 
                 const auto& [sprts, rendering_i] = view.get<shape::sprite_animation>(entity);

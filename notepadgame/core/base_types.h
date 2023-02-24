@@ -135,22 +135,20 @@ struct velocity : np_vector_t<float>{
     
 };
 
-struct force{
-    npi_t value = 1;
-};
-
-struct begin_die{}
-;
-struct lifetime
+namespace life
 {
-    gametime::duration duration ;
+    struct begin_die{};
     
-};
+    struct lifetime{
+        gametime::duration duration ;
+    };
 
-struct death_last_will
-{
-    std::function<void(entt::registry&, entt::entity)> wish;
-};
+    struct death_last_will{
+        std::function<void(entt::registry&, entt::entity)> wish;
+    }; 
+}
+
+
 
 
 struct boundbox

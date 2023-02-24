@@ -12,7 +12,7 @@ public:
     void execute(entt::registry& reg, gametime::duration delta) override
     {
 
-        for(const auto view = reg.view<const begin_die>();
+        for(const auto view = reg.view<const life::begin_die>();
         const auto entity: view)
         {
             reg.destroy(entity);

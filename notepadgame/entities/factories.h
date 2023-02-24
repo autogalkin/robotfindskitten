@@ -18,6 +18,11 @@ struct actor
 };
 struct projectile final
 {
+    static collision::responce on_collide(entt::registry& r, const entt::entity self, const  entt::entity other)
+    {
+        r.emplace_or_replace<life::begin_die>(self);
+        return collision::responce::block;
+    }
     static void make(entt::registry& reg, const entt::entity e
         , location start
         , velocity dir
@@ -29,14 +34,18 @@ struct projectile final
         reg.emplace<location_buffer>(e, std::move(start), dirty_flag<location>{});
         reg.emplace<non_uniform_movement_tag>(e);
         reg.emplace<velocity>(e, dir);
+        
         reg.emplace<collision::agent>(e);
         
-        reg.emplace<lifetime>(e, life_time);
+        reg.emplace<collision::on_collide>(e, &projectile::on_collide);
+        
+        reg.emplace<life::lifetime>(e, life_time);
+
         
         reg.emplace< timeline::what_do>(e, [duration=std::chrono::duration<double>(life_time).count(), call = true] (entt::registry& reg_, const entt::entity e_, direction)
         mutable {
             auto& i = reg_.get<location_buffer>(e_).translation.pin().line();
-            i = easing::easeinrange(duration - std::chrono::duration<double>(reg_.get<lifetime>(e_).duration).count(), {0., 0.1}, duration, &easing::easeInExpo);
+            i = easing::easeinrange(duration - std::chrono::duration<double>(reg_.get<life::lifetime>(e_).duration).count(), {0., 0.1}, duration, &easing::easeInExpo);
             // TODO почему i = 0.1 Но прибавляется строка
             if(std::lround(i*10) != 0 && call){
                 reg_.get<shape::sprite_animation>(e_).current_sprite().data(0, 0) = '_';
@@ -45,7 +54,7 @@ struct projectile final
         });
         
         reg.emplace< timeline::eval_direction> (e, direction::forward);
-        reg.emplace<death_last_will>(e, [](entt::registry& reg_, const entt::entity ent)
+        reg.emplace<life::death_last_will>(e, [](entt::registry& reg_, const entt::entity ent)
         {
             const auto& [current_proj_location, translation] = reg_.get<location_buffer>(ent);
             
@@ -53,9 +62,9 @@ struct projectile final
             reg_.emplace<location_buffer>(new_e, current_proj_location, dirty_flag<location>{translation});
             reg_.emplace<shape::sprite_animation>( new_e, std::vector<shape::sprite>{ {shape::sprite::from_data{U"*", 1, 1} }}, static_cast<uint8_t>(0));
             reg_.emplace<visible_in_game>(new_e);
-            reg_.emplace<lifetime>(new_e, std::chrono::seconds{1});
+            reg_.emplace<life::lifetime>(new_e, std::chrono::seconds{1});
             
-            reg_.emplace<death_last_will>(new_e, [](entt::registry& r_, const entt::entity ent_)
+            reg_.emplace<life::death_last_will>(new_e, [](entt::registry& r_, const entt::entity ent_)
             {
                 auto& lb = r_.get<location_buffer>(ent_);
                 
@@ -66,8 +75,10 @@ struct projectile final
                     r_.emplace<location_buffer>(proj, location{lb.current.line()+offset.line(), lb.current.index_in_line()+offset.index_in_line()}, dirty_flag<location>{});
                     r_.emplace<visible_in_game>(proj);
                     r_.emplace<velocity>(proj, dir_.line(), dir_.index_in_line());
-                    r_.emplace<lifetime>(proj, std::chrono::seconds{1});
-                    r_.emplace<non_uniform_movement_tag>(proj); 
+                    r_.emplace<life::lifetime>(proj, std::chrono::seconds{1});
+                    r_.emplace<non_uniform_movement_tag>(proj);
+                    r_.emplace<collision::agent>(proj);
+                    r_.emplace<collision::on_collide>(proj, &projectile::on_collide);
                 };
                 
                 create_fragment({0, 1}, {0, 2});
@@ -89,7 +100,7 @@ namespace timeline
         , direction dir     = direction::forward
  )
     {
-        reg.emplace<lifetime>(e, duration);
+        reg.emplace<life::lifetime>(e, duration);
         reg.emplace<timeline::what_do>(e, std::move(what_do));
         reg.emplace<timeline::eval_direction>(e, dir);
         
@@ -103,8 +114,8 @@ struct timer final
         , std::function<void(entt::registry&, entt::entity)> what_do
         , const std::chrono::milliseconds duration=std::chrono::seconds{1})
     {
-        reg.emplace<lifetime>(e, duration);
-        reg.emplace<death_last_will>(e, std::move(what_do));
+        reg.emplace<life::lifetime>(e, duration);
+        reg.emplace<life::death_last_will>(e, std::move(what_do));
     }
 };
 
@@ -119,6 +130,7 @@ struct character final
         reg.emplace<uniform_movement_tag>(e);
         reg.emplace<velocity>(e);
         reg.emplace<collision::agent>(e);
+        reg.emplace<collision::on_collide>(e, &collision::on_collide::block_always);
     }
     
     template< input::key UP   =input::key::w
@@ -172,7 +184,7 @@ struct atmosphere final
         timeline::make(reg, cycle_timeline,  &atmosphere::update_cycle, cycle_duration, reg.get<timeline::eval_direction>(timer).value);
         
         reg.emplace<color_range>(cycle_timeline);
-        reg.emplace<death_last_will>(cycle_timeline, [](entt::registry& reg_, const entt::entity cycle_timeline_){
+        reg.emplace<life::death_last_will>(cycle_timeline, [](entt::registry& reg_, const entt::entity cycle_timeline_){
             
             const auto again_timer = reg_.create();
             timer::make(reg_, again_timer, &atmosphere::run_cycle, time_between_cycle);
@@ -184,7 +196,7 @@ struct atmosphere final
     static void update_cycle(entt::registry& reg, const entt::entity e, const direction d)
     {
         const auto& [start, end] = reg.get<color_range>(e);
-        const auto& [current_lifetime] = reg.get<lifetime>(e);
+        const auto& [current_lifetime] = reg.get<life::lifetime>(e);
         
         //new_value = ( (old_value - old_min) / (old_max - old_min) ) * (new_max - new_min) + new_min
         double value = (current_lifetime - cycle_duration) / (std::chrono::duration<double>{0} - cycle_duration);
@@ -214,10 +226,18 @@ private:
 
 struct monster
 {
+    static collision::responce on_collide(entt::registry& reg, const entt::entity self, const entt::entity collider)
+    {
+        reg.emplace_or_replace<life::begin_die>(self);
+        return collision::responce::block;
+    }
     static void make(entt::registry& reg, const entt::entity e, location loc)
     {
         actor::make_base_renderable(reg, e, std::move(loc), {shape::sprite::from_data{U"👾", 1, 1}});
+        
         reg.emplace<collision::agent>(e);
+        reg.emplace<collision::on_collide>(e, &monster::on_collide);
+        
         reg.emplace<velocity>(e);
         reg.emplace<uniform_movement_tag>(e);
 
@@ -238,8 +258,33 @@ struct monster
                 j = 0;
                 reg_.get<timeline::eval_direction>(e_).value = direction_converter::invert(d);
             }
-            
         });
-        
+
+        reg.emplace<life::death_last_will>(e, [](entt::registry& reg_, const entt::entity self)
+        {
+            const auto dead = reg_.create();
+            auto& [old_loc, _] = reg_.get<location_buffer>(self);
+
+            actor::make_base_renderable(reg_, dead, location{old_loc.line(),old_loc.index_in_line() - 1}, {shape::sprite::from_data{U"___", 1, 3}});
+            reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
+            reg_.emplace<timeline::eval_direction>(dead);
+            reg_.emplace<timeline::what_do>(dead, [](entt::registry& r_, const entt::entity e_, direction d){
+                r_.get<location_buffer>(e_).translation.mark_dirty();
+            });
+            
+            reg_.emplace<life::death_last_will>(dead, [](entt::registry& r_, const entt::entity s)
+            {
+                const auto timer = r_.create();
+                
+                r_.emplace<life::lifetime>(timer, std::chrono::seconds{10});
+                r_.emplace<life::death_last_will>(timer, [spawn_loc = r_.get<location_buffer>(s).current](entt::registry& r1_, const entt::entity self_)
+                {
+                    const auto new_monster = r1_.create();
+                    monster::make(r1_, new_monster, spawn_loc);
+                });
+            });
+        });
     }
+
+    
 };

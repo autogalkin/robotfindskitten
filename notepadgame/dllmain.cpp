@@ -71,14 +71,15 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                 
                 actor::make_base_renderable(reg, entity, {6, 6},{shape::sprite::from_data{U"█", 1, 1}});
                 reg.emplace<collision::agent>(entity);
+                reg.emplace<collision::on_collide>(entity);
             });
             
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
                 
                 reg.emplace<shape::sprite_animation>(entity,
-                    std::vector<shape::sprite>{{{shape::sprite::from_data{ 		U"f-", 1, 2}}  // forward mesh
-                                                    ,{shape::sprite::from_data{ 		U"-f", 1, 2}} // reverse mesh
+                    std::vector<shape::sprite>{{{shape::sprite::from_data{ 		U"f-", 1, 2}}  
+                                                    ,{shape::sprite::from_data{ 		U"-f", 1, 2}}  
                         }} 
                     , static_cast<uint8_t>(0)
                    );

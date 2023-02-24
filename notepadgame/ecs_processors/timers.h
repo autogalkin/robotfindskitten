@@ -17,13 +17,13 @@ public:
     void execute(entt::registry& reg, const gametime::duration delta) override
     {
         using namespace std::chrono_literals;
-        for(const auto view = reg.view<lifetime>();
+        for(const auto view = reg.view<life::lifetime>();
         const auto entity: view)
         {
-            if(auto& [duration] = view.get<lifetime>(entity)
+            if(auto& [duration] = view.get<life::lifetime>(entity)
                 ; duration <= 0ms){
                 
-                reg.emplace<begin_die>(entity);
+                reg.emplace<life::begin_die>(entity);
             }
             else
             {
@@ -43,10 +43,10 @@ public:
 
     void execute(entt::registry& reg, gametime::duration delta) override
     {
-        for(const auto view = reg.view<begin_die, death_last_will>();
+        for(const auto view = reg.view<life::begin_die,life::death_last_will>();
         const auto entity: view)
         {
-            view.get<death_last_will>(entity).wish(reg, entity);
+            view.get<life::death_last_will>(entity).wish(reg, entity);
         }
     }
 };

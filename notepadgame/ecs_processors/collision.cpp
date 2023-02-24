@@ -1,4 +1,4 @@
-﻿#include "collision.h"
+﻿ #include "collision.h"
 #include "../core/notepader.h"
 
 collision::index collision::quad_tree::insert(const id_type id, const boundbox& bbox)
@@ -272,7 +272,6 @@ collision::query::query(world* w): ecs_processor{w}
         on_scroll_changed(new_scroll);
     });
     w->get_registry().on_construct<collision::agent>().connect<&entt::registry::emplace_or_replace<need_update_entity>>();
-    //on_destroy_entity = w->get_registry().on_destroy<collision::agent>().connect<&query::remove_on_destroy>(*this);
 }
 
 void collision::query::execute(entt::registry& reg, gametime::duration delta)
@@ -288,13 +287,11 @@ void collision::query::execute(entt::registry& reg, gametime::duration delta)
     }
     
     {// query 
-        const auto view = reg.view<location_buffer, const shape::sprite_animation, collision::agent, velocity>();
+        const auto view = reg.view<location_buffer, const shape::sprite_animation, collision::agent, const collision::on_collide>();
             
         // compute collision
         for(const auto entity : view)
         {
-            auto& vel = view.get<velocity>(entity);
-            
             
             auto& [current_location, translation] = view.get<location_buffer>(entity);
 
@@ -306,10 +303,16 @@ void collision::query::execute(entt::registry& reg, gametime::duration delta)
                 // TODO on collide func
                 //
                 for (const auto collide : collides){
-                    if(tree.get_entity(collide).id != entity)
+                    if(const auto cl = tree.get_entity(collide).id;
+                        cl != entity)
                     {
-                        translation = location::null();
-                        view.get<location_buffer>(tree.get_entity(collide).id).translation = location::null();
+                        view.get<on_collide>(cl).call(reg, cl, entity);
+                        if(const auto resp = view.get<on_collide>(entity).call(reg, entity, cl)
+                            ; resp == responce::block){
+                            translation = location::null();
+                            view.get<location_buffer>(cl).translation.mark_dirty();  
+                        }
+                        
                     }
                 }
             }
@@ -317,7 +320,7 @@ void collision::query::execute(entt::registry& reg, gametime::duration delta)
         // remove actors which will move, insert it again in the next tick 
         for(const auto entity : view)
         {
-            if(!view.get<location_buffer>(entity).translation.get().is_null() || reg.all_of<begin_die>(entity)){
+            if(!view.get<location_buffer>(entity).translation.get().is_null() || reg.all_of<life::begin_die>(entity)){
                 auto& [index_in_quad_tree] = view.get<collision::agent>(entity);
                 tree.remove(index_in_quad_tree);
                 index_in_quad_tree = collision::invalid_index;
