@@ -129,7 +129,7 @@ struct character final
         reg.emplace<location_buffer>(e, std::move(l), dirty_flag<location>{});
         reg.emplace<uniform_movement_tag>(e);
         reg.emplace<velocity>(e);
-        reg.emplace<collision::agent>(e);
+        //reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &collision::on_collide::block_always);
     }
     
@@ -235,7 +235,7 @@ struct monster
     {
         actor::make_base_renderable(reg, e, std::move(loc), {shape::sprite::from_data{U"👾", 1, 1}});
         
-        reg.emplace<collision::agent>(e);
+        //reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &monster::on_collide);
         
         reg.emplace<velocity>(e);
@@ -285,6 +285,24 @@ struct monster
             });
         });
     }
-
     
+};
+
+struct gun
+{
+    static void add_to(entt::registry& reg, const entt::entity e)
+    {
+        
+    }
+    static void fire(entt::registry& reg, const entt::entity e)
+    {
+        auto& loc = reg.get<location_buffer>(e);
+        auto& sh = reg.get<shape::sprite_animation>(e);
+        auto [dir] = reg.get<shape::render_direction>(e);
+                    
+        const auto proj = reg.create();
+        location spawn_translation =  dir == direction::forward ? location{0, static_cast<double>(sh.current_sprite().bound_box().size.index_in_line() )} : location{0, -1};
+        projectile::make(reg, proj,loc.current + spawn_translation,  velocity{0, 15 * static_cast<float>(dir)}, std::chrono::seconds{4});
+                    
+    }
 };

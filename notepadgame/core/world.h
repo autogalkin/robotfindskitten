@@ -19,54 +19,42 @@ class engine;
 // the array of chars on the screen
 class backbuffer 
 {
-    friend class world;
-    friend class notepader; // for update the scroll
 public:
-    backbuffer(const backbuffer& other) = delete;
-    backbuffer(backbuffer&& other) noexcept;
-    backbuffer& operator=(const backbuffer& other) = delete;
-    backbuffer& operator=(backbuffer&& other) noexcept;
 
-    explicit backbuffer(engine* owner): engine_(owner){}
-    virtual ~backbuffer();
+    explicit backbuffer(engine* owner);
+    virtual ~backbuffer() = default;
     
-    void init(const int window_width);
+    void init();
     
-    // tick operations
+    // draw to the edit contol
     void send();
-    void get() const;
     
     [[nodiscard]] virtual char_size& at(const position& char_on_screen);
     [[nodiscard]] virtual char_size at(const position& char_on_screen) const;
-    [[nodiscard]] int get_line_size() const noexcept { return line_lenght_;}
-    [[nodiscard]] const position& get_scroll() const noexcept {return scroll.get();}
-    
-    [[nodiscard]] position global_position_to_buffer_position(const position& position) const noexcept{
-        return {position.line() - get_scroll().line(), position.index_in_line() - get_scroll().index_in_line()};
-    }
-    
-    [[nodiscard]] bool is_in_buffer(const position& position) const noexcept{
-        return position.line() > get_scroll().line() || position.index_in_line() > get_scroll().index_in_line();
-    }
+    [[nodiscard]] position global_position_to_buffer_position(const position& position) const noexcept;
+    [[nodiscard]] bool is_in_buffer(const position& position) const noexcept;
     void draw(const position& pivot, const shape::sprite& sh);
     void erase(const position& pivot, const shape::sprite& sh);
 private:
+    // name for a \0 in buffer math operations
     static constexpr int endl = 1;
-    int line_lenght_{0};
-    int lines_count_{0};
+    // \n(changed to \0 if not need a \n) and \0 for a line in the buffer
+    static  constexpr int special_chars_count = 2;
 
-    struct line
-    {
+    struct line{
         std::vector< char_size > chars;
-        // count of erased invisible utf bytes
+        // a previous paste operation lenght, cache for a support of utf 8 multybytes strs
         int pasted_bytes_count=0;
     };
-    using line_type = dirty_flag< line>;
+    using line_type = dirty_flag< line >;
     std::unique_ptr< std::vector< line_type > > buffer{};
     engine* engine_;
-    
-    dirty_flag<position> scroll{};
+    dirty_flag<position> scroll_{};
+    boost::signals2::scoped_connection scroll_changed_connection_;
+    boost::signals2::scoped_connection size_changed_connection;
 };
+
+
 
 class ecs_processors_executor
 {
@@ -116,19 +104,14 @@ private:
 };
 
 
+
 class world final : public backbuffer, public tickable  // NOLINT(cppcoreguidelines-special-member-functions)
 {
     
 public:
-    // TODO запретить перемещение и копирование
+    // TODO запретить копирование
     
-    explicit world(engine* owner) noexcept: backbuffer(owner)
-    {
-        //scroll_changed_connection = owner->get_on_scroll_changed().connect([this](const location& new_scroll){scroll = new_scroll;});
-        // declare dependencies
-        //reg_.on_construct<velocity>().connect<&entt::registry::emplace<movement_force>>();
-    }
-
+    explicit world(engine* owner) noexcept;
     ~world() override;
 
     void tick(gametime::duration delta) override{
@@ -136,16 +119,17 @@ public:
     }
     ecs_processors_executor& get_ecs_executor() {return executor_;}
     entt::registry& get_registry() {return reg_;}
-    void spawn_actor(const std::function<void(entt::registry&, const entt::entity)>& for_add_components)
-    {
+    void spawn_actor(const std::function<void(entt::registry&, const entt::entity)>& for_add_components){
         const auto entity = reg_.create();
         for_add_components(reg_, entity);
     }
 private:
-    
-    boost::signals2::scoped_connection scroll_changed_connection;
+    void redraw_all_actors();
     ecs_processors_executor executor_{this};
     entt::registry reg_;
+    engine* engine_;
+    boost::signals2::scoped_connection scroll_changed_connection_;
+    boost::signals2::scoped_connection size_changed_connection;
     
 };
 

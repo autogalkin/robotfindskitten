@@ -11,9 +11,6 @@
 
 
 
-
-
-
 engine::~engine() = default;
 HWND engine::create_native_window(const DWORD dwExStyle, const LPCWSTR lpWindowName, const DWORD dwStyle,
                                  const int X, const int Y, const int nWidth, const int nHeight, const HWND hWndParent, const HMENU hMenu,
@@ -36,9 +33,11 @@ HWND engine::create_native_window(const DWORD dwExStyle, const LPCWSTR lpWindowN
     
     show_spaces(notepader::options::show_spaces & start_options_ ? 1 : 0);
     show_eol(notepader::options::show_eol & start_options_ ? 1 : 0);
+    
     world_ = std::make_unique<class world>(this);
     
-    world_->init(nWidth);
+    world_->init();
+    
     return edit_window_;
 }
 
@@ -50,5 +49,11 @@ void engine::init_direct_access()
     //thread_safe_function_ =  reinterpret_cast<int64_t (__cdecl *)(sptr_t, int, uptr_t, sptr_t)>(&SendMessageW); // NOLINT(clang-diagnostic-cast-function-type)
 }
 
+uint32_t engine::get_window_widht() const noexcept
+{
+    RECT r;
+    get_window_rect(r);
+    return r.right - r.left;
+}
 
 

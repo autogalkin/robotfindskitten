@@ -14,7 +14,6 @@
 #include "world.h"
 
 #define NOMINMAX
-
 #include "Richedit.h"
 #include "CommCtrl.h"
 #include <Windows.h>
@@ -48,15 +47,14 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 				{
 				case SC_UPDATE_H_SCROLL:
 					{
-						auto& w = get().get_engine();
-						const auto& scroll = w->world_->scroll.get();
-						w->world_->scroll.pin().index_in_line() = w->get_horizontal_scroll_offset() / w->get_char_width();
-						
+						auto& e = get().get_engine();
+						e->set_h_scroll(e->get_horizontal_scroll_offset() / e->get_char_width());
 						break;
 					}
 				case SC_UPDATE_V_SCROLL:
 					{
-						get().get_engine()->world_->scroll.pin().line() = get().get_engine()->get_first_visible_line();
+						auto& e = get().get_engine();
+						e->set_h_scroll(e->get_first_visible_line());
 						break;
 					}
 				default: break;
@@ -66,6 +64,13 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 			
 			break;
 		}
+	case WM_SIZE:
+		{
+			UINT width =  LOWORD(lp);
+			UINT height = HIWORD(lp);
+			
+			//pSimpleText->OnResize(width, height);
+		}
 	default:
 		break;
 	}
@@ -74,68 +79,76 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 
 
 
-// TODO описание как из getmessage в peek message
+
 bool notepader::hook_GetMessageW(const HMODULE module) const
 {
 	static decltype(&GetMessageW) original = nullptr;
 	return iat_hook::hook_import<decltype(original)>(module,
 	"user32.dll", "GetMessageW", original,
-	[](LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax) -> BOOL
+	[](const LPMSG lpMsg, const HWND hWnd, const UINT wMsgFilterMin, const UINT wMsgFilterMax) -> BOOL
 	{
+
 		
+		// TODO описание как из getmessage в peek message
 		while(PeekMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, PM_REMOVE))
 		{
-			//TODO switch
-			if (lpMsg->message == WM_QUIT)    
-				return 0;
 			
-			// Handle keyboard messages
-			if (lpMsg->message == WM_KEYDOWN || lpMsg->message == WM_KEYUP)
+			switch (lpMsg->message)
 			{
-
-				if(	
-					  lpMsg->wParam != VK_BACK
+			case WM_QUIT: return 0;
+				
+				// Handle keyboard messages
+			case WM_KEYDOWN:
+			case WM_KEYUP:
+				{
+					
+					if(	lpMsg->wParam != VK_BACK
 					&&  lpMsg->wParam != VK_DELETE)
-				{
-					if(auto& input = get().get_input_manager(); input.get()) input->receive(lpMsg);
-					// Block messages
-					lpMsg->message = WM_NULL;
+					{
+						if(auto& input = get().get_input_manager(); input) input->receive(lpMsg);
+						// Block
+						lpMsg->message = WM_NULL;
+					}
+					
+					break;
 				}
-			}
-			// handle mouse
-			if(options::disable_mouse & get().options_)
-			{
-				if(     lpMsg->message == WM_MOUSEMOVE			
-					 || lpMsg->message == WM_LBUTTONDOWN		
-					 || lpMsg->message == WM_LBUTTONUP			
-					 || lpMsg->message == WM_RBUTTONDOWN		
-					 || lpMsg->message == WM_RBUTTONUP			
-					 || lpMsg->message == WM_LBUTTONDBLCLK		
-					 || lpMsg->message == WM_RBUTTONDBLCLK)
+				
+				// handle mouse
+			case WM_MOUSEMOVE:
+			case WM_LBUTTONDOWN:
+			case WM_LBUTTONUP:
+			case WM_RBUTTONDOWN:
+			case WM_RBUTTONUP:
+			case WM_LBUTTONDBLCLK:
+			case WM_RBUTTONDBLCLK:
 				{
-					lpMsg->message = WM_NULL;
+					if(options::disable_mouse & get().options_) lpMsg->message = WM_NULL;
+					break;
 				}
+			default: break;
 			}
-			
 			
 			TranslateMessage(lpMsg);                                     
 			DispatchMessage(lpMsg);
-			lpMsg->message = WM_NULL; // send null to original dispatch loop
+			lpMsg->message = WM_NULL; // send the null to original dispatch loop
 		}
 
-		try{
-			static  std::once_flag once;
+
+		
+		//try{
+			static std::once_flag once;
 			std::call_once(once, []{get().reset_to_start();});
+
+			
 			get().tickframe();
 			
-			}
-			catch([[maybe_unused]] std::exception& e){
+			//}
+			//catch([[maybe_unused]] std::exception& e){
 				//onError(e.what());
-				PostQuitMessage(0);
-				//close(); // TODO handle exeptions
-			}
+				//PostQuitMessage(0);
+			//}
+		
 		return 1;
-		//const auto orig_res = original(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
 	});
 }
 

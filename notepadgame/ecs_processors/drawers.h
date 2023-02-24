@@ -39,6 +39,8 @@ private:
     struct previous_sprite{ int8_t index = -1;};
 public:
     explicit redrawer(world* w): ecs_processor(w){
+        
+       w->get_registry().on_construct<visible_in_game>().connect<&redrawer::upd_visible>();
     }
 
     void execute(entt::registry& reg, gametime::duration delta) override
@@ -76,6 +78,9 @@ public:
             }
         }
     }
-
+private:
+    static void upd_visible(entt::registry& reg, const entt::entity e){
+        if(const auto ptr = reg.try_get<location_buffer>(e)) ptr->translation.mark_dirty();
+    }
 };
 

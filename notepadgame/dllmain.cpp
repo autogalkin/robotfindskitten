@@ -70,7 +70,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             w->spawn_actor([](entt::registry& reg, const entt::entity entity){
                 
                 actor::make_base_renderable(reg, entity, {6, 6},{shape::sprite::from_data{U"█", 1, 1}});
-                reg.emplace<collision::agent>(entity);
+                //reg.emplace<collision::agent>(entity);
                 reg.emplace<collision::on_collide>(entity);
             });
             
