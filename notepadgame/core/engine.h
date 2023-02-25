@@ -35,11 +35,12 @@ class engine final
     friend class notepader;
     
 public:
-    // todo описание как  в scintilla об удаленных функциях
+    // Only the notepader object can create the engine
     engine() = delete;
-    engine(engine &other) = delete;
-    engine& operator=(const engine& other) = delete;
-    engine(engine&& other) noexcept = delete;
+    // Deleted so engine objects can not be copied.
+    engine(engine &other)                      = delete;
+    engine& operator=(const engine& other)     = delete;
+    engine(engine&& other) noexcept            = delete;
     engine& operator=(engine&& other) noexcept = delete;
 
     using scroll_changed_signal = boost::signals2::signal<void (const position&)>;
@@ -50,6 +51,7 @@ public:
     [[nodiscard]] scroll_changed_signal& get_on_scroll_changed()                 { return on_scroll_changed_; }
     [[nodiscard]] size_changed_signal& get_on_resize()                           {return on_resize_;}
     [[nodiscard]] const position& get_scroll() const                             {return scroll_;}
+    void scroll(const npi_t columns_to_scroll, const npi_t lines_to_scroll) const{ dcall2(SCI_LINESCROLL, columns_to_scroll, lines_to_scroll);}
     // caret
     [[nodiscard]] npi_t get_caret_index() const noexcept                         { return dcall0(SCI_GETCURRENTPOS);}
     [[nodiscard]] npi_t get_caret_index_in_line() const noexcept;

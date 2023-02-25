@@ -24,7 +24,7 @@ public:
     explicit backbuffer(engine* owner);
     virtual ~backbuffer() = default;
     
-    void init();
+    void init(const uint32_t w_width, const uint32_t lines_on_screen);
     
     // draw to the edit contol
     void send();
@@ -32,14 +32,15 @@ public:
     [[nodiscard]] virtual char_size& at(const position& char_on_screen);
     [[nodiscard]] virtual char_size at(const position& char_on_screen) const;
     [[nodiscard]] position global_position_to_buffer_position(const position& position) const noexcept;
-    [[nodiscard]] bool is_in_buffer(const position& position) const noexcept;
+    [[nodiscard]] bool is_in_buffer(const position& global_position) const noexcept;
     void draw(const position& pivot, const shape::sprite& sh);
     void erase(const position& pivot, const shape::sprite& sh);
 private:
+    void traverse_sprite_positions(const position& pivot, const shape::sprite& sh, const std::function<void(const position&, char_size part_of_sprite)>& visitor) const;
     // name for a \0 in buffer math operations
     static constexpr int endl = 1;
     // \n(changed to \0 if not need a \n) and \0 for a line in the buffer
-    static  constexpr int special_chars_count = 2;
+    static constexpr int special_chars_count = 2;
 
     struct line{
         std::vector< char_size > chars;

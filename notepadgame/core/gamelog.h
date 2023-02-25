@@ -31,9 +31,10 @@ public:
         ([&]
         {
             ++i;
-            std::cout  << args << sep << std::endl;
+            std::cout  << args << sep;
 
         } (), ...);
+        std::cout << std::endl;
     }
 
 protected:

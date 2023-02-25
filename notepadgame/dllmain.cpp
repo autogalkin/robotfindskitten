@@ -40,13 +40,14 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             //  notepader::hide_selection
             //| notepader::kill_focus
             //| notepader::disable_mouse
-            | notepader::show_eol
+            //| notepader::show_eol
             | notepader::show_spaces;
         
         np.connect_to_notepad(np_module, start_options); // start initialization and a game loop
         
         np.get_on_open().connect([]
         {
+            
             const auto& w = notepader::get().get_engine()->get_world();
             auto& exec =  w->get_ecs_executor();
 
@@ -86,14 +87,15 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                 
                 character::make(reg, entity, location{3, 3});
                 reg.emplace<input_passer::down_signal>(entity, &character::process_input<>);
+                character::add_top_down_camera(reg, entity);
                 
             });
             
-            
+            /*
             w->spawn_actor([](entt::registry& reg, const entt::entity entity){
                 monster::make(reg, entity, {10, 3});
             });
-            
+            */
             /*
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
@@ -108,8 +110,9 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                 
             });
             */
+              
             
-        });
+        }); // on the notepad open
     }
     return TRUE;
 }

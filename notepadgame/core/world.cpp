@@ -12,11 +12,11 @@ backbuffer::backbuffer(engine* owner): engine_(owner){
     scroll_changed_connection_ = engine_->get_on_scroll_changed().connect([this](const position& new_scroll)
     {
         scroll_.pin() = new_scroll;
-        backbuffer::init();
+        backbuffer::init(static_cast<int>(engine_->get_window_widht()) , engine_->get_lines_on_screen());
     });
 
-    size_changed_connection = engine_->get_on_resize().connect([this](uint32_t width, uint32_t height){
-        backbuffer::init();
+    size_changed_connection = engine_->get_on_resize().connect([this](const uint32_t width, const uint32_t height){
+        backbuffer::init(width , height / engine_->get_line_height());
     });
 }
 
@@ -24,47 +24,44 @@ position backbuffer::global_position_to_buffer_position(const position& position
     return {position.line() - scroll_.get().line(), position.index_in_line() - scroll_.get().index_in_line()};
 }
 
-bool backbuffer::is_in_buffer(const position& position) const noexcept{
-    return position.line() >= scroll_.get().line()
-    && position.index_in_line() >= scroll_.get().index_in_line()
-    && position.index_in_line() < static_cast<int>(engine_->get_window_widht()) / engine_->get_char_width() + scroll_.get().index_in_line()
-    && position.line() < engine_->get_lines_on_screen() + scroll_.get().line();
+bool backbuffer::is_in_buffer(const position& global_position) const noexcept{
+    return global_position.line() >= scroll_.get().line()
+    && global_position.index_in_line() >= scroll_.get().index_in_line()
+    && global_position.index_in_line() <= static_cast<int>(engine_->get_window_widht()) / engine_->get_char_width() + scroll_.get().index_in_line()
+    && global_position.line() <= engine_->get_lines_on_screen() + scroll_.get().line()
+    ;
 }
 
 void backbuffer::draw(const position& pivot, const shape::sprite& sh){
-    
-    const position screen_pivot = global_position_to_buffer_position(pivot);
-    
-    for(auto rows = sh.data.rowwise();
-        auto [line, row] : rows | ranges::views::enumerate)
-    {
-        for(int ind_in_line{-1}; const char_size ch : row
-            | ranges::views::filter([&ind_in_line](const char c){++ind_in_line; return c != shape::whitespace;}))
-        {
-            if (position p = screen_pivot + position{static_cast<npi_t>(line), ind_in_line}
-                ; is_in_buffer(p))
-            {
-                at(p) = ch;
-            } 
-        }
-    }
+
+    traverse_sprite_positions(pivot, sh, [this](const position& p, const char_size ch){
+        at(p) = ch;
+    });
 }
 
 void backbuffer::erase(const position& pivot, const shape::sprite& sh)
+{
+    traverse_sprite_positions(pivot, sh, [this](const position& p, char_size){
+        at(p) = shape::whitespace;
+    });
+}
+
+void backbuffer::traverse_sprite_positions(const position& pivot, const shape::sprite& sh, const std::function<void(const position&, char_size)>& visitor) const
 {
     const position screen_pivot = global_position_to_buffer_position(pivot);
     
     for(auto rows = sh.data.rowwise();
         auto [line, row] : rows | ranges::views::enumerate)
     {
-        for(int byte_i{-1}; const auto [[maybe_unused]] byte : row
+        for(int byte_i{-1}; const auto part_of_sprite : row
             | ranges::views::filter([&byte_i](const char_size c){++byte_i; return c != shape::whitespace;}))
         {
             if(position p = screen_pivot + position{static_cast<npi_t>(line), byte_i}
-                ; is_in_buffer(p))
-                {
-                    at(p) = shape::whitespace;
-                }
+            ; p.index_in_line() >= 0 && p.index_in_line() <= static_cast<int>(engine_->get_window_widht()) / engine_->get_char_width()
+            && p.line() >= 0 && p.line() <= engine_->get_lines_on_screen())
+            {
+                visitor(p, part_of_sprite);
+            }
                 
         }
     }
@@ -82,16 +79,15 @@ char_size& backbuffer::at(const position& char_on_screen)
 }
 
 
-void backbuffer::init()
+void backbuffer::init(const uint32_t w_width, const uint32_t lines_on_screen)
 {
-    const int line_lenght = static_cast<int>(engine_->get_window_widht()) / engine_->get_char_width();
-    const int lines_count = engine_->get_lines_on_screen();
+    const uint32_t line_lenght = w_width / engine_->get_char_width();
     
-    if(!buffer) buffer = std::make_unique<std::vector< line_type > >(lines_count);
-    else buffer->resize(lines_count);
+    if(!buffer) buffer = std::make_unique<std::vector< line_type > >(lines_on_screen);
+    else buffer->resize(lines_on_screen + 1);
     for(auto& line  : *buffer)
     {
-        line.pin().chars.resize(line_lenght + special_chars_count, U' ');
+        line.pin().chars.resize(line_lenght + 1 + special_chars_count, U' ');
         std::ranges::fill(line.pin().chars, U' ');
         
         *(line.pin().chars.end() - 1/*past-the-end*/ - endl) = U'\n';
@@ -112,8 +108,8 @@ void backbuffer::send()
         
         const npi_t lnum = scroll_.get().line() + enumerate;
         const npi_t fi = engine_->get_first_char_index_in_line(lnum);
-
-        npi_t endsel  = std::max(0, line.get().pasted_bytes_count-1);
+        ;
+        npi_t endsel  = engine_->get_line_lenght(lnum);// std::max(0, line.get().pasted_bytes_count-1);
         char_size ch_end {'\0'};
         if(lnum >= engine_->get_lines_count()-1)   { ch_end = '\n';   }
         else                                       { endsel  -= endl; }

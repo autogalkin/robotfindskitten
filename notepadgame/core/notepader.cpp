@@ -30,8 +30,32 @@ void notepader::close()
 
 LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, const LPARAM lp)
 {
+	//gamelog::cout(std::hex, "wnd proc", msg);
 	switch (msg)
 	{
+	case WM_USER + 100: // on initialize
+	{
+			{
+				// destroy the status bar
+				if(const HWND stbar = FindWindowExW(notepader::get().get_main_window(), nullptr,  STATUSCLASSNAME, nullptr)){
+					DestroyWindow(stbar);
+				}
+				// destroy the main menu
+				const HMENU hMenu = GetMenu(notepader::get().get_main_window());
+				SetMenu(notepader::get().get_main_window(), nullptr);
+				DestroyMenu(hMenu);
+				RECT rc{};
+				GetClientRect(notepader::get().get_main_window(), &rc);
+				PostMessage(notepader::get().get_main_window(), WM_SIZE, SIZE_RESTORED, MAKELPARAM(rc.right - rc.left, rc.bottom - rc.top));
+			}
+			
+			get().input_ = std::make_unique<input>();
+			get().on_open_();
+			// disable
+			boost::signals2::signal<void()> empty {} ;
+			std::swap(get().on_open_, empty);
+			break;
+	}
 	case WM_DESTROY:
 		{
 			get().close();
@@ -54,7 +78,7 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 				case SC_UPDATE_V_SCROLL:
 					{
 						auto& e = get().get_engine();
-						e->set_h_scroll(e->get_first_visible_line());
+						e->set_v_scroll(e->get_first_visible_line());
 						break;
 					}
 				default: break;
@@ -64,11 +88,18 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 			
 			break;
 		}
+	case WM_SIZING:
 	case WM_SIZE:
 		{
 			const UINT width =  LOWORD(lp);
 			const UINT height = HIWORD(lp);
 			if(get().get_engine()) get().get_engine()->get_on_resize()(width, height );
+			break;
+		}
+	case WM_ACTIVATEAPP:
+		{
+			gamelog::cout("activate");
+			break;
 		}
 	default:
 		break;
@@ -87,11 +118,13 @@ bool notepader::hook_GetMessageW(const HMODULE module) const
 	[](const LPMSG lpMsg, const HWND hWnd, const UINT wMsgFilterMin, const UINT wMsgFilterMax) -> BOOL
 	{
 
-		
+		if(const HWND stbar = FindWindowExW(notepader::get().get_main_window(), nullptr,  STATUSCLASSNAME, nullptr)){
+			//gamelog::cout("valid");	
+						}
 		// TODO описание как из getmessage в peek message
 		while(PeekMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, PM_REMOVE))
 		{
-			
+			//gamelog::cout(std::hex, "get message", lpMsg->message);
 			switch (lpMsg->message)
 			{
 			case WM_QUIT: return 0;
@@ -190,32 +223,18 @@ bool notepader::hook_CreateWindowExW(HMODULE module) const
 		out_hwnd = original(dwExStyle, lpClassName, lpWindowName, dwStyle,
 									 X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 	}
-		
+	
 	// catch notepad.exe window
 	if (!lstrcmp(lpClassName, L"Notepad"))
 	{
+		
 		get().main_window_ = out_hwnd;
-		// patch wnd proc
+		// patch the wnd proc
 		get().original_proc_ = GetWindowLongPtr(get().main_window_, GWLP_WNDPROC);
 		SetWindowLongPtr(get().main_window_, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(hook_wnd_proc));
+		PostMessage(get().main_window_, WM_USER + 100, 0, 0);
 	}
 	
-	if(get().get_main_window() && get().get_engine() && get().get_engine()->get_native_window())
-	{
-		
-		static std::once_flag once;
-		std::call_once(once, []
-		{
-			
-			get().input_ = std::make_unique<input>();
-			get().on_open_();
-			
-			// disable
-			boost::signals2::signal<void()> empty {} ;
-			std::swap(get().on_open_, empty);
-		});
-		
-	}
 	return out_hwnd;
 	});
 }
