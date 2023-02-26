@@ -179,13 +179,14 @@ void collision::quad_tree::split(quadnode& node, const quad_node_data& leaf)
 {
     assert(node.isleaf() && "Only leaves can be split");
     // Pop off all the previous elements.
-    std::vector<entity_quad_node> elts;
+    std::vector<size_t> elts;
             
     while (node.first_child != end_of_list)
     {
+        const index index = node.first_child;
         node.first_child = entity_nodes_[node.first_child].next; 
-        elts.push_back(entity_nodes_[node.first_child]);
-        entity_nodes_.erase(node.first_child);
+        elts.push_back(entity_nodes_[index].entity_index);
+        entity_nodes_.erase(index);
     }
  
     // Start by allocating 4 child nodes.
@@ -196,7 +197,6 @@ void collision::quad_tree::split(quadnode& node, const quad_node_data& leaf)
         node.first_child = static_cast<int>(nodes_.size());
         nodes_.resize(nodes_.size() + 4);
     }
-    node = nodes_[leaf.i];
  
     // Initialize the new child nodes.
     for (int j=0; j < 4; ++j)
@@ -208,15 +208,15 @@ void collision::quad_tree::split(quadnode& node, const quad_node_data& leaf)
     // Transfer the elements in the former leaf node to its new children.
     node.count_entities = is_branch;
     for (const auto& elt : elts)
-        node_insert(leaf, elt.entity_index);
+        node_insert(leaf, elt);
 }
 
 collision::quad_tree::quadrant collision::quad_tree::get_quadrant(const boundbox& node_box, const boundbox& value_box)
 {
     if (auto center = node_box.center()
-        ; value_box.end().index_in_line() < center.index_in_line())
+        ; value_box.end().index_in_line() <= center.index_in_line())
     {
-        if (value_box.pivot.line() < center.line())
+        if (value_box.pivot.line() <= center.line())
             return quadrant::top_left;
         else if (value_box.pivot.line() >= center.line())
             return quadrant::bottom_left;
@@ -225,7 +225,7 @@ collision::quad_tree::quadrant collision::quad_tree::get_quadrant(const boundbox
     }
     else if (value_box.pivot.index_in_line() >= center.index_in_line())
     {
-        if (value_box.end().line() < center.line())
+        if (value_box.end().line() <= center.line())
             return quadrant::top_right;
         else if (value_box.pivot.line() >= center.line())
             return quadrant::bottom_right;
@@ -259,8 +259,7 @@ std::vector<collision::quad_tree::quad_node_data> collision::quad_tree::find_lea
     const boundbox& start_rect) const
 {
     std::vector<quad_node_data> leaves;
-    traverse(start, start_rect, [](quad_node_data&){}, [&leaves](quad_node_data& nd)
-    {
+    traverse(start, start_rect, [](quad_node_data&){}, [&leaves](const quad_node_data& nd){
         leaves.push_back(nd);
     });
     return leaves;
@@ -285,7 +284,7 @@ void collision::query::execute(entt::registry& reg, gametime::duration delta)
         view.get<collision::agent>(entity).index_in_quad_tree = tree.insert(entity, sh.current_sprite().bound_box()+position_converter::from_location(current_location));
         reg.remove<need_update_entity>(entity);
     }
-    
+
     {// query 
         const auto view = reg.view<location_buffer, const shape::sprite_animation, collision::agent, const collision::on_collide>();
             
@@ -306,10 +305,11 @@ void collision::query::execute(entt::registry& reg, gametime::duration delta)
                     if(const auto cl = tree.get_entity(collide).id;
                         cl != entity)
                     {
-                        view.get<on_collide>(cl).call(reg, cl, entity);
+                        const auto cl_resp = view.get<on_collide>(cl).call(reg, cl, entity);
                         if(const auto resp = view.get<on_collide>(entity).call(reg, entity, cl)
-                            ; resp == responce::block){
+                            ; cl_resp == responce::block && resp == responce::block){
                             translation = location::null();
+                            translation.mark_dirty();
                             view.get<location_buffer>(cl).translation.mark_dirty();  
                         }
                         

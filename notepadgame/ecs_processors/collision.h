@@ -13,6 +13,7 @@
 
 namespace collision
 {
+    class query;
     using index = int64_t;
     inline static constexpr int end_of_list   = -1;
     inline static constexpr int is_branch     = -1;
@@ -23,8 +24,8 @@ namespace collision
     {
     public:
         using next_free_index = index;
-        using data_type = boost::container::small_vector<std::variant<T, next_free_index>, 128 >;
-        
+        //using data_type = boost::container::small_vector<std::variant<T, next_free_index>, 128 >;
+        using data_type = std::vector<std::variant<T, next_free_index>>;
         index insert(const T& elt){
             if (first_free_ != end_of_list){
                 const index ind = first_free_;
@@ -63,6 +64,7 @@ namespace collision
     
     class quad_tree
     {
+        friend class collision::query;
     public:
         using id_type = entt::entity;
         // is a max number of values a node can contain before we try to split it
@@ -78,6 +80,8 @@ namespace collision
     private:
         struct quadnode
         {
+            // Points to the first child if this node is a branch or the first element
+            // if this node is a leaf.
             index first_child = end_of_list;
             // Stores the number of elements in the node or -1 if it is not a leaf.
             int count_entities = is_branch;
@@ -109,7 +113,8 @@ namespace collision
         object_pool<quad_entity> entities_;
         object_pool<entity_quad_node> entity_nodes_;
         // Stores all the nodes in the quadtree. The first node in this sequence is always the root.
-        boost::container::small_vector<quadnode, 128> nodes_;
+        // boost::container::small_vector<quadnode, 128>
+        std::vector<quadnode> nodes_;
         // Stores the quadtree extents.
         boundbox root_rect_;
         // Stores the first free node in the quadtree to be reclaimed as 4
@@ -125,6 +130,7 @@ namespace collision
         explicit quad_tree(boundbox rootrect, const uint8_t max_depth = 8): 
         root_rect_(std::move(rootrect)), free_node_(end_of_list), max_depth(max_depth){
             constexpr quadnode root_node = {.first_child = end_of_list, .count_entities =0};
+            nodes_.reserve(128);
             nodes_.push_back(root_node);
         }
 
@@ -194,9 +200,9 @@ namespace collision
 
         virtual void execute(entt::registry& reg, gametime::duration delta) override;
     private:
-        // TODO update scroll and resize Need traverse method
+        
         void on_scroll_changed(const position& new_scroll){
-            tree = quad_tree{tree.get_root_rect() + new_scroll, 8};
+            //tree = quad_tree{tree.get_root_rect() + new_scroll, 8};
         }
         void remove_on_destroy(const entt::registry& reg, const entt::entity e){
             if(const auto& agent =reg.get<collision::agent>(e)
@@ -207,7 +213,7 @@ namespace collision
         }
         // mark entity to remove from tree and insert again
         struct need_update_entity{};
-        quad_tree tree{boundbox{{0, 0}, {100, 100}}, 8}; 
+        quad_tree tree{boundbox{{0, 0}, {1000, 1000}}, 4}; 
 
     };
     }
