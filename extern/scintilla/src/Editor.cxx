@@ -1424,12 +1424,15 @@ void Editor::ScrollRange(SelectionRange range) {
 	SetXYScroll(XYScrollToMakeVisible(range, XYScrollOptions::all, caretPolicies));
 }
 
-void Editor::EnsureCaretVisible(bool useMargin, bool vert, bool horiz) {
+void Editor::EnsureCaretVisible([[maybe_unused]] bool useMargin, [[maybe_unused]] bool vert, [[maybe_unused]] bool horiz) {
+		// PATCH for the notepadgame
+	/*
 	SetXYScroll(XYScrollToMakeVisible(SelectionRange(posDrag.IsValid() ? posDrag : sel.RangeMain().caret),
 		(useMargin?XYScrollOptions::useMargin:XYScrollOptions::none)|
 		(vert?XYScrollOptions::vertical:XYScrollOptions::none)|
 		(horiz?XYScrollOptions::horizontal:XYScrollOptions::none),
 		caretPolicies));
+	*/
 }
 
 void Editor::ShowCaretAtCurrentPosition() {
