@@ -3,6 +3,9 @@
 #include "../core/base_types.h"
 #include "../ecs_processors/collision.h"
 #include "../core/input.h"
+#include  "../core/easing.h"
+struct coin;
+struct character;
 
 struct actor
 {
@@ -91,6 +94,40 @@ struct projectile final
         
     }
 };
+struct gun
+{
+
+    static collision::responce on_collide(entt::registry& reg, const entt::entity self, const entt::entity collider)
+    {
+        if(reg.all_of<character>(collider))
+        {
+            reg.emplace_or_replace<life::begin_die>(self);
+            return collision::responce::ignore;
+        }
+        return collision::responce::block;
+    }
+    
+    static void make(entt::registry& reg, const entt::entity e, location loc)
+    {
+        reg.emplace<gun>(e);
+        actor::make_base_renderable(reg, e, std::move(loc), {shape::sprite::from_data{U"¬", 1, 1}});
+        reg.emplace<collision::agent>(e);
+        reg.emplace<collision::on_collide>(e, &gun::on_collide);
+        
+    }
+    
+    static void fire(entt::registry& reg, const entt::entity character)
+    {
+        const auto& [loc, _] = reg.get<location_buffer>(character);
+        auto& sh = reg.get<shape::sprite_animation>(character);
+        auto [dir] = reg.get<shape::render_direction>(character);
+                    
+        const auto proj = reg.create();
+        const location spawn_translation =  dir == direction::forward ? location{0, static_cast<double>(sh.current_sprite().bound_box().size.index_in_line() )} : location{0, -1};
+        projectile::make(reg, proj,loc + spawn_translation,  velocity{0, 15 * static_cast<float>(dir)}, std::chrono::seconds{4});
+                    
+    }
+};
 
 namespace timeline
 {
@@ -121,16 +158,41 @@ struct timer final
 
 struct character final
 {
+    static collision::responce on_collide(entt::registry& reg, const entt::entity self, const entt::entity collider)
+    {
+        // TODO collision functions without cast?
+        if(reg.all_of<gun>(collider))
+        {
+            auto& [signal] = reg.get<input_passer::down_signal>(self);
+            signal.connect([](entt::registry& reg_, const entt::entity chrcter, const input::key_state_type& state)
+            {
+                if(const auto it = std::ranges::find(state, input::key::space); it != state.end())
+                {
+                    gun::fire(reg_, chrcter);
+                }
+            });
+            return collision::responce::ignore;
+        }
+        /*
+        if(reg.all_of<coin>(collider))
+        {
+            return collision::responce::ignore;
+        }
+        */
+        return collision::responce::block;
+    }
+    
     static void make(entt::registry& reg, const entt::entity e, location l)
     {
+        reg.emplace<character>(e);
         reg.emplace<shape::on_change_direction>(e, &actor::invert_shape_direction);
         reg.emplace<shape::render_direction>(e, direction::forward);
         reg.emplace<visible_in_game>(e);
         reg.emplace<location_buffer>(e, std::move(l), dirty_flag<location>{});
         reg.emplace<uniform_movement_tag>(e);
         reg.emplace<velocity>(e);
-        //reg.emplace<collision::agent>(e);
-        reg.emplace<collision::on_collide>(e, &collision::on_collide::block_always);
+        reg.emplace<collision::agent>(e);
+        reg.emplace<collision::on_collide>(e, &character::on_collide);
     }
     
     static void add_top_down_camera(entt::registry& reg, const entt::entity e)
@@ -219,9 +281,8 @@ struct character final
             , input::key LEFT =input::key::a
             , input::key DOWN =input::key::s
             , input::key RIGHT=input::key::d
-            , input::key ACTION=input::key::space
     >
-    static void process_input(entt::registry& reg, const entt::entity e, const input::key_state_type& state)
+    static void process_movement_input(entt::registry& reg, const entt::entity e, const input::key_state_type& state)
     {
         auto& vel = reg.get<velocity>(e);
        
@@ -233,34 +294,6 @@ struct character final
             case LEFT: vel.index_in_line()  -= 1; break;
             case DOWN: vel.line()           += 1; break;
             case RIGHT: vel.index_in_line() += 1; break;
-            case ACTION:
-                {
-                    
-                    
-                    //tagTPMPARAMS tpm_params;
-                    //tpm_params.cbSize = sizeof(tagTPMPARAMS);
-                    //GetWindowRect(notepader::get().get_main_window(), &tpm_params.rcExclude);
-                    //TrackPopupMenuEx(GetSubMenu(hMenu, 0), NULL, tpm_params.rcExclude.left, tpm_params.rcExclude.top, notepader::get().get_main_window(), NULL);
-
-                    //SetMenu(notepader::get().get_main_window(), NULL);
-                    //DestroyMenu(hMenu);
-                    
-                    
-                    
-                    //SetWindowPos(notepader::get().get_main_window(), 0, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOZORDER);
-                    //ValidateRect(notepader::get().get_main_window(), &rc);
-                    //RedrawWindow(notepader::get().get_engine()->get_native_window(),  0, 0, RDW_INVALIDATE);
-                    //UpdateWindow(notepader::get().get_engine()->get_native_window());
-                    /*
-                    auto& loc = reg.get<location_buffer>(e);
-                    auto& sh = reg.get<shape::sprite_animation>(e);
-                    auto [dir] = reg.get<shape::render_direction>(e);
-                    
-                    const auto proj = reg.create();
-                    location spawn_translation =  dir == direction::forward ? location{0, static_cast<double>(sh.current_sprite().bound_box().size.index_in_line() )} : location{0, -1};
-                    projectile::make(reg, proj,loc.current + spawn_translation,  velocity{0, 15 * static_cast<float>(dir)}, std::chrono::seconds{4});
-                    */
-                }
             default: break;
             }
         }
@@ -334,7 +367,7 @@ struct monster
     {
         actor::make_base_renderable(reg, e, std::move(loc), {shape::sprite::from_data{U"👾", 1, 1}});
         
-        //reg.emplace<collision::agent>(e);
+        reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &monster::on_collide);
         
         reg.emplace<velocity>(e);
@@ -386,22 +419,43 @@ struct monster
     }
     
 };
-
-struct gun
+/*
+struct coin
 {
-    static void add_to(entt::registry& reg, const entt::entity e)
+    
+    static void make(entt::registry& reg, const entt::entity e, location loc)
     {
+        reg.emplace<coin>(e);
+        reg.emplace<visible_in_game>(e);
+        reg.emplace<location_buffer>(e, std::move(loc), dirty_flag<location>{});
+        reg.emplace< shape::sprite_animation>(e,  std::vector<shape::sprite>{
+            {
+                {shape::sprite::from_data{U"O", 1, 1}}
+                ,{shape::sprite::from_data{U"0", 1, 1}}
+            }}, static_cast<uint8_t>(0));
+        reg.emplace<collision::agent>(e);
+        reg.emplace<collision::on_collide>(e, [](entt::registry& r, const entt::entity self, const  entt::entity collider)
+        {
+            if(r.all_of<character>(collider))
+            {
+                r.emplace<life::begin_die>(self);
+            }
+            return collision::responce::ignore;
+        });
+
+        reg.emplace< timeline::eval_direction> (e, direction::forward);
         
-    }
-    static void fire(entt::registry& reg, const entt::entity e)
-    {
-        auto& loc = reg.get<location_buffer>(e);
-        auto& sh = reg.get<shape::sprite_animation>(e);
-        auto [dir] = reg.get<shape::render_direction>(e);
-                    
-        const auto proj = reg.create();
-        location spawn_translation =  dir == direction::forward ? location{0, static_cast<double>(sh.current_sprite().bound_box().size.index_in_line() )} : location{0, -1};
-        projectile::make(reg, proj,loc.current + spawn_translation,  velocity{0, 15 * static_cast<float>(dir)}, std::chrono::seconds{4});
-                    
+        reg.emplace< timeline::what_do> (e, [t = std::rand() % 20 - 0 + 1, i = 1](entt::registry& reg_ , const entt::entity self_, direction) mutable 
+        {
+            if(t > 50)
+            {
+                t = 0;
+                reg_.get<shape::sprite_animation>(self_).rendering_i = i;
+                reg_.get<location_buffer>(self_).translation.mark_dirty();
+                i = 1 - i;
+            }
+            ++t;
+        });
     }
 };
+*/

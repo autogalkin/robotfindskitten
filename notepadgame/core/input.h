@@ -24,10 +24,10 @@ public:
         , d = 0x44
         , l = 0x49
         , space = VK_SPACE
-        , up = VK_UP
+        , up    = VK_UP
         , right = VK_RIGHT
-        , left = VK_LEFT
-        , down = VK_DOWN
+        , left  = VK_LEFT
+        , down  = VK_DOWN
         
     };
     
@@ -66,7 +66,8 @@ public:
     explicit input_passer(world* w);
 
     struct down_signal{
-        std::function<void(entt::registry&, entt::entity, const input::key_state_type&)> callback{};
+        // for customize input in runtime
+        boost::signals2::signal<void (entt::registry&, entt::entity, const input::key_state_type&)> call;
     };
     struct up_signal : down_signal {};
     
@@ -78,7 +79,7 @@ public:
         for(const auto view = reg.view<const input_passer::down_signal>();
             const auto entity: view){
             
-            view.get<input_passer::down_signal>(entity).callback(reg, entity, state);
+            view.get<input_passer::down_signal>(entity).call(reg, entity, state);
             //view.get<input_passer::up_signal>(entity).callback(reg, entity, state);
             }
     }

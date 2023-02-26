@@ -12,7 +12,6 @@
 #include "ecs_processors/motion.h"
 #include "core/world.h"
 
-#include "ecs_processors/animations.h"
 #include "ecs_processors/drawers.h"
 #include "ecs_processors/killer.h"
 #include "ecs_processors/timers.h"
@@ -67,13 +66,29 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
             w->spawn_actor([](entt::registry& reg, const entt::entity entity){
                 atmosphere::make(reg, entity);
             });
-            
-            w->spawn_actor([](entt::registry& reg, const entt::entity entity){
+
+            {
+                int i = 0;
+                int j = 0;
+                auto spawn_block = [&i, &j](entt::registry& reg, const entt::entity entity){
                 
-                actor::make_base_renderable(reg, entity, {6, 6},{shape::sprite::from_data{U"█", 1, 1}});
-                //reg.emplace<collision::agent>(entity);
-                reg.emplace<collision::on_collide>(entity);
+                  actor::make_base_renderable(reg, entity, {6 + static_cast<double>(i), 4 + + static_cast<double>(j)},{shape::sprite::from_data{U"█", 1, 1}});
+                  reg.emplace<collision::agent>(entity);
+                  reg.emplace<collision::on_collide>(entity);
+                };
+                
+                for (i = 0; i < 4; ++i)
+                {
+                    ++j;
+                    w->spawn_actor(spawn_block); 
+                } 
+            }
+            
+
+            w->spawn_actor([](entt::registry& reg, const entt::entity entity){
+                gun::make(reg, entity, {14, 20});
             });
+
             
             w->spawn_actor([](entt::registry& reg, const entt::entity entity)
             {
@@ -86,30 +101,17 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
                    );
                 
                 character::make(reg, entity, location{3, 3});
-                reg.emplace<input_passer::down_signal>(entity, &character::process_input<>);
+                auto& [input_callback] = reg.emplace<input_passer::down_signal>(entity);
+                input_callback.connect(&character::process_movement_input<>);
                 character::add_top_down_camera(reg, entity);
                 
             });
             
-            /*
+            
             w->spawn_actor([](entt::registry& reg, const entt::entity entity){
                 monster::make(reg, entity, {10, 3});
             });
-            */
-            /*
-            w->spawn_actor([](entt::registry& reg, const entt::entity entity)
-            {
-                reg.emplace<shape>(entity, shape::initializer_from_data{"d", 1, 1});
-                character::make(reg, entity, location{5, 8});
-                reg.emplace<input_passer::down_signal>(entity,
-                    &character::process_input<input::key::up
-                                            , input::key::left
-                                            , input::key::down
-                                            , input::key::right
-                                            , input::key::l>);
-                
-            });
-            */
+            
               
             
         }); // on the notepad open

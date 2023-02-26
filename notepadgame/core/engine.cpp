@@ -27,6 +27,9 @@ HWND engine::create_native_window(const DWORD dwExStyle, const LPCWSTR lpWindowN
     dcall2(SCI_STYLESETSIZE, STYLE_DEFAULT,36); // pt size
     dcall2(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT,1);
     dcall2(SCI_SETHSCROLLBAR, 1, 0);
+
+    // hide control symbol mnemonics
+    dcall1(SCI_SETCONTROLCHARSYMBOL, ' ');
     
     show_spaces(notepader::options::show_spaces & start_options_ ? 1 : 0);
     show_eol(notepader::options::show_eol & start_options_ ? 1 : 0);

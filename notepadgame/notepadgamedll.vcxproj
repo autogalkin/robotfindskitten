@@ -136,7 +136,6 @@
     <ClCompile Include="core\tick.cpp" />
     <ClCompile Include="core\world.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="ecs_processors\animations.cpp" />
     <ClCompile Include="ecs_processors\collision.cpp" />
     <ClCompile Include="ecs_processors\motion.cpp" />
   </ItemGroup>
@@ -150,7 +149,6 @@
     <ClInclude Include="core\notepader.h" />
     <ClInclude Include="core\tick.h" />
     <ClInclude Include="core\world.h" />
-    <ClInclude Include="ecs_processors\animations.h" />
     <ClInclude Include="ecs_processors\collision.h" />
     <ClInclude Include="ecs_processors\drawers.h" />
     <ClInclude Include="ecs_processors\killer.h" />

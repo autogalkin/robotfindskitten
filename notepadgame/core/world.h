@@ -41,13 +41,8 @@ private:
     static constexpr int endl = 1;
     // \n(changed to \0 if not need a \n) and \0 for a line in the buffer
     static constexpr int special_chars_count = 2;
-
-    struct line{
-        std::vector< char_size > chars;
-        // a previous paste operation lenght, cache for a support of utf 8 multybytes strs
-        int pasted_bytes_count=0;
-    };
-    using line_type = dirty_flag< line >;
+    
+    using line_type = dirty_flag< std::vector< char_size > >;
     std::unique_ptr< std::vector< line_type > > buffer{};
     engine* engine_;
     dirty_flag<position> scroll_{};

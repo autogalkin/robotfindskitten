@@ -96,11 +96,6 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 			if(get().get_engine()) get().get_engine()->get_on_resize()(width, height );
 			break;
 		}
-	case WM_ACTIVATEAPP:
-		{
-			gamelog::cout("activate");
-			break;
-		}
 	default:
 		break;
 	}

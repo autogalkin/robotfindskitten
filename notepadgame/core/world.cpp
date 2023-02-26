@@ -69,13 +69,13 @@ void backbuffer::traverse_sprite_positions(const position& pivot, const shape::s
 
 char_size backbuffer::at(const position& char_on_screen) const
 {
-    auto& [chars, _] = (*buffer)[char_on_screen.line()].get();
-    return chars[char_on_screen.index_in_line()];
+    auto& line = (*buffer)[char_on_screen.line()].get();
+    return line[char_on_screen.index_in_line()];
 }
 char_size& backbuffer::at(const position& char_on_screen)
 {
-    auto& [chars, _] = (*buffer)[char_on_screen.line()].pin();
-    return chars[char_on_screen.index_in_line()];
+    auto& line = (*buffer)[char_on_screen.line()].pin();
+    return line[char_on_screen.index_in_line()];
 }
 
 
@@ -87,11 +87,11 @@ void backbuffer::init(const uint32_t w_width, const uint32_t lines_on_screen)
     else buffer->resize(lines_on_screen + 1);
     for(auto& line  : *buffer)
     {
-        line.pin().chars.resize(line_lenght + 1 + special_chars_count, U' ');
-        std::ranges::fill(line.pin().chars, U' ');
+        line.pin().resize(line_lenght + 1 + special_chars_count, U' ');
+        std::ranges::fill(line.pin(), U' ');
         
-        *(line.pin().chars.end() - 1/*past-the-end*/ - endl) = U'\n';
-        line.pin().chars.back() = U'\0';
+        *(line.pin().end() - 1/*past-the-end*/ - endl) = U'\n';
+        line.pin().back() = U'\0';
     }
     
 }
@@ -108,22 +108,21 @@ void backbuffer::send()
         
         const npi_t lnum = scroll_.get().line() + enumerate;
         const npi_t fi = engine_->get_first_char_index_in_line(lnum);
-        ;
+        
         npi_t endsel  = engine_->get_line_lenght(lnum);// std::max(0, line.get().pasted_bytes_count-1);
         char_size ch_end {'\0'};
         if(lnum >= engine_->get_lines_count()-1)   { ch_end = '\n';   }
         else                                       { endsel  -= endl; }
     
-        *(line.pin().chars.end() - 1/*past-the-end*/ - endl) = ch_end; // enable or disable eol
+        *(line.pin().end() - 1/*past-the-end*/ - endl) = ch_end; // enable or disable eol
 
 
         std::vector<char> bytes{};
-        utf8::utf32to8(line.get().chars.begin(), line.get().chars.end(), std::back_inserter(bytes));
+        utf8::utf32to8(line.get().begin(), line.get().end(), std::back_inserter(bytes));
         
         engine_->set_selection(fi+scroll_.get().index_in_line(), fi + endsel);
         engine_->replace_selection({bytes.begin(), bytes.end()});
         
-        line.pin().pasted_bytes_count = static_cast<int>(bytes.size());
         line.reset_flag();
         buffer_is_changed = true; 
        
