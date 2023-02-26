@@ -1,84 +1,109 @@
 
+#include <array>
 #include <Windows.h>
 #include <iostream>
 #include <filesystem>
+#include <functional>
 #include <string>
 
-/*
-* wchar_t buffer[MAX_PATH] = {};
-    GetSystemDirectoryW(buffer,_countof(buffer));
-    wcscat_s(buffer,L"\\notepad.exe");
-    return std::wstring{buffer};
- */
+
+
+class dll_injection_error final : public std::runtime_error
+{
+public:
+    explicit dll_injection_error(const char* message)
+        : runtime_error(message){
+    }
+};
+[[noreturn]] void error(const char* message){
+    throw dll_injection_error(message);
+}
+
 
 int main(int argc, char* argv[])
 {
-    char cmd[256] = { 0 };
-    snprintf(cmd, sizeof(cmd), "notepad");
-
-    PROCESS_INFORMATION proc_info = { 0 };
-    STARTUPINFOA startup_info = { 0 };
-    startup_info.cb = sizeof(STARTUPINFO);
-    if (!CreateProcessA(nullptr, cmd, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL,
-        &startup_info, &proc_info)) {
-        std::cerr << "Failed to launch Notepad" << std::endl;
-        return 1;
-    }
-
-    const auto proc_handle = proc_info.hProcess;
-    const auto proc_id = GetProcessId(proc_info.hProcess);
-    std::cout << "Opened " << proc_id << std::endl;
-
-    auto kernel32_handle = GetModuleHandleA("kernel32.dll");
-    if (kernel32_handle == NULL) {
-        std::cerr << "Failed to get kernel32" << std::endl;
-        return 1;
-    }
-
-    auto LoadLibraryA_addr = GetProcAddress(kernel32_handle, "LoadLibraryA");
-    if (LoadLibraryA_addr == NULL) {
-        std::cerr << "Failed to get LoadLibraryA" << std::endl;
-        return 1;
-    }
-
-    auto dll_path = std::filesystem::absolute("notepadgamedll.dll").string();
     
-    auto buffer = VirtualAllocEx(proc_handle, NULL, MAX_PATH,
-        MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    if (buffer == NULL) {
-        std::cerr << "Failed to allocate buffer in remote process" << std::endl;
-        return 1;
-    }
+    try
+    {
+        
+        std::unique_ptr<PROCESS_INFORMATION, void(*)(const PROCESS_INFORMATION*)> proc_info{ new PROCESS_INFORMATION{}
+            , [](const PROCESS_INFORMATION* ptr )
+            {
+                CloseHandle(ptr->hThread);
+                CloseHandle(ptr->hProcess);
+            }};
 
+        std::cout << "Lanch Notepad..." << std::endl;
+        {
+            std::array<char, MAX_PATH> cmd{"notepad"};
+            STARTUPINFOA startup_info{};
+            startup_info.cb = sizeof(STARTUPINFO);
+            if (!CreateProcessA(nullptr
+                , cmd.data()
+                , nullptr, nullptr
+                , FALSE
+                , CREATE_SUSPENDED
+                , nullptr, nullptr,
+                &startup_info, proc_info.get())) {
+                error("Failed to launch Notepad");
+                } 
+        }
+        
+        std::cout << "`Notepad process id is " << GetProcessId(proc_info->hProcess) << std::endl;
+        
+        const auto kernel32_handle = GetModuleHandleA("kernel32.dll");
+        if (!kernel32_handle) {
+            error("Failed to get kernel32");
+        }
 
-    if (!WriteProcessMemory(proc_handle, buffer, dll_path.c_str(), MAX_PATH, NULL)) {
-        std::cerr << "Failed to write to remote buffer" << std::endl;
-        return 1;
-    }
-    
-    
-    auto remote_thread = CreateRemoteThread(proc_handle, NULL, 0,
-        reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibraryA_addr), buffer, NULL, NULL);
-    if (remote_thread == NULL) {
-        std::cerr << "Failed to create remote thread" << std::endl;
-        return 1;
-    }
+        const auto LoadLibraryA_addr = GetProcAddress(kernel32_handle, "LoadLibraryA");
+        if (!LoadLibraryA_addr) {
+            error("Failed to get LoadLibraryA");
+        }
 
-    if (WaitForSingleObject(remote_thread, INFINITE) == WAIT_FAILED) {
-        std::cerr << "Failed while waiting on remote thread to finish" << std::endl;
-        return 1;
-    }
+        const auto dll_path = std::filesystem::absolute("notepadgamedll.dll").string();
 
-    if (ResumeThread(proc_info.hThread) == -1) {
-        std::cerr << "Failed to resume main process thread" << std::endl;
-        return 1;
+        const std::unique_ptr<std::remove_pointer_t<LPVOID>, std::function<void(LPVOID)>> dll_addr{
+            
+            VirtualAllocEx(proc_info->hProcess, nullptr, MAX_PATH, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)
+            ,
+            [&proc_info](const LPVOID addr){
+                VirtualFreeEx(proc_info->hProcess, addr, 0, MEM_RELEASE);
+            }
+        };
+        
+        if (!dll_addr) {
+            error("Failed to allocate buffer in remote process");
+        }
+        
+        if (!WriteProcessMemory(proc_info->hProcess, dll_addr.get(),
+            dll_path.c_str(), MAX_PATH, nullptr)) {
+            error("Failed to write to remote buffer");
+        }
+        
+        const auto remote_thread = CreateRemoteThread(proc_info->hProcess, nullptr, 0,
+                                                      reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibraryA_addr)  // NOLINT(clang-diagnostic-cast-function-type)
+                                                      , dll_addr.get(),
+                                                      NULL, nullptr); 
+        if (!remote_thread) {
+             error("Failed to create remote thread");
+        }
+
+        if (WaitForSingleObject(remote_thread, INFINITE) == WAIT_FAILED) {
+             error("Failed while waiting on remote thread to finish");
+        }
+
+        if (ResumeThread(proc_info->hThread) == static_cast<DWORD>(-1)) {
+             error("Failed to resume main process thread");
+        }
+        
+        std::cout << "Done! the notepadgame dll thread_id=" << GetThreadId(remote_thread) << std::endl;
+        
     }
-    CloseHandle(proc_info.hThread);
-    std::cout << "Done! thread_id=" << GetThreadId(remote_thread) << std::endl;
-    printf("end");
-    VirtualFreeEx(proc_handle, buffer, 0, MEM_RELEASE);
-    
-    CloseHandle(proc_handle);
-   
-    return 0;
+    catch(const dll_injection_error& err)
+    {
+        std::cerr << err.what();
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }
