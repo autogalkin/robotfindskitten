@@ -12,3 +12,4 @@ cmake-build-debug
 mainlog.txt
 out
 .vscode
+build

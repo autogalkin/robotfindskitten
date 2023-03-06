@@ -1,0 +1,56 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 24,
+      "patch": 0
+    },
+    "include": [
+    ],
+    "configurePresets": [
+      {
+        "name": "windows-default-debug",
+        "displayName": "Windows Default Debug",
+        "description": "efault Debug build using Ninja generator and Conan toolchain",
+        "installDir": "${sourceDir}/bin/${presetName}"
+        
+        ,"condition": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+        }
+        , 
+        "generator": "Ninja",
+        "binaryDir": "${sourceDir}/build/${presetName}",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        , "CMAKE_CXX_COMPILER": "cl"
+        , "CMAKE_TOOLCHAIN_FILE": "C:/dev/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake"
+          
+        }
+        ,"architecture": {
+          "value": "x64",
+          "strategy": "external"
+        }
+        ,"toolset": {
+          "value": "host=x64",
+          "strategy": "external"
+      }
+      ,"vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "Windows" ]
+          , "intelliSenseMode": "windows-msvc-x64"
+        }
+      }
+    }
+    ],
+    "buildPresets": [
+        {
+          "name": "windows-default-build-debug",
+            "configurePreset": "windows-default-debug"
+          , "description": "default debug build"
+
+          
+        }
+      ]
+}

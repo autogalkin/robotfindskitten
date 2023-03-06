@@ -1,36 +1,33 @@
+#
+# notepadgame
+#
+
 cmake_minimum_required(VERSION 3.24)
-project(notepadgame)
-
-set(CMAKE_CXX_STANDARD 20)
-
-set(Boost_INCLUDE_DIR "C:/Program Files/boost/boost_1_81_0")
-set(Boost_LIBRARY_DIR "C:/Program Files/boost/boost_1_81_0/libs")
-find_package(Boost COMPONENTS system filesystem REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
-link_directories(${Boost_LIBRARY_DIR})
-
-add_executable(main dllmain.cpp)
-target_link_libraries( main ${Boost_LIBRARIES} )
 
 
-include_directories(loader)
-include_directories(notepadgame)
-include_directories(notepadgame/core)
+project(notepadgame
+        DESCRIPTION "A hello world project"
+        VERSION 0.0.1
+        HOMEPAGE_URL ""
+        LANGUAGES CXX
+        )
+
+set(CMAKE_CXX_STANDARD          20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS        OFF)
+
+add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
+get_filename_component(NPGAME_SCINTILLA_DIR
+                       "${CMAKE_SOURCE_DIR}/extern/scintilla"
+                       ABSOLUTE)
 
 
-add_executable(notepadgame
-        loader/main.cpp
-        notepadgame/core/common.h
-        notepadgame/core/iat_hook.cpp
-        notepadgame/core/iat_hook.h
-        notepadgame/core/notepad.cpp
-        notepadgame/core/notepad.h
-        notepadgame/core/outputlog.h
-        notepadgame/character.cpp
-        notepadgame/character.h
-        notepadgame/dllmain.cpp
-        notepadgame/input.cpp
-        notepadgame/input.h
-        notepadgame/world.cpp
-        notepadgame/world.h)
+add_subdirectory(src/loader)
+add_subdirectory(src/notepadgame)
+
+
+
+
 
