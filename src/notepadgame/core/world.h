@@ -24,7 +24,7 @@ public:
     
     void init(const uint32_t w_width, const uint32_t lines_on_screen);
     
-    // draw to the edit contol
+    // paste chars to the edit contol
     void send();
     
     [[nodiscard]] virtual char_size& at(const position& char_on_screen);
@@ -34,6 +34,7 @@ public:
     void draw(const position& pivot, const shape::sprite& sh);
     void erase(const position& pivot, const shape::sprite& sh);
 private:
+    // visitor traverse all sprite matrix 
     void traverse_sprite_positions(const position& pivot, const shape::sprite& sh, const std::function<void(const position&, char_size part_of_sprite)>& visitor) const;
     // name for a \0 in buffer math operations
     static constexpr int endl = 1;

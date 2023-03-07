@@ -15,3 +15,4 @@ build
 extern/scintilla/bin
 .cache
 extern/scintilla/bin
+compile_commands.json
