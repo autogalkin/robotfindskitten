@@ -1,4 +1,4 @@
 
 [submodule "scintilla"]
-	path = scintilla
+	path = extern/scintilla
 	url = git@github.com:mirror/scintilla.git
