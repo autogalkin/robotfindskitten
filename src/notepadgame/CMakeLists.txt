@@ -6,6 +6,9 @@ project(notepadgame
 
 # building scintilla
 # find make
+
+
+
 find_program(NPGAME_MAKE_EXISTS make mingw32-make)
 if(NPGAME_MAKE_EXISTS)
         set(NPGAME_SCIBUILD_COMMAND make)
@@ -20,6 +23,21 @@ add_custom_target(scintilla ALL COMMAND ${NPGAME_SCIBUILD_COMMAND}
                    WORKING_DIRECTORY  "${NPGAME_SCINTILLA_DIR}/win32"
                    COMMENT "Original scintilla makefile target"
 )
+add_custom_command(
+    OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/include/foo.h"
+    COMMAND ${CMAKE_COMMAND} -E copy
+                 "${CMAKE_SOURCE_DIR}/patch/scintilla/src/Editor.cxx" 
+                 "${NPGAME_SCINTILLA_DIR}/src/Editor.cxx"
+    DEPENDS scintilla
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+#add_custom_command(
+ #       TARGET scintilla POST_BUILD
+ #       COMMAND ${CMAKE_COMMAND} -E copy
+  #              ${CMAKE_SOURCE_DIR}/test/input.txt
+  #              ${CMAKE_CURRENT_BINARY_DIR}/input.txt)
+
 
 find_package(range-v3 CONFIG REQUIRED)
 find_package(Eigen3   CONFIG REQUIRED)
