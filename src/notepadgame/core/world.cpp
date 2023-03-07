@@ -137,7 +137,6 @@ void backbuffer::send()
 
 world::world(engine* owner) noexcept: backbuffer(owner), engine_(owner)
 {
-    
     scroll_changed_connection_ = engine_->get_on_scroll_changed().connect([this](const position& new_scroll)
     {
         redraw_all_actors();

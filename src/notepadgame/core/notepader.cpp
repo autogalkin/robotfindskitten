@@ -13,11 +13,11 @@
 #include "input.h"
 #include "world.h"
 
-#define NOMINMAX
+
 #include "Richedit.h"
 #include "CommCtrl.h"
 #include <Windows.h>
-#undef NOMINMAX
+
 
 
 

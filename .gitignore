@@ -11,5 +11,7 @@ notepadgame.sln.DotSettings.user
 cmake-build-debug
 mainlog.txt
 out
-.vscode
 build
+extern/scintilla/bin
+.cache
+extern/scintilla/bin

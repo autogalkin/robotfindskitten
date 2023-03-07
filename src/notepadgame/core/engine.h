@@ -9,11 +9,10 @@
 #include "boost/signals2/signal.hpp"
 #include "world.h"
 
-#define NOMINMAX
 #include <Windows.h>
 #include <CommCtrl.h>
 #include <Richedit.h>
-#undef NOMINMAX
+
 
 
 

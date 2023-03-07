@@ -7,9 +7,9 @@
 #include "tick.h"
 #include <entt/entt.hpp>
 
-#define NOMINMAX
+
 #include "Windows.h"
-#undef NOMINMAX
+
 
 
 class input final : public tickable

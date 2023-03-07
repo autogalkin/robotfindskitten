@@ -5,21 +5,21 @@
 #include <utility>
 #include <entt/entt.hpp>
 #include <Eigen/Dense>
+#include "Windows.h"
 #include "tick.h"
 
-#define NOMINMAX
-#include "Windows.h"
-#undef NOMINMAX
 
-using npi_t = int64_t; // notepad index size
+
+using npi_t = int64_t; // notepad's index size
 
 using char_size = char32_t; // support utf-8
 
 
 class world;
-class ecs_processor  // NOLINT(cppcoreguidelines-special-member-functions)
+class ecs_processor
 {
 public:
+
     explicit ecs_processor(world* w): w_(w){}
     virtual void execute(entt::registry& reg, gametime::duration delta) = 0;
     
@@ -39,14 +39,10 @@ struct np_vector_t : public Eigen::Vector2<SizeType>
     constexpr np_vector_t(){*this << 0, 0;}
     constexpr np_vector_t(const SizeType& line, const SizeType& index_in_line): Eigen::Vector2<SizeType>{line, index_in_line} {}
 
-    // ReSharper disable CppNonExplicitConvertingConstructor
-    
     template<typename OtherDerived>
     np_vector_t(const Eigen::EigenBase<OtherDerived>& other): Eigen::Vector2<SizeType>{other}{}
     template<typename OtherDerived>
     np_vector_t(const Eigen::EigenBase<OtherDerived>&& other): Eigen::Vector2<SizeType>{other}{}
-    
-    // ReSharper restore CppNonExplicitConvertingConstructor
 
     template<typename T>
     requires std::is_convertible_v<T, SizeType>
@@ -77,10 +73,10 @@ struct np_vector_t : public Eigen::Vector2<SizeType>
     static np_vector_t<SizeType> null(){return np_vector_t<SizeType>{static_cast<SizeType>(0), static_cast<SizeType>(0)};}
 };
 
-// notepas space position
+// notepad's space position
 using position = np_vector_t<npi_t>;
 
-// actor location
+// actor locations
 using location = np_vector_t<double>;
 
 

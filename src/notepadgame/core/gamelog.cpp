@@ -1,10 +1,7 @@
 ﻿
 #include "gamelog.h"
-
-
-#define NOMINMAX
 #include <Windows.h>
-#undef NOMINMAX
+
 
 gamelog& gamelog::get()
 {

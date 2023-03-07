@@ -4,8 +4,6 @@
 #include <vector>
 
 
-
-
 #include "../core/base_types.h"
 
 #include "../ecs_processors/collision.h"

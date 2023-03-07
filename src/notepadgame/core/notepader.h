@@ -2,17 +2,14 @@
 
 #include <memory>
 #include <thread>
-
-
 #include "boost/signals2.hpp"
 
 #include "tick.h"
 #include "input.h"
 #include "engine.h"
 
-#define NOMINMAX
 #include <Windows.h>
-#undef NOMINMAX
+
 
 
 class notepader final : public ticker // notepad.exe wrapper

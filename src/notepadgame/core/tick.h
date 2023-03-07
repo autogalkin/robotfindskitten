@@ -85,7 +85,7 @@ public:
     }
     
     [[nodiscard]] int get_current_frame_rate() const { return frame_rate;}
-    virtual [[nodiscard]] boost::signals2::signal<void(gametime::duration)>& get_on_tick()
+    [[nodiscard]] virtual boost::signals2::signal<void(gametime::duration)>& get_on_tick()
     {
         return on_tick_;
     }

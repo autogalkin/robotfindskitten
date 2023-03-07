@@ -25,12 +25,11 @@ find_package(range-v3 CONFIG REQUIRED)
 find_package(Eigen3   CONFIG REQUIRED)
 find_package(utf8cpp  CONFIG REQUIRED)
 find_package(EnTT     CONFIG REQUIRED)
-find_package(Boost)
+find_package(Boost COMPONENTS container) # and signals2
 
-file(GLOB_RECURSE SRCS *.cpp)
+file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS *.cpp)
 add_library(${PROJECT_NAME} SHARED ${SRCS})
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 target_link_libraries  (${PROJECT_NAME} PRIVATE  
                                                 utf8::cpp
                                                 range-v3::range-v3
@@ -39,19 +38,23 @@ target_link_libraries  (${PROJECT_NAME} PRIVATE
 
 target_include_directories(${PROJECT_NAME} PRIVATE "${NPGAME_SCINTILLA_DIR}/include")
 
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+        NOMINMAX            # windows.h ...
+        WIN32_LEAN_AND_MEAN # windows.h ...
+)
 
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Debug
-        RUNTIME DESTINATION Debug/)
+        RUNTIME DESTINATION /.)
 
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Release
-        RUNTIME DESTINATION Release/)
+        RUNTIME DESTINATION ./)
 
 install(FILES "${NPGAME_SCINTILLA_DIR}/bin/Scintilla.dll"
         CONFIGURATIONS Debug
-        DESTINATION Debug/)
+        DESTINATION ./)
 
 install(FILES "${NPGAME_SCINTILLA_DIR}/bin/Scintilla.dll"
         CONFIGURATIONS Release
-        DESTINATION Release/)
+        DESTINATION ./)
