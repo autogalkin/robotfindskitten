@@ -1,5 +1,6 @@
-![title](./resources/title.png?raw=true "Title")
 # notepadgame
+
+![title](./resources/title.png?raw=true "Title")
 
 ## Table of Contents
 
@@ -16,7 +17,7 @@
 - Hooks the standard keyboard and mouse inputs to allow for player interaction
 - Removes Notepad's main menu and status bar, and changes the window title to fit the game's context
 
-<video src=./resources/example.mp4>.
+[<video src=./resources/example.mp4 >](https://user-images.githubusercontent.com/97976281/223846104-b2485ac3-26d2-48a6-9dda-85df107ebc9e.mp4)
 
 The game in Notepad is based on an entity-component-system and supports:
 - an open world
@@ -39,7 +40,7 @@ he project uses vcpkg to manage dependencies, and depends on several libraries:
 - utfcpp
 - range-v3
 
-### Getting
+### Getting notepadgame
 
 Please note that the notepadgame depends on a scintilla submodule. The simplest way to clone it is:
 ```
