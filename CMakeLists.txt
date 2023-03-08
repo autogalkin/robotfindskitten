@@ -16,7 +16,7 @@ set(CMAKE_CXX_EXTENSIONS        OFF)
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 get_filename_component(NPGAME_SCINTILLA_DIR
-                       "${CMAKE_SOURCE_DIR}/extern/scintilla"
+                       "${CMAKE_SOURCE_DIR}/extern/thirdparty/scintilla"
                        ABSOLUTE)
 set(${CMAKE_EXPORT_COMPILE_COMMANDS} ON)
 
