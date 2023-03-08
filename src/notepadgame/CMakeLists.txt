@@ -67,7 +67,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Debug
-        RUNTIME DESTINATION /.)
+        RUNTIME DESTINATION ./)
 
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Release

@@ -12,6 +12,6 @@ install(TARGETS ${PROJECT_NAME}
 
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Release
-        RUNTIME DESTINATION /.)
+        RUNTIME DESTINATION ./)
 
 
