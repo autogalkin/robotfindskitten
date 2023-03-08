@@ -12,8 +12,8 @@ cmake-build-debug
 mainlog.txt
 out
 build
-extern/scintilla/bin
+extern/thirdparty/scintilla/win32
 .cache
-extern/scintilla/bin
+extern/thirdparty/scintilla/bin
 compile_commands.json
 .DS_Store
