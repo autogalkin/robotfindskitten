@@ -5,10 +5,19 @@ project(notepadgame
         )
 
 # building scintilla
+# patch scintilla source code
+set(NPGAME_SCI_PATCH_FILE "${CMAKE_SOURCE_DIR}/extern/patch/scintilla/src/Editor.cxx" )
+set(NPGAME_SCI_ORIG_FILE "${NPGAME_SCINTILLA_DIR}/src/Editor.cxx" )
+set(NPGAME_SCI_TEMP_FILE "${CMAKE_SOURCE_DIR}/extern/patch/scintilla/src/Editor_temp.cxx")
+add_custom_target(scintilla_patch
+        COMMAND ${CMAKE_COMMAND} -E copy
+                 "${NPGAME_SCI_ORIG_FILE}" "${NPGAME_SCI_TEMP_FILE}" 
+        COMMAND ${CMAKE_COMMAND} -E copy
+                 "${NPGAME_SCI_PATCH_FILE}" "${NPGAME_SCI_ORIG_FILE}"       
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
 # find make
-
-
-
 find_program(NPGAME_MAKE_EXISTS make mingw32-make)
 if(NPGAME_MAKE_EXISTS)
         set(NPGAME_SCIBUILD_COMMAND make)
@@ -21,22 +30,14 @@ endif()
 # run the scintilla makefile
 add_custom_target(scintilla ALL COMMAND ${NPGAME_SCIBUILD_COMMAND}
                    WORKING_DIRECTORY  "${NPGAME_SCINTILLA_DIR}/win32"
+                   DEPENDS scintilla_patch
                    COMMENT "Original scintilla makefile target"
 )
 add_custom_command(
-    OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/include/foo.h"
-    COMMAND ${CMAKE_COMMAND} -E copy
-                 "${CMAKE_SOURCE_DIR}/patch/scintilla/src/Editor.cxx" 
-                 "${NPGAME_SCINTILLA_DIR}/src/Editor.cxx"
-    DEPENDS scintilla
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-)
-#add_custom_command(
- #       TARGET scintilla POST_BUILD
- #       COMMAND ${CMAKE_COMMAND} -E copy
-  #              ${CMAKE_SOURCE_DIR}/test/input.txt
-  #              ${CMAKE_CURRENT_BINARY_DIR}/input.txt)
+        TARGET scintilla POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                "${NPGAME_SCI_TEMP_FILE}" "${NPGAME_SCI_ORIG_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E remove "${NPGAME_SCI_TEMP_FILE}")
 
 
 find_package(range-v3 CONFIG REQUIRED)
