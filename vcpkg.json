@@ -1,0 +1,10 @@
+{
+    "name": "notepadgame",
+    "version-string": "0.1.0",
+    "dependencies": [
+      "boost",
+      "Eigen3",
+      "range-v3",
+      "utfcpp"
+    ]
+  }
