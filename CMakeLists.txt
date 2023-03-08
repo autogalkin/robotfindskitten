@@ -18,7 +18,8 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 get_filename_component(NPGAME_SCINTILLA_DIR
                        "${CMAKE_SOURCE_DIR}/extern/thirdparty/scintilla"
                        ABSOLUTE)
-set(${CMAKE_EXPORT_COMPILE_COMMANDS} ON)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "") 
 
 add_subdirectory(src/loader)
 add_subdirectory(src/notepadgame)
