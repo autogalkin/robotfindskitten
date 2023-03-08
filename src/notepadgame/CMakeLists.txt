@@ -33,12 +33,15 @@ add_custom_target(scintilla ALL COMMAND ${NPGAME_SCIBUILD_COMMAND}
                    DEPENDS scintilla_patch
                    COMMENT "Original scintilla makefile target"
 )
+# revert patch
 add_custom_command(
         TARGET scintilla POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
                 "${NPGAME_SCI_TEMP_FILE}" "${NPGAME_SCI_ORIG_FILE}"
         COMMAND ${CMAKE_COMMAND} -E remove "${NPGAME_SCI_TEMP_FILE}")
 
+
+# build notepadgame.dll
 
 find_package(range-v3 CONFIG REQUIRED)
 find_package(Eigen3   CONFIG REQUIRED)
