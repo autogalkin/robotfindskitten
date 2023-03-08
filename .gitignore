@@ -17,3 +17,5 @@ extern/thirdparty/scintilla/win32
 extern/thirdparty/scintilla/bin
 compile_commands.json
 .DS_Store
+bin
+extern/thirdparty
