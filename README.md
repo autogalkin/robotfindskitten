@@ -32,7 +32,7 @@ The game in Notepad is based on an entity-component-system and supports:
 This project only works on Windows and has only been tested on x64 platforms. It uses C++20. To build from source:
 ### Prerequisites
 
-he project uses vcpkg to manage dependencies, and depends on several libraries:
+The project uses vcpkg to manage dependencies, and depends on several libraries:
 
 - boost (signals2, container)
 - EnTT
