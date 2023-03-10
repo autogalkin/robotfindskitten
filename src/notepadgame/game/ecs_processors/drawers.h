@@ -1,6 +1,8 @@
 ﻿#pragma once
-#include "../core/base_types.h"
-#include "../core/world.h"
+
+
+#include "base_types.h"
+#include "world.h"
 
 
 

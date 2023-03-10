@@ -1,5 +1,4 @@
 ﻿#include "tick.h"
-
 #include "notepader.h"
 
 

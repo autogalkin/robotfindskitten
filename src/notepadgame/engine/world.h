@@ -1,12 +1,9 @@
 ﻿#pragma once
-
+#pragma warning(push, 0)
 #include <memory>
 #include <vector>
-
-
-#include "../core/base_types.h"
-
-#include "../ecs_processors/collision.h"
+#pragma warning(pop)
+#include "base_types.h"
 #include "tick.h"
 
 

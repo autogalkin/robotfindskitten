@@ -1,22 +1,22 @@
 ﻿
+#pragma warning(push, 0)
 #include <algorithm>
 #include <locale>
-
-
-#include "notepader.h"
-
 #include <mutex>
+#include "Richedit.h"
+#include "CommCtrl.h"
+#include <Windows.h>
+#pragma warning(pop)
 
-
+#include "gamelog.h"
+#include "notepader.h"
 #include "iat_hook.h"
 #include "engine.h"
 #include "input.h"
 #include "world.h"
 
 
-#include "Richedit.h"
-#include "CommCtrl.h"
-#include <Windows.h>
+
 
 
 
@@ -50,6 +50,9 @@ LRESULT notepader::hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp, con
 			}
 			
 			get().input_ = std::make_unique<input>();
+			get().get_on_open().connect([]{
+				gamelog::cout("Connected");
+			});
 			get().on_open_();
 			// disable
 			boost::signals2::signal<void()> empty {} ;

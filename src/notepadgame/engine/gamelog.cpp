@@ -1,8 +1,7 @@
-﻿
-#include "gamelog.h"
+﻿#pragma warning(push, 0)
 #include <Windows.h>
-
-
+#pragma warning(pop)
+#include "gamelog.h"
 gamelog& gamelog::get()
 {
     static gamelog glog{};

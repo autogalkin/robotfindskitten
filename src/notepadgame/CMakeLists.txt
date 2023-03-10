@@ -27,6 +27,7 @@ else()
                 set(NPGAME_SCIBUILD_COMMAND nmake -f scintilla.mak)
        endif()
 endif()
+
 # run the scintilla makefile
 add_custom_target(scintilla ALL COMMAND ${NPGAME_SCIBUILD_COMMAND}
                    WORKING_DIRECTORY  "${NPGAME_SCINTILLA_DIR}/win32"
@@ -41,29 +42,40 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E remove "${NPGAME_SCI_TEMP_FILE}")
 
 
+
+
 # build notepadgame.dll
 
 find_package(range-v3 CONFIG REQUIRED)
 find_package(Eigen3   CONFIG REQUIRED)
-find_package(utf8cpp  CONFIG REQUIRED)
 find_package(EnTT     CONFIG REQUIRED)
 find_package(Boost COMPONENTS container) # and signals2
+find_package(utf8cpp  CONFIG REQUIRED)
 
-file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS *.cpp)
-add_library(${PROJECT_NAME} SHARED ${SRCS})
+include("${CMAKE_CURRENT_SOURCE_DIR}/engine/CMakeLists.txt")
+include("${CMAKE_CURRENT_SOURCE_DIR}/game/CMakeLists.txt")
 
-target_link_libraries  (${PROJECT_NAME} PRIVATE  
+
+
+add_library(${PROJECT_NAME} SHARED ./dllmain.cpp ${ENGINESRCS} ${GAMESRCS})
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+
+target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/libs/easing/")
+target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/engine")
+target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/game")
+target_include_directories(${PROJECT_NAME} PUBLIC "${NPGAME_SCINTILLA_DIR}/include/")
+
+target_link_libraries  (${PROJECT_NAME} PUBLIC  
+                                                Boost::container
                                                 utf8::cpp
                                                 range-v3::range-v3
                                                 Eigen3::Eigen
                                                 EnTT::EnTT)
 
-target_include_directories(${PROJECT_NAME} PRIVATE "${NPGAME_SCINTILLA_DIR}/include")
-
 target_compile_definitions(${PROJECT_NAME} PUBLIC
-        NOMINMAX            # windows.h ...
-        WIN32_LEAN_AND_MEAN # windows.h ...
-)
+                                                NOMINMAX            # windows.h ...
+                                                WIN32_LEAN_AND_MEAN # windows.h ...
+                                        )
 
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Debug

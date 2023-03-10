@@ -1,14 +1,14 @@
 ﻿#pragma once
-
-#include "../core/gamelog.h"
-
+#pragma warning(push, 0)
 #include <chrono>
-#include "../core/base_types.h"
 #include <entt/entt.hpp>
 #include "range/v3/view/iota.hpp"
 #include "boost/container/small_vector.hpp"
 #include <variant>
+#pragma warning(pop)
 
+#include "base_types.h"
+#include "gamelog.h"
 
 
 namespace collision
@@ -73,8 +73,9 @@ namespace collision
         // represent an entity in the quadtree.
         //An element is only inserted once to the quadtree no matter how many cells it occupies.
         struct quad_entity{
-            id_type id{};
             boundbox bbox;
+            id_type id{};
+            
         };
         
     private:

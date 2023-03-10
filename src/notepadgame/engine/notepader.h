@@ -1,14 +1,14 @@
 ﻿#pragma once
-
+#pragma warning(push, 0)
+#include <Windows.h>
 #include <memory>
 #include <thread>
 #include "boost/signals2.hpp"
-
+#pragma warning(pop)
 #include "tick.h"
 #include "input.h"
 #include "engine.h"
 
-#include <Windows.h>
 
 
 

@@ -1,20 +1,18 @@
 ﻿#pragma once
 
+#pragma warning(push, 0)
 #include <memory>
 #include <algorithm>
 #include <string>
-#include "Scintilla.h"
-
-#include "base_types.h"
 #include "boost/signals2/signal.hpp"
-#include "world.h"
-
 #include <Windows.h>
 #include <CommCtrl.h>
 #include <Richedit.h>
+#include "Scintilla.h"
+#pragma warning(pop)
 
-
-
+#include "base_types.h"
+#include "world.h"
 
 
 

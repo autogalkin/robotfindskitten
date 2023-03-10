@@ -1,10 +1,12 @@
-﻿
-
+﻿#pragma warning(push, 0)
+#include "Windows.h"
+#include <CommCtrl.h>
+#include <Richedit.h>
+#pragma warning(pop)
 #include "engine.h"
 #include "notepader.h"
 #include "world.h"
-#include <CommCtrl.h>
-#include <Richedit.h>
+
 
 
 

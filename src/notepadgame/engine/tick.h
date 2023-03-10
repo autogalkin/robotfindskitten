@@ -1,9 +1,8 @@
 ﻿#pragma once
-
-
+#pragma warning(push, 0)
 #include <chrono>
 #include "boost/signals2.hpp"
-
+#pragma warning(pop)
 
 namespace gametime
 {
@@ -109,8 +108,8 @@ public:
     explicit tickable();
     virtual ~tickable() = default;
 protected: // prevent slicing
-    tickable(const tickable& other)            noexcept : tickable() {} // connect to new tick
-    tickable& operator=(const tickable& other) noexcept  {return *this;}
+    tickable(const tickable&)            noexcept : tickable() {} // connect to new tick
+    tickable& operator=(const tickable&) noexcept  {return *this;}
     tickable(tickable&& other)                 noexcept : tickable() {other.tick_connection.disconnect();}
     tickable& operator=(tickable&& other)      noexcept  {other.tick_connection.disconnect(); return *this;}
     

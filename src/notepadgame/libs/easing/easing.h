@@ -1,8 +1,9 @@
 ﻿#pragma once
+#pragma warning(push, 0)
 #include <numbers>
 #include <utility>
 #include <cmath>
-
+#pragma warning(pop)
 
 // from the https://easings.net/ and https://github.com/nicolausYes/easing-functions
 namespace easing

@@ -1,18 +1,18 @@
-﻿#include "world.h"
-
-
-#include "notepader.h"
-#include "../core/engine.h"
+﻿
+#pragma warning(push, 0)
 #include "range/v3/view/enumerate.hpp"
 #include "range/v3/view/filter.hpp"
-#include "utf8.h"
-
+#include "utf8cpp/utf8.h"
+#pragma warning(pop)
+#include "notepader.h"
+#include "engine.h"
+#include "world.h"
 
 backbuffer::backbuffer(engine* owner): engine_(owner){
     scroll_changed_connection_ = engine_->get_on_scroll_changed().connect([this](const position& new_scroll)
     {
         scroll_.pin() = new_scroll;
-        backbuffer::init(static_cast<int>(engine_->get_window_widht()) , engine_->get_lines_on_screen());
+        backbuffer::init(static_cast<int>(engine_->get_window_widht()) , static_cast<int>(engine_->get_lines_on_screen()));
     });
 
     size_changed_connection = engine_->get_on_resize().connect([this](const uint32_t width, const uint32_t height){

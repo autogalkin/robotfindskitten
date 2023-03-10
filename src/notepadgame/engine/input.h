@@ -1,14 +1,18 @@
 ﻿#pragma once
 
+#pragma warning(push, 0)
 #include <queue>
-
+#include "Windows.h"
 #include "boost/signals2.hpp"
+#include <entt/entt.hpp>
+#pragma warning(pop)
+
 #include "base_types.h"
 #include "tick.h"
-#include <entt/entt.hpp>
 
 
-#include "Windows.h"
+
+
 
 
 

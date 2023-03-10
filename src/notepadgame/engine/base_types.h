@@ -1,11 +1,13 @@
 ﻿#pragma once
-
+#pragma warning(push, 0)
 #include <chrono>
 #include <cstdint>
 #include <utility>
 #include <entt/entt.hpp>
 #include <Eigen/Dense>
 #include "Windows.h"
+#pragma warning(pop)
+
 #include "tick.h"
 
 

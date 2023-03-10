@@ -1,5 +1,4 @@
 ﻿#include "base_types.h"
-
 #include "notepader.h"
 #include "engine.h"
 

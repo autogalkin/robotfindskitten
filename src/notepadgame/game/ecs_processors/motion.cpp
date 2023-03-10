@@ -1,7 +1,6 @@
 ﻿#include "motion.h"
+#include "world.h"
 
-
-#include "../core/world.h"
 
 void non_uniform_motion::execute(entt::registry& reg, gametime::duration delta)
 {

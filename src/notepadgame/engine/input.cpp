@@ -1,5 +1,4 @@
 ﻿#include "input.h"
-
 #include "notepader.h"
 
 

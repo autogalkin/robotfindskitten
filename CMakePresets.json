@@ -11,7 +11,7 @@
       {
         "name": "x64-debug",
         "displayName": "x64 win default debug",
-        "description": "The default debug build using the Ninja generator MSVC and vcpkg toolchain",
+        "description": "The default debug build using the Ninja generator, MSVC and vcpkg toolchain",
         "installDir": "${sourceDir}/bin/${presetName}"
         
         ,"condition": {
@@ -25,8 +25,10 @@
         "cacheVariables": {
           "CMAKE_BUILD_TYPE": "Debug"
         , "CMAKE_CXX_COMPILER": "cl"
+        , "CMAKE_CXX_FLAGS": " /EHsc"
         , "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         , "Boost_NO_WARN_NEW_VERSIONS": "1"
+        
           
         }
         ,"architecture": {
@@ -50,6 +52,7 @@
           "name": "x64-debug",
             "configurePreset": "x64-debug"
           , "description": "default debug build"
+          
 
           
         }

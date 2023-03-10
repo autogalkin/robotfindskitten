@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../core/base_types.h"
+#include "base_types.h"
 
 
 class killer final : public ecs_processor

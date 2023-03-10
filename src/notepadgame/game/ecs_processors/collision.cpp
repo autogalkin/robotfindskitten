@@ -1,9 +1,9 @@
-﻿ #include "collision.h"
-#include "../core/notepader.h"
+﻿#include "ecs_processors/collision.h"
+#include "notepader.h"
 
 collision::index collision::quad_tree::insert(const id_type id, const boundbox& bbox)
 {
-    const quad_entity new_entity = {id,  bbox};
+    const quad_entity new_entity = {bbox, id};
     const index element = entities_.insert(new_entity);
     node_insert(root_data(), element);
     return element;
