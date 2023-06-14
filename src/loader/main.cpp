@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
     
     try
     {
-        
+
         std::unique_ptr<PROCESS_INFORMATION, void(*)(const PROCESS_INFORMATION*)> proc_info{ new PROCESS_INFORMATION{}
             , [](const PROCESS_INFORMATION* ptr )
             {
@@ -35,19 +35,20 @@ int main(int argc, char* argv[])
                 CloseHandle(ptr->hProcess);
             }};
 
-        std::cout << "Lanch Notepad..." << std::endl;
+        std::cout << "Launch notepad.exe..." << std::endl;
         {
-            std::array<char, MAX_PATH> cmd{"notepad"};
+            std::string cmd = std::format("{}\\notepad.exe", std::getenv("windir"));
             STARTUPINFOA startup_info{};
             startup_info.cb = sizeof(STARTUPINFO);
-            if (!CreateProcessA(nullptr
-                , cmd.data()
+            if (!CreateProcess(
+                  cmd.data()     // lpApplicationName
+                , nullptr        // lpCommandLine
                 , nullptr, nullptr
                 , FALSE
                 , CREATE_SUSPENDED
                 , nullptr, nullptr,
                 &startup_info, proc_info.get())) {
-                error("Failed to launch Notepad");
+                error("Failed to launch notepad.exe process..");
                 } 
         }
         
