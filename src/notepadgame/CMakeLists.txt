@@ -18,14 +18,26 @@ add_custom_target(scintilla_patch
 )
 
 # find make
-find_program(NPGAME_MAKE_EXISTS make mingw32-make)
-if(NPGAME_MAKE_EXISTS)
-        set(NPGAME_SCIBUILD_COMMAND make)
+message("find nmake for cl.exe or make and gcc for build scintilla makefile")
+find_program(NPGAME_NMAKE_EXISTS  nmake)
+if(NPGAME_NMAKE_EXISTS )
+        set(NPGAME_SCIBUILD_COMMAND nmake -f scintilla.mak)
 else()
-        find_program(NPGAME_NMAKE_EXISTS  nmake)
-        if(NPGAME_NMAKE_EXISTS )
-                set(NPGAME_SCIBUILD_COMMAND nmake -f scintilla.mak)
-       endif()
+        message("nmake not found try to find make and gcc")
+        find_program(NPGAME_MAKE_EXISTS make mingw32-make)
+        find_program(NPGAME_GCC_EXISTS gcc g++)
+        if(NPGAME_MAKE_EXISTS AND NPGAME_GCC_EXISTS)
+                set(NPGAME_SCIBUILD_COMMAND make)
+        else()
+                if(NOT NPGAME_MAKE_EXISTS)
+                        message(SEND_ERROR "make not found" )
+                endif()
+                if(NOT NPGAME_GCC_EXISTS)
+                        message(SEND_ERROR "gcc not found"  )
+                endif()
+                message(FATAL_ERROR "unable to compile scintilla.." )
+
+        endif()
 endif()
 
 # run the scintilla makefile
