@@ -2,6 +2,7 @@
 #include <array>
 #include <Windows.h>
 #include <iostream>
+#include <format>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -16,8 +17,9 @@ public:
     }
 };
 [[noreturn]] void error(const char* message){
-    throw dll_injection_error(message);
+    throw dll_injection_error(std::format("[!] err {} : {}!\n", GetLastError(), message).c_str());
 }
+
 
 
 int main(int argc, char* argv[])
