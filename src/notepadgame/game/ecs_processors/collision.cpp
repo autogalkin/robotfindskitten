@@ -1,4 +1,5 @@
-﻿#include "ecs_processors/collision.h"
+﻿#include "df/dirtyflag.h"
+#include "ecs_processors/collision.h"
 #include "notepader.h"
 
 collision::index collision::quad_tree::insert(const id_type id, const boundbox& bbox)
@@ -308,9 +309,8 @@ void collision::query::execute(entt::registry& reg, gametime::duration delta)
                         const auto cl_resp = view.get<on_collide>(cl).call(reg, cl, entity);
                         if(const auto resp = view.get<on_collide>(entity).call(reg, entity, cl)
                             ; cl_resp == responce::block && resp == responce::block){
-                            translation = location::null();
-                            translation.mark_dirty();
-                            view.get<location_buffer>(cl).translation.mark_dirty();  
+                            translation = df::dirtyflag{location::null(), df::state::dirty};
+                            view.get<location_buffer>(cl).translation.mark();  
                         }
                         
                     }

@@ -76,6 +76,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/l
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/engine")
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/game")
 target_include_directories(${PROJECT_NAME} PUBLIC "${NPGAME_SCINTILLA_DIR}/include/")
+target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/extern/thirdparty/dirtyflag/include/")
 
 target_link_libraries  (${PROJECT_NAME} PUBLIC  
                                                 Boost::container

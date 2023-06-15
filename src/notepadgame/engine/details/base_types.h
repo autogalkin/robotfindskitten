@@ -6,6 +6,7 @@
 #include <entt/entt.hpp>
 #include <Eigen/Dense>
 #include "Windows.h"
+#include "df/dirtyflag.h"
 #pragma warning(pop)
 
 #include "tick.h"
@@ -198,30 +199,6 @@ namespace shape
     };
 }
 
-
-
-// store a check state for ckecking changed a variable or not, automated mark as dirty when getting non const value with dirty_flag::pin()
-template<typename T>
-struct dirty_flag
-{
-    explicit dirty_flag(T&& value=T{}, bool is_dirty=true) : value_(std::make_pair(is_dirty, std::forward<T>(value))){}
-    [[nodiscard]] const T& get() const noexcept {return value_.second;}
-    [[nodiscard]] T& pin()  noexcept{
-        mark_dirty();
-        return value_.second;
-    }
-    dirty_flag& operator=(const T&& other){
-        value_.second = other;
-        mark_dirty();
-        return *this;
-    }
-    void mark_dirty() noexcept { value_.first = true;} 
-    void reset_flag() noexcept {value_.first = false;}
-    [[nodiscard]] bool is_changed() const noexcept {return value_.first;}
-private:
-    std::pair<bool, T> value_;
-};
-
 struct color_range
 {
     COLORREF start{RGB(0, 0, 0)};
@@ -231,5 +208,5 @@ struct color_range
 struct location_buffer
 {
     location current{};
-    dirty_flag<location> translation{};
+    df::dirtyflag<location> translation{{}, df::state::dirty};
 };

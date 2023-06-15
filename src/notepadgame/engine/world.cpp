@@ -1,4 +1,5 @@
 ﻿
+#include "df/dirtyflag.h"
 #pragma warning(push, 0)
 #include "range/v3/view/enumerate.hpp"
 #include "range/v3/view/filter.hpp"
@@ -83,8 +84,8 @@ void backbuffer::init(const uint32_t w_width, const uint32_t lines_on_screen)
 {
     const uint32_t line_lenght = w_width / engine_->get_char_width();
     
-    if(!buffer) buffer = std::make_unique<std::vector< line_type > >(lines_on_screen);
-    else buffer->resize(lines_on_screen + 1);
+    if(!buffer) buffer = std::make_unique<std::vector< line_type > >(lines_on_screen, line_type{{}, df::state::dirty});
+    else buffer->resize(lines_on_screen + 1, line_type{{}, df::state::dirty});
     for(auto& line  : *buffer)
     {
         line.pin().resize(line_lenght + 1 + special_chars_count, U' ');
@@ -103,7 +104,7 @@ void backbuffer::send()
    
     
     for(int enumerate{-1}; auto& line : *buffer // | ranges::views::enumerate
-        | ranges::views::filter([this, &enumerate](auto& l){++enumerate; return l.is_changed() || scroll_.is_changed() ;}))
+        | ranges::views::filter([this, &enumerate](auto& l){++enumerate; return l.is_dirty() || scroll_.is_dirty() ;}))
     {
         
         const npi_t lnum = scroll_.get().line() + enumerate;
@@ -123,7 +124,7 @@ void backbuffer::send()
         engine_->set_selection(fi+scroll_.get().index_in_line(), fi + endsel);
         engine_->replace_selection({bytes.begin(), bytes.end()});
         
-        line.reset_flag();
+        line.clear();
         buffer_is_changed = true; 
        
         
@@ -131,7 +132,7 @@ void backbuffer::send()
     
     if(buffer_is_changed){
         engine_->set_caret_index(pos);
-        scroll_.reset_flag();
+        scroll_.clear();
     } 
 }
 
@@ -152,7 +153,7 @@ world::~world() = default;
 void world::redraw_all_actors()
 {
     for(const auto view = reg_.view<location_buffer>(); const auto entity : view){
-        view.get<location_buffer>(entity).translation.mark_dirty();
+        view.get<location_buffer>(entity).translation.mark();
     }
 }
 

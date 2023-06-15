@@ -1,4 +1,7 @@
 ﻿#pragma once
+
+#include "df/dirtyflag.h"
+
 #include "easing.h"
 #include "details/base_types.h"
 #include "notepader.h"
@@ -16,7 +19,7 @@ struct actor
     static void make_base_renderable(entt::registry& reg, const entt::entity e, location start, shape::sprite sprite)
     {
         reg.emplace<visible_in_game>(e);
-        reg.emplace<location_buffer>(e, std::move(start), dirty_flag<location>{});
+        reg.emplace<location_buffer>(e, std::move(start), df::dirtyflag<location>{{}, df::state::dirty});
         reg.emplace< shape::sprite_animation>(e,  std::vector<shape::sprite>{{std::move(sprite)}}, static_cast<uint8_t>(0));
     }
 };
@@ -36,7 +39,7 @@ struct projectile final
         reg.emplace< shape::sprite_animation>(e,  std::vector<shape::sprite>{{shape::sprite::from_data{U"-", 1, 1}}}, static_cast<uint8_t>(0));
         reg.emplace<visible_in_game>(e);
         
-        reg.emplace<location_buffer>(e, std::move(start), dirty_flag<location>{});
+        reg.emplace<location_buffer>(e, std::move(start), df::dirtyflag<location>{{}, df::state::dirty});
         reg.emplace<non_uniform_movement_tag>(e);
         reg.emplace<velocity>(e, dir);
         
@@ -64,7 +67,7 @@ struct projectile final
             const auto& [current_proj_location, translation] = reg_.get<location_buffer>(ent);
             
             const auto new_e = reg_.create();
-            reg_.emplace<location_buffer>(new_e, current_proj_location, dirty_flag<location>{translation});
+            reg_.emplace<location_buffer>(new_e, current_proj_location, df::dirtyflag<location>{location{translation.get()}, df::state::dirty});
             reg_.emplace<shape::sprite_animation>( new_e, std::vector<shape::sprite>{ {shape::sprite::from_data{U"*", 1, 1} }}, static_cast<uint8_t>(0));
             reg_.emplace<visible_in_game>(new_e);
             reg_.emplace<life::lifetime>(new_e, std::chrono::seconds{1});
@@ -77,7 +80,7 @@ struct projectile final
                 {
                     const entt::entity proj = r_.create();
                     r_.emplace< shape::sprite_animation>(proj,  std::vector<shape::sprite>{{shape::sprite::from_data{U".", 1, 1}}}, static_cast<uint8_t>(0));
-                    r_.emplace<location_buffer>(proj, location{lb.current.line()+offset.line(), lb.current.index_in_line()+offset.index_in_line()}, dirty_flag<location>{});
+                    r_.emplace<location_buffer>(proj, location{lb.current.line()+offset.line(), lb.current.index_in_line()+offset.index_in_line()}, df::dirtyflag<location>{{}, df::state::dirty});
                     r_.emplace<visible_in_game>(proj);
                     r_.emplace<velocity>(proj, dir_.line(), dir_.index_in_line());
                     r_.emplace<life::lifetime>(proj, std::chrono::seconds{1});
@@ -190,7 +193,7 @@ struct character final
         reg.emplace<shape::on_change_direction>(e, &actor::invert_shape_direction);
         reg.emplace<shape::render_direction>(e, direction::forward);
         reg.emplace<visible_in_game>(e);
-        reg.emplace<location_buffer>(e, std::move(l), dirty_flag<location>{});
+        reg.emplace<location_buffer>(e, std::move(l), df::dirtyflag<location>{{}, df::state::dirty});
         reg.emplace<uniform_movement_tag>(e);
         reg.emplace<velocity>(e);
         reg.emplace<collision::agent>(e);
@@ -406,7 +409,7 @@ struct monster
             reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
             reg_.emplace<timeline::eval_direction>(dead);
             reg_.emplace<timeline::what_do>(dead, [](entt::registry& r_, const entt::entity e_, direction d){
-                r_.get<location_buffer>(e_).translation.mark_dirty();
+                r_.get<location_buffer>(e_).translation.mark();
             });
             
             reg_.emplace<life::death_last_will>(dead, [](entt::registry& r_, const entt::entity s)

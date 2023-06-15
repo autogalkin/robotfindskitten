@@ -1,5 +1,5 @@
 ﻿#pragma once
-
+#include "df/dirtyflag.h"
 
 #include "details/base_types.h"
 #include "ecs_processor_base.h"
@@ -53,7 +53,7 @@ public:
             ; const auto entity: view)
         {
             const bool is_dead =  reg.all_of<life::begin_die>(entity);
-            if(const auto& [current, translation] = view.get<location_buffer>(entity); translation.is_changed() || is_dead){
+            if(const auto& [current, translation] = view.get<location_buffer>(entity); translation.is_dirty() || is_dead){
                 
                 const auto& [sprts, rendering_i] = view.get<shape::sprite_animation>(entity);
                 get_world()->erase(position_converter::from_location(view.get<location_buffer>(entity).current)
@@ -68,14 +68,14 @@ public:
         {
             auto& [current, translation] = view.get<location_buffer>(entity);
             
-            if(translation.is_changed()){
+            if(translation.is_dirty()){
                 
                 auto& sp = view.get<shape::sprite_animation>(entity);
                 
                 current += translation.get();
                 get_world()->draw (position_converter::from_location(current), sp.current_sprite());
                 
-                translation = dirty_flag<location>{location::null(), false};
+                translation = df::dirtyflag<location>{location::null(), df::state::clean};
 
                 reg.emplace_or_replace<previous_sprite>(entity, static_cast<int8_t>(sp.rendering_i));
             }
@@ -83,7 +83,7 @@ public:
     }
 private:
     static void upd_visible(entt::registry& reg, const entt::entity e){
-        if(const auto ptr = reg.try_get<location_buffer>(e)) ptr->translation.mark_dirty();
+        if(const auto ptr = reg.try_get<location_buffer>(e)) ptr->translation.mark();
     }
 };
 

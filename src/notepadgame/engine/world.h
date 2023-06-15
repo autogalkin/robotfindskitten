@@ -2,6 +2,7 @@
 #pragma warning(push, 0)
 #include <memory>
 #include <vector>
+#include "df/dirtyflag.h"
 #pragma warning(pop)
 #include "details/base_types.h"
 #include "tick.h"
@@ -38,10 +39,10 @@ private:
     // \n(changed to \0 if not need a \n) and \0 for a line in the buffer
     static constexpr int special_chars_count = 2;
     
-    using line_type = dirty_flag< std::vector< char_size > >;
+    using line_type = df::dirtyflag< std::vector< char_size > >;
     std::unique_ptr< std::vector< line_type > > buffer{};
     engine* engine_;
-    dirty_flag<position> scroll_{};
+    df::dirtyflag<position> scroll_{{}, df::state::dirty};
     boost::signals2::scoped_connection scroll_changed_connection_;
     boost::signals2::scoped_connection size_changed_connection;
 };
