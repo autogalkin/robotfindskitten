@@ -2,11 +2,11 @@
 #include <Windows.h>
 #pragma warning(pop)
 
-#include "gamelog.h"
+#include "details/gamelog.h"
 #include "engine.h"
 #include "notepader.h"
 #include "world.h"
-#include "base_types.h"
+#include "details/base_types.h"
 
 #include "ecs_processors/drawers.h"
 #include "ecs_processors/killer.h"

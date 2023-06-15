@@ -3,7 +3,7 @@
 #include <stdint.h>
 #pragma warning(pop)
 #include "engine/notepader.h"
-#include "engine/gamelog.h"
+#include "engine/details/gamelog.h"
 #include "engine/notepader.h"
 #include "game/game.h"
 

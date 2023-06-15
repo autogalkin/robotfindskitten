@@ -8,7 +8,7 @@
 #include <Windows.h>
 #pragma warning(pop)
 
-#include "gamelog.h"
+#include "details/gamelog.h"
 #include "notepader.h"
 #include "iat_hook.h"
 #include "engine.h"

@@ -7,8 +7,8 @@
 #include <variant>
 #pragma warning(pop)
 
-#include "base_types.h"
-#include "gamelog.h"
+#include "details/base_types.h"
+#include "details/gamelog.h"
 
 
 namespace collision

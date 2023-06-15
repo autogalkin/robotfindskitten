@@ -7,7 +7,7 @@
 #include <entt/entt.hpp>
 #pragma warning(pop)
 
-#include "base_types.h"
+#include "details/base_types.h"
 #include "tick.h"
 
 

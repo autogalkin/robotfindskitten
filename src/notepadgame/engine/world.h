@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #pragma warning(pop)
-#include "base_types.h"
+#include "details/base_types.h"
 #include "tick.h"
 
 

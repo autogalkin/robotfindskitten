@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "easing.h"
-#include "base_types.h"
+#include "details/base_types.h"
 #include "notepader.h"
 #include "ecs_processors/collision.h"
 #include "input.h"
