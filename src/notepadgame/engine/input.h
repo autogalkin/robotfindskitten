@@ -9,7 +9,7 @@
 
 #include "details/base_types.h"
 #include "tick.h"
-
+#include "ecs_processor_base.h"
 
 
 

@@ -9,7 +9,7 @@
 
 #include "details/base_types.h"
 #include "details/gamelog.h"
-
+#include "ecs_processor_base.h"
 
 namespace collision
 {
