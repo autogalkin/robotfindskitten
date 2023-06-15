@@ -15,20 +15,21 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD  ul_reason_for_call, L
     {   /**/
         // Ignore thread notifications
         DisableThreadLibraryCalls(h_module);
-
+#ifndef NDEBUG
         gamelog::get(); // alloc a console for the cout
-        
+#endif // DEBUG    
         // run the notepad singleton
         notepader& np = notepader::get();
         const auto np_module = GetModuleHandleW(nullptr); // get the module handle of the notepad.exe
         
         [[maybe_unused]] constexpr uint8_t start_options =
             notepader::options::empty
-            //  notepader::hide_selection
-            //| notepader::kill_focus
-            //| notepader::disable_mouse
-            //| notepader::show_eolP
-            
+#ifdef NDEBUG
+            | notepader::hide_selection
+            | notepader::kill_focus
+            | notepader::disable_mouse          
+#endif // NDEBUG  
+            | notepader::show_eol    
             | notepader::show_spaces;
         
          np.get_on_open().connect([]{
