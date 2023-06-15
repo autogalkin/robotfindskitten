@@ -19,7 +19,6 @@ namespace game
 {
     inline void start()
     {
-        gamelog::cout("Hello");
         const auto& w = notepader::get().get_engine()->get_world();
         auto& exec =  w->get_ecs_executor();
 
@@ -45,7 +44,7 @@ namespace game
             int j = 0;
             auto spawn_block = [&i, &j](entt::registry& reg, const entt::entity entity){
             
-                actor::make_base_renderable(reg, entity, {6 + static_cast<double>(i), 4 + + static_cast<double>(j)},{shape::sprite::from_data{U"█", 1, 1}});
+                actor::make_base_renderable(reg, entity, {6 + static_cast<double>(i), 4 + static_cast<double>(j)}, 1, {shape::sprite::from_data{U"█", 1, 1}});
                 reg.emplace<collision::agent>(entity);
                 reg.emplace<collision::on_collide>(entity);
             };
@@ -55,6 +54,9 @@ namespace game
                 ++j;
                 w->spawn_actor(spawn_block); 
             } 
+            w->spawn_actor([](entt::registry& reg, const entt::entity entity){
+                actor::make_base_renderable(reg, entity, {16, 24}, 2, {shape::sprite::from_data{U"Hello Interface!", 1, 15}});
+            });
         }
         
 
@@ -67,8 +69,8 @@ namespace game
         {
             
             reg.emplace<shape::sprite_animation>(entity,
-                std::vector<shape::sprite>{{{shape::sprite::from_data{ 		U"f-", 1, 2}}  
-                                                ,{shape::sprite::from_data{ 		U"-f", 1, 2}}  
+                std::vector<shape::sprite>{{{shape::sprite::from_data{ 	U"f-", 1, 2}}  
+                                            ,{shape::sprite::from_data{ U"-f", 1, 2}}  
                     }} 
                 , static_cast<uint8_t>(0)
                 );

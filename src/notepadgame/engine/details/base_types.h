@@ -210,3 +210,7 @@ struct location_buffer
     location current{};
     df::dirtyflag<location> translation{{}, df::state::dirty};
 };
+
+struct z_depth {
+    int32_t value;
+};

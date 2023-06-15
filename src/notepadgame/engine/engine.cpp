@@ -49,7 +49,7 @@ void engine::init_direct_access()
     //thread_safe_function_ =  reinterpret_cast<int64_t (__cdecl *)(sptr_t, int, uptr_t, sptr_t)>(&SendMessageW); // NOLINT(clang-diagnostic-cast-function-type)
 }
 
-uint32_t engine::get_window_widht() const noexcept
+uint32_t engine::get_window_width() const noexcept
 {
     RECT r;
     get_window_rect(r);

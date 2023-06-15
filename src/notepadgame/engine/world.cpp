@@ -13,7 +13,8 @@ backbuffer::backbuffer(engine* owner): engine_(owner){
     scroll_changed_connection_ = engine_->get_on_scroll_changed().connect([this](const position& new_scroll)
     {
         scroll_.pin() = new_scroll;
-        backbuffer::init(static_cast<int>(engine_->get_window_widht()) , static_cast<int>(engine_->get_lines_on_screen()));
+        // TODO dirty all actors after resize
+        backbuffer::init(static_cast<int>(engine_->get_window_width()) , static_cast<int>(engine_->get_lines_on_screen()));
     });
 
     size_changed_connection = engine_->get_on_resize().connect([this](const uint32_t width, const uint32_t height){
@@ -28,22 +29,30 @@ position backbuffer::global_position_to_buffer_position(const position& position
 bool backbuffer::is_in_buffer(const position& global_position) const noexcept{
     return global_position.line() >= scroll_.get().line()
     && global_position.index_in_line() >= scroll_.get().index_in_line()
-    && global_position.index_in_line() <= static_cast<int>(engine_->get_window_widht()) / engine_->get_char_width() + scroll_.get().index_in_line()
+    && global_position.index_in_line() <= static_cast<int>(engine_->get_window_width()) / engine_->get_char_width() + scroll_.get().index_in_line()
     && global_position.line() <= engine_->get_lines_on_screen() + scroll_.get().line()
     ;
 }
 
-void backbuffer::draw(const position& pivot, const shape::sprite& sh){
+void backbuffer::draw(const position& pivot, const shape::sprite& sh, int32_t depth){
 
-    traverse_sprite_positions(pivot, sh, [this](const position& p, const char_size ch){
-        at(p) = ch;
+    traverse_sprite_positions(pivot, sh, [this, depth](const position& p, const char_size ch){
+        int32_t z_index = p.line() * static_cast<int>(engine_->get_window_width()) + p.index_in_line();
+        if(depth >= this->z_buffer[z_index]){
+            this->z_buffer[z_index] = depth;
+            at(p) = ch;
+        }
     });
 }
 
-void backbuffer::erase(const position& pivot, const shape::sprite& sh)
+void backbuffer::erase(const position& pivot, const shape::sprite& sh, int32_t depth)
 {
-    traverse_sprite_positions(pivot, sh, [this](const position& p, char_size){
-        at(p) = shape::whitespace;
+    traverse_sprite_positions(pivot, sh, [this, depth](const position& p, char_size){
+        int32_t z_index = p.line() * static_cast<int>(engine_->get_window_width()) + p.index_in_line();
+        if(this->z_buffer[z_index] <= depth){
+            at(p) = shape::whitespace;
+        }
+        
     });
 }
 
@@ -58,7 +67,7 @@ void backbuffer::traverse_sprite_positions(const position& pivot, const shape::s
             | ranges::views::filter([&byte_i](const char_size c){++byte_i; return c != shape::whitespace;}))
         {
             if(position p = screen_pivot + position{static_cast<npi_t>(line), byte_i}
-            ; p.index_in_line() >= 0 && p.index_in_line() <= static_cast<int>(engine_->get_window_widht()) / engine_->get_char_width()
+            ; p.index_in_line() >= 0 && p.index_in_line() <= static_cast<int>(engine_->get_window_width()) / engine_->get_char_width()
             && p.line() >= 0 && p.line() <= engine_->get_lines_on_screen())
             {
                 visitor(p, part_of_sprite);
@@ -94,6 +103,7 @@ void backbuffer::init(const uint32_t w_width, const uint32_t lines_on_screen)
         *(line.pin().end() - 1/*past-the-end*/ - endl) = U'\n';
         line.pin().back() = U'\0';
     }
+    z_buffer.resize(w_width * lines_on_screen, 0);
     
 }
 

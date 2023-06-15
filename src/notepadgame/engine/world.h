@@ -29,8 +29,8 @@ public:
     [[nodiscard]] virtual char_size at(const position& char_on_screen) const;
     [[nodiscard]] position global_position_to_buffer_position(const position& position) const noexcept;
     [[nodiscard]] bool is_in_buffer(const position& global_position) const noexcept;
-    void draw(const position& pivot, const shape::sprite& sh);
-    void erase(const position& pivot, const shape::sprite& sh);
+    void draw(const position& pivot, const shape::sprite& sh, int32_t depth);
+    void erase(const position& pivot, const shape::sprite& sh, int32_t depth);
 private:
     // visitor traverse all sprite matrix 
     void traverse_sprite_positions(const position& pivot, const shape::sprite& sh, const std::function<void(const position&, char_size part_of_sprite)>& visitor) const;
@@ -39,6 +39,8 @@ private:
     // \n(changed to \0 if not need a \n) and \0 for a line in the buffer
     static constexpr int special_chars_count = 2;
     
+    // TODO flat line buffer
+    std::vector<int32_t> z_buffer{};
     using line_type = df::dirtyflag< std::vector< char_size > >;
     std::unique_ptr< std::vector< line_type > > buffer{};
     engine* engine_;

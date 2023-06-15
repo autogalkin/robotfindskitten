@@ -17,11 +17,12 @@ struct actor
     static void invert_shape_direction(direction d, shape::sprite_animation& sp){
         sp.rendering_i = static_cast<uint8_t>(std::max(0, -1*static_cast<int>(d)));
     }
-    static void make_base_renderable(entt::registry& reg, const entt::entity e, location start, shape::sprite sprite)
+    static void make_base_renderable(entt::registry& reg, const entt::entity e, location start, int z_depth_position, shape::sprite sprite)
     {
         reg.emplace<visible_in_game>(e);
         reg.emplace<location_buffer>(e, std::move(start), df::dirtyflag<location>{{}, df::state::dirty});
-        reg.emplace< shape::sprite_animation>(e,  std::vector<shape::sprite>{{std::move(sprite)}}, static_cast<uint8_t>(0));
+        reg.emplace<shape::sprite_animation>(e,  std::vector<shape::sprite>{{std::move(sprite)}}, static_cast<uint8_t>(0));
+        reg.emplace<z_depth>(e, z_depth_position);
     }
 };
 struct projectile final
@@ -39,7 +40,7 @@ struct projectile final
         reg.emplace<projectile>(e);
         reg.emplace< shape::sprite_animation>(e,  std::vector<shape::sprite>{{shape::sprite::from_data{U"-", 1, 1}}}, static_cast<uint8_t>(0));
         reg.emplace<visible_in_game>(e);
-        
+        reg.emplace<z_depth>(e, 1);
         reg.emplace<location_buffer>(e, std::move(start), df::dirtyflag<location>{{}, df::state::dirty});
         reg.emplace<non_uniform_movement_tag>(e);
         reg.emplace<velocity>(e, dir);
@@ -71,6 +72,7 @@ struct projectile final
             reg_.emplace<location_buffer>(new_e, current_proj_location, df::dirtyflag<location>{location{translation.get()}, df::state::dirty});
             reg_.emplace<shape::sprite_animation>( new_e, std::vector<shape::sprite>{ {shape::sprite::from_data{U"*", 1, 1} }}, static_cast<uint8_t>(0));
             reg_.emplace<visible_in_game>(new_e);
+            reg_.emplace<z_depth>(new_e, 1);
             reg_.emplace<life::lifetime>(new_e, std::chrono::seconds{1});
             
             reg_.emplace<life::death_last_will>(new_e, [](entt::registry& r_, const entt::entity ent_)
@@ -83,6 +85,7 @@ struct projectile final
                     r_.emplace< shape::sprite_animation>(proj,  std::vector<shape::sprite>{{shape::sprite::from_data{U".", 1, 1}}}, static_cast<uint8_t>(0));
                     r_.emplace<location_buffer>(proj, location{lb.current.line()+offset.line(), lb.current.index_in_line()+offset.index_in_line()}, df::dirtyflag<location>{{}, df::state::dirty});
                     r_.emplace<visible_in_game>(proj);
+                    r_.emplace<z_depth>(proj, 1);
                     r_.emplace<velocity>(proj, dir_.line(), dir_.index_in_line());
                     r_.emplace<life::lifetime>(proj, std::chrono::seconds{1});
                     r_.emplace<non_uniform_movement_tag>(proj);
@@ -116,7 +119,7 @@ struct gun
     static void make(entt::registry& reg, const entt::entity e, location loc)
     {
         reg.emplace<gun>(e);
-        actor::make_base_renderable(reg, e, std::move(loc), {shape::sprite::from_data{U"¬", 1, 1}});
+        actor::make_base_renderable(reg, e, std::move(loc), 1, {shape::sprite::from_data{U"¬", 1, 1}});
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &gun::on_collide);
         
@@ -191,6 +194,7 @@ struct character final
     static void make(entt::registry& reg, const entt::entity e, location l)
     {
         reg.emplace<character>(e);
+        reg.emplace<z_depth>(e, 1);
         reg.emplace<shape::on_change_direction>(e, &actor::invert_shape_direction);
         reg.emplace<shape::render_direction>(e, direction::forward);
         reg.emplace<visible_in_game>(e);
@@ -211,7 +215,7 @@ struct character final
             
             
             const auto& scroll = notepader::get().get_engine()->get_scroll();
-            const npi_t width =  notepader::get().get_engine()->get_window_widht() / notepader::get().get_engine()->get_char_width();
+            const npi_t width =  notepader::get().get_engine()->get_window_width() / notepader::get().get_engine()->get_char_width();
             const npi_t height = notepader::get().get_engine()->get_lines_on_screen();
 
             int c_move_pos = 0;
@@ -374,7 +378,7 @@ struct monster
     }
     static void make(entt::registry& reg, const entt::entity e, location loc)
     {
-        actor::make_base_renderable(reg, e, std::move(loc), {shape::sprite::from_data{U"👾", 1, 1}});
+        actor::make_base_renderable(reg, e, std::move(loc), 1, {shape::sprite::from_data{U"👾", 1, 1}});
         
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &monster::on_collide);
@@ -406,7 +410,7 @@ struct monster
             const auto dead = reg_.create();
             auto& [old_loc, _] = reg_.get<location_buffer>(self);
 
-            actor::make_base_renderable(reg_, dead, location{old_loc.line(),old_loc.index_in_line() - 1}, {shape::sprite::from_data{U"___", 1, 3}});
+            actor::make_base_renderable(reg_, dead, location{old_loc.line(),old_loc.index_in_line() - 1}, 1, {shape::sprite::from_data{U"___", 1, 3}});
             reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
             reg_.emplace<timeline::eval_direction>(dead);
             reg_.emplace<timeline::what_do>(dead, [](entt::registry& r_, const entt::entity e_, direction d){
