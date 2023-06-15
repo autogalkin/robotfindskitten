@@ -24,7 +24,7 @@ HWND engine::create_native_window(const DWORD dwExStyle, const LPCWSTR lpWindowN
     
     dcall2( SCI_STYLESETFONT, STYLE_DEFAULT, reinterpret_cast<sptr_t>("Lucida Console"));
     dcall2(SCI_STYLESETBOLD, STYLE_DEFAULT, 1); // bold
-    dcall2(SCI_STYLESETSIZE, STYLE_DEFAULT,36); // pt size
+    dcall2(SCI_STYLESETSIZE, STYLE_DEFAULT,16); // pt size
     //dcall2(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT,1);
     dcall2(SCI_SETHSCROLLBAR, 1, 0);
 

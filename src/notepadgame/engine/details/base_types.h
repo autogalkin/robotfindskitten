@@ -214,3 +214,10 @@ struct location_buffer
 struct z_depth {
     int32_t value;
 };
+
+struct screen_resize {
+    std::function<void(const uint32_t width, const uint32_t height)> call;
+};
+struct screen_scroll {
+    std::function<void(const position& new_scroll)> call;
+};
