@@ -7,6 +7,7 @@
 #include "notepader.h"
 #include "ecs_processors/collision.h"
 #include "input.h"
+#include "ecs_processors/input_passer.h"
 
 struct coin;
 struct character;

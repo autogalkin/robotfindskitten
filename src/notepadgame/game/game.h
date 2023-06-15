@@ -12,6 +12,7 @@
 #include "ecs_processors/killer.h"
 #include "ecs_processors/timers.h"
 #include "ecs_processors/motion.h"
+#include "ecs_processors/input_passer.h"
 #include "entities/factories.h"
 
 namespace game
@@ -24,7 +25,7 @@ namespace game
 
                         // the game tick pipeline of the ecs
         
-        exec.push<      input_passer                                                    >();
+        exec.push<      input_passer                                                    >(notepader::get().get_input_manager().get());
         exec.push<      uniform_motion                                                  >();
         exec.push<      non_uniform_motion                                              >();
         exec.push<      timeline_executor                                               >();
