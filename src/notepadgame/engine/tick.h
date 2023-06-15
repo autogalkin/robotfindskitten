@@ -3,6 +3,7 @@
 #include <chrono>
 #include "boost/signals2.hpp"
 #pragma warning(pop)
+#include "details/nonconstructors.h"
 
 namespace gametime
 {
@@ -15,7 +16,7 @@ namespace gametime
 }
 
 
-class ticker
+class ticker: public noncopyable, public nonmoveable 
 {
 public:
     

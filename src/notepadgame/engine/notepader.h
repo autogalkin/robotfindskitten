@@ -11,8 +11,8 @@
 
 
 
-
-class notepader final : public ticker // notepad.exe wrapper
+// notepad.exe wrapper
+class notepader final : public ticker
 {
 public:
     
@@ -41,11 +41,6 @@ public:
         hook_SetWindowTextW(module);
         
     }
-    
-    notepader(notepader &other) = delete;
-    notepader& operator=(const notepader& other) = delete;
-    notepader(notepader&& other) noexcept = delete;
-    notepader& operator=(notepader&& other) noexcept = delete;
     
     [[nodiscard]] boost::signals2::signal<void ()>& get_on_open()             { return on_open_;  }
     [[nodiscard]] boost::signals2::signal<void ()>& get_on_close()            { return on_close_; }

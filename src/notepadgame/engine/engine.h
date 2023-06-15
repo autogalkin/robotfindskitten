@@ -10,7 +10,7 @@
 #include <Richedit.h>
 #include "Scintilla.h"
 #pragma warning(pop)
-
+#include "details/nonconstructors.h"
 #include "details/base_types.h"
 #include "world.h"
 
@@ -27,18 +27,13 @@ concept is_container_of_chars = requires(T t)
 
 
 // this is the EDIT Control window of the notepad
-class engine final
+class engine final: public noncopyable, public nonmoveable  // Deleted so engine objects can not be copied.
 {
     friend class notepader;
     
 public:
     // Only the notepader object can create the engine
     engine() = delete;
-    // Deleted so engine objects can not be copied.
-    engine(engine &other)                      = delete;
-    engine& operator=(const engine& other)     = delete;
-    engine(engine&& other) noexcept            = delete;
-    engine& operator=(engine&& other) noexcept = delete;
 
     using scroll_changed_signal = boost::signals2::signal<void (const position&)>;
     using size_changed_signal = boost::signals2::signal<void (uint32_t width,uint32_t height)>;

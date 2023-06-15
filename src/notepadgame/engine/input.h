@@ -16,7 +16,7 @@
 
 
 
-class input final : public tickable
+class input final : public tickable, public noncopyable, public nonmoveable
 {
 public:
     
@@ -40,11 +40,6 @@ public:
     
     explicit input() = default;
     ~input() override;
-
-    input(input& other) noexcept = delete;
-    input(input&& other) noexcept = delete;
-    input& operator=(const input& other) = delete;
-    input& operator=(input&& other) noexcept = delete;
     
     virtual void tick(gametime::duration) override;
     void send_input();

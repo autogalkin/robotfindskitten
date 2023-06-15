@@ -2,17 +2,15 @@
 #pragma once
 
 #include <iostream>
+#include "details/nonconstructors.h"
 
-class gamelog final
+
+class gamelog final : public noncopyable, public nonmoveable
 {
 public:
     
     static gamelog& get();
     inline static constexpr char sep = ' ';
-    gamelog(const gamelog& other)                = delete;
-    gamelog(gamelog&& other) noexcept            = delete;
-    gamelog& operator=(const gamelog& other)     = delete;
-    gamelog& operator=(gamelog&& other) noexcept = delete;
 
     template<typename ... Args>
     requires requires(Args... args, std::ostream& stream){
