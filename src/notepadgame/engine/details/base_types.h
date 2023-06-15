@@ -22,20 +22,20 @@ class world;
 
 template<typename SizeType>
 requires std::is_arithmetic_v<SizeType>
-struct np_vector_t : public Eigen::Vector2<SizeType>
+struct vec_t : public Eigen::Vector2<SizeType>
 {
     using size_type = SizeType;
-    constexpr np_vector_t(){*this << 0, 0;}
-    constexpr np_vector_t(const SizeType& line, const SizeType& index_in_line): Eigen::Vector2<SizeType>{line, index_in_line} {}
+    constexpr vec_t(){*this << 0, 0;}
+    constexpr vec_t(const SizeType& line, const SizeType& index_in_line): Eigen::Vector2<SizeType>{line, index_in_line} {}
 
     template<typename OtherDerived>
-    np_vector_t(const Eigen::EigenBase<OtherDerived>& other): Eigen::Vector2<SizeType>{other}{}
+    vec_t(const Eigen::EigenBase<OtherDerived>& other): Eigen::Vector2<SizeType>{other}{}
     template<typename OtherDerived>
-    np_vector_t(const Eigen::EigenBase<OtherDerived>&& other): Eigen::Vector2<SizeType>{other}{}
+    vec_t(const Eigen::EigenBase<OtherDerived>&& other): Eigen::Vector2<SizeType>{other}{}
 
     template<typename T>
     requires std::is_convertible_v<T, SizeType>
-    np_vector_t<SizeType>& operator=(const np_vector_t<T>& rhs) {
+    vec_t<SizeType>& operator=(const vec_t<T>& rhs) {
         line() = rhs.line(); index_in_line() = rhs.index_in_line(); return *this;
     }
     
@@ -46,27 +46,27 @@ struct np_vector_t : public Eigen::Vector2<SizeType>
 
     
     template<typename T>
-    np_vector_t<std::common_type_t<SizeType, T>> operator+(const np_vector_t<T>& rhs) const {
-        return  np_vector_t<std::common_type_t<SizeType, T>>{line() + rhs.line(), index_in_line() + rhs.index_in_line()};
+    vec_t<std::common_type_t<SizeType, T>> operator+(const vec_t<T>& rhs) const {
+        return  vec_t<std::common_type_t<SizeType, T>>{line() + rhs.line(), index_in_line() + rhs.index_in_line()};
     }
     template<typename T>
-    np_vector_t<std::common_type_t<SizeType, T>> operator*(const np_vector_t<T>& rhs) const {
-        return  np_vector_t<std::common_type_t<SizeType, T>>{line() * rhs.line(), index_in_line() * rhs.index_in_line()};
+    vec_t<std::common_type_t<SizeType, T>> operator*(const vec_t<T>& rhs) const {
+        return  vec_t<std::common_type_t<SizeType, T>>{line() * rhs.line(), index_in_line() * rhs.index_in_line()};
     }
     template<typename T>
     requires std::is_arithmetic_v<T>
-    np_vector_t<std::common_type_t<SizeType, T>> operator*(const T& rhs) const {
-        return  np_vector_t<std::common_type_t<SizeType, T>>{line() * rhs, index_in_line() * rhs};
+    vec_t<std::common_type_t<SizeType, T>> operator*(const T& rhs) const {
+        return  vec_t<std::common_type_t<SizeType, T>>{line() * rhs, index_in_line() * rhs};
     }
     [[nodiscard]] bool is_null() const {return line() == static_cast<SizeType>(0) && index_in_line() == static_cast<SizeType>(0);}
-    static np_vector_t<SizeType> null(){return np_vector_t<SizeType>{static_cast<SizeType>(0), static_cast<SizeType>(0)};}
+    static vec_t<SizeType> null(){return vec_t<SizeType>{static_cast<SizeType>(0), static_cast<SizeType>(0)};}
 };
 
-// notepad's space position
-using position = np_vector_t<npi_t>;
+// notepad's col-row position
+using position = vec_t<npi_t>;
 
-// actor locations
-using location = np_vector_t<double>;
+// an actor location, used for smooth move
+using location = vec_t<double>;
 
 
 struct uniform_movement_tag {};
@@ -108,14 +108,14 @@ namespace position_converter
     inline position from_location(const location& location) {return {std::lround(location.line()), std::lround(location.index_in_line())}; }
 }
 
-struct velocity : np_vector_t<float>{
+struct velocity : vec_t<float>{
     velocity() = default;
-    velocity(const np_vector_t<float>& l) : np_vector_t<float>(l){}
+    velocity(const vec_t<float>& l) : vec_t<float>(l){}
     template<typename T>
-    velocity(const Eigen::EigenBase<T>& other): np_vector_t<float>{other}{}
+    velocity(const Eigen::EigenBase<T>& other): vec_t<float>{other}{}
     template<typename T>
-    velocity(const Eigen::EigenBase<T>&& other): np_vector_t<float>{other}{}
-    velocity(const float line, const float index_in_line) : np_vector_t<float>{line, index_in_line}{}
+    velocity(const Eigen::EigenBase<T>&& other): vec_t<float>{other}{}
+    velocity(const float line, const float index_in_line) : vec_t<float>{line, index_in_line}{}
     
 };
 
