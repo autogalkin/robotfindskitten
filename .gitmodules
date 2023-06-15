@@ -1,3 +1,6 @@
 [submodule "extern/thirdparty/scintilla"]
 	path = extern/thirdparty/scintilla
 	url = git@github.com:mirror/scintilla.git
+[submodule "extern/dirtyflag"]
+	path = extern/dirtyflag
+	url = https://github.com/autogalkin/dirtyflag
