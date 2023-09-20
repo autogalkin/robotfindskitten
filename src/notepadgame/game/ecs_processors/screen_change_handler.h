@@ -7,14 +7,14 @@
 
 class screen_change_handler final : public ecs_processor {
   public:
-    explicit screen_change_handler(world* w, engine* e) : ecs_processor(w) {
+    explicit screen_change_handler(world* w, engine_t* e) : ecs_processor(w) {
         size_changed_connection = e->get_on_resize().connect(
             [this](const uint32_t width, const uint32_t height) {
-                on_resize(get_world()->get_registry(), width, height);
+                on_resize(get_world()->reg_, width, height);
             });
         scroll_changed_connection_ = e->get_on_scroll_changed().connect(
-            [this](const position& new_scroll) {
-                on_scroll(get_world()->get_registry(), new_scroll);
+            [this](const position_t& new_scroll) {
+                on_scroll(get_world()->reg_, new_scroll);
             });
     }
 
@@ -30,7 +30,7 @@ class screen_change_handler final : public ecs_processor {
             screen_resize_do(width, height);
         }
     }
-    void on_scroll(entt::registry& reg, const position& new_scroll) {
+    void on_scroll(entt::registry& reg, const position_t& new_scroll) {
         for (const auto view = reg.view<screen_scroll>();
              const auto entity : view) {
             auto& [screen_scroll_do] = view.get<screen_scroll>(entity);

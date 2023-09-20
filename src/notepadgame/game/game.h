@@ -14,29 +14,29 @@
 #include "ecs_processors/timers.h"
 #include "engine.h"
 #include "entities/factories.h"
-#include "notepader.h"
+#include "notepad.h"
 #include "world.h"
 
 namespace game {
 inline void start() {
-    const auto& w = notepader::get().get_engine()->get_world();
-    auto& exec = w->get_ecs_executor();
+    auto& w = notepad_t::get().get_engine().get_world();
+    auto& exec = w.executor;
 
     // the game tick pipeline of the ecs
-    exec.push<screen_change_handler>(
-        notepader::get().get_engine().get()); // TODO its only observer
-    exec.push<input_passer>(notepader::get().get_input_manager().get());
-    exec.push<uniform_motion>();
-    exec.push<non_uniform_motion>();
-    exec.push<timeline_executor>();
-    exec.push<rotate_animator>();
-    exec.push<collision::query>();
-    exec.push<redrawer>();
-    exec.push<death_last_will_executor>();
-    exec.push<killer>();
-    exec.push<lifetime_ticker>();
+    exec.push<screen_change_handler>(&w,
+        &notepad_t::get().get_engine()); // TODO its only observer
+    exec.push<input_passer>(&w,&notepad_t::get().input);
+    exec.push<uniform_motion>(&w);
+    exec.push<non_uniform_motion>(&w);
+    exec.push<timeline_executor>(&w);
+    exec.push<rotate_animator>(&w);
+    exec.push<collision::query>(&w);
+    exec.push<redrawer>(&w);
+    exec.push<death_last_will_executor>(&w);
+    exec.push<killer>(&w);
+    exec.push<lifetime_ticker>(&w);
 
-    w->spawn_actor([](entt::registry& reg, const entt::entity entity) {
+    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });
 
@@ -55,13 +55,13 @@ inline void start() {
 
         for (i = 0; i < 4; ++i) {
             ++j;
-            w->spawn_actor(spawn_block);
+            w.spawn_actor(spawn_block);
         }
         // w->spawn_actor([](entt::registry& reg, const entt::entity entity){
         //     actor::make_base_renderable(reg, entity, {16, 24}, 2,
         //     {shape::sprite::from_data{U"Hello Interface!", 1, 15}});
         // });
-        w->spawn_actor([](entt::registry& reg, const entt::entity entity) {
+        w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(reg, entity, {2, 0}, 2,
                                         {shape::sprite::from_data{U"-", 1, 1}});
             reg.emplace<screen_resize>(entity, [&reg,
@@ -72,19 +72,19 @@ inline void start() {
                     std::vector<char32_t>(width, U'—').data(), 1, width}};
             });
             reg.emplace<screen_scroll>(entity, [&reg, entity](
-                                                   const position& new_scroll) {
+                                                   const position_t& new_scroll) {
                 auto& [current, translation] = reg.get<location_buffer>(entity);
                 translation.pin() = location{
                     0., static_cast<double>(new_scroll.index_in_line()) -
                             current.index_in_line()};
             });
         });
-        w->spawn_actor([](entt::registry& reg, const entt::entity entity) {
+        w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(
                 reg, entity, {0, 0}, 2,
                 {shape::sprite::from_data{U"It's a banana! Oh, joy!", 1, 23}});
             reg.emplace<screen_scroll>(entity, [&reg, entity](
-                                                   const position& new_scroll) {
+                                                   const position_t& new_scroll) {
                 auto& [current, translation] = reg.get<location_buffer>(entity);
                 translation.pin() = location{
                     0., static_cast<double>(new_scroll.index_in_line()) -
@@ -93,11 +93,11 @@ inline void start() {
         });
     }
 
-    w->spawn_actor([](entt::registry& reg, const entt::entity entity) {
+    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         gun::make(reg, entity, {14, 20});
     });
 
-    w->spawn_actor([](entt::registry& reg, const entt::entity entity) {
+    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         reg.emplace<shape::sprite_animation>(
             entity,
             std::vector<shape::sprite>{
@@ -111,7 +111,7 @@ inline void start() {
         character::add_top_down_camera(reg, entity);
     });
 
-    w->spawn_actor([](entt::registry& reg, const entt::entity entity) {
+    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         monster::make(reg, entity, {10, 3});
     });
 };

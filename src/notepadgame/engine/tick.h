@@ -39,7 +39,7 @@ class ticker : public noncopyable, public nonmoveable {
         last_time = gametime::clock::now();
     }
 
-    virtual void tickframe() {
+    virtual void tick_frame() {
         using namespace std::literals;
 
         const gametime::time_point new_t = gametime::clock::now();

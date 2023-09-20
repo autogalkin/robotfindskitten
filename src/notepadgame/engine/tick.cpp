@@ -1,6 +1,6 @@
 ﻿#include "tick.h"
-#include "notepader.h"
+#include "notepad.h"
 
 tickable::tickable()
-    : tick_connection(notepader::get().get_on_tick().connect(
+    : tick_connection(notepad_t::get().get_on_tick().connect(
           [this](const gametime::duration delta) { tick(delta); })) {}

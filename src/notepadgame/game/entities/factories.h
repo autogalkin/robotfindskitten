@@ -7,7 +7,7 @@
 #include "ecs_processors/collision.h"
 #include "ecs_processors/input_passer.h"
 #include "input.h"
-#include "notepader.h"
+#include "notepad.h"
 
 struct coin;
 struct character;
@@ -207,9 +207,8 @@ struct character final {
         if (reg.all_of<gun>(collider)) {
             auto& [signal] = reg.get<input_passer::down_signal>(self);
             signal.connect([](entt::registry& reg_, const entt::entity chrcter,
-                              const input::key_state_type& state) {
-                if (const auto it = std::ranges::find(state, input::key::space);
-                    it != state.end()) {
+                              const input_state_t& state) {
+                if (state.has_key(input_state_t::key_t::space)){
                     gun::fire(reg_, chrcter);
                 }
             });
@@ -247,12 +246,12 @@ struct character final {
             const auto& [location, _] = reg_.get<location_buffer>(owner);
             auto pos = position_converter::from_location(location);
 
-            const auto& scroll = notepader::get().get_engine()->get_scroll();
+            const auto& scroll = notepad_t::get().get_engine().get_scroll();
             const npi_t width =
-                notepader::get().get_engine()->get_window_width() /
-                notepader::get().get_engine()->get_char_width();
+                notepad_t::get().get_engine().get_window_width() /
+                notepad_t::get().get_engine().get_char_width();
             const npi_t height =
-                notepader::get().get_engine()->get_lines_on_screen();
+                notepad_t::get().get_engine().get_lines_on_screen();
 
             int c_move_pos = 0;
             if (pos.index_in_line() > width + scroll.index_in_line() ||
@@ -304,7 +303,7 @@ struct character final {
                             } else {
                                 i += 1 * l_sign;
                             }
-                            notepader::get().get_engine()->scroll(c, l);
+                            notepad_t::get().get_engine().scroll(c, l);
                             ++lifetime;
                         }
                         ++t;
@@ -319,31 +318,14 @@ struct character final {
         });
     }
 
-    template <input::key UP = input::key::w, input::key LEFT = input::key::a,
-              input::key DOWN = input::key::s, input::key RIGHT = input::key::d>
+    template <input_state_t::key_t UP = input_state_t::key_t::w, input_state_t::key_t LEFT = input_state_t::key_t::a,
+              input_state_t::key_t DOWN = input_state_t::key_t::s, input_state_t::key_t RIGHT = input_state_t::key_t::d>
     static void process_movement_input(entt::registry& reg,
                                        const entt::entity e,
-                                       const input::key_state_type& state) {
+                                       const input_state_t& state) {
         auto& vel = reg.get<velocity>(e);
-
-        for (auto& key : state) {
-            switch (key) {
-            case UP:
-                vel.line() -= 1;
-                break;
-            case LEFT:
-                vel.index_in_line() -= 1;
-                break;
-            case DOWN:
-                vel.line() += 1;
-                break;
-            case RIGHT:
-                vel.index_in_line() += 1;
-                break;
-            default:
-                break;
-            }
-        }
+        vel.line() += state.has_key(UP) - state.has_key(DOWN);
+        vel.index_in_line() += state.has_key(RIGHT) - state.has_key(LEFT);
     }
 };
 
@@ -395,9 +377,9 @@ struct atmosphere final {
                 std::lerp(GetGValue(start), GetGValue(end), -value),
                 std::lerp(GetBValue(start), GetBValue(end), -value));
 
-        notepader::get().get_engine()->force_set_background_color(
+        notepad_t::get().get_engine().force_set_background_color(
             new_back_color);
-        notepader::get().get_engine()->force_set_all_text_color(
+        notepad_t::get().get_engine().force_set_all_text_color(
             new_front_color);
     }
 

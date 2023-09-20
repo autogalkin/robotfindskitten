@@ -41,7 +41,7 @@ class redrawer final : public ecs_processor {
   public:
     explicit redrawer(world* w) : ecs_processor(w) {
 
-        w->get_registry()
+        w->reg_
             .on_construct<visible_in_game>()
             .connect<&redrawer::upd_visible>();
     }
@@ -60,7 +60,7 @@ class redrawer final : public ecs_processor {
                 const auto& [sprts, rendering_i] =
                     view.get<shape::sprite_animation>(entity);
                 auto& [depth] = view.get<z_depth>(entity);
-                get_world()->erase(
+                get_world()->backbuffer.erase(
                     position_converter::from_location(
                         view.get<location_buffer>(entity).current),
                     sprts[view.get<previous_sprite>(entity).index], depth);
@@ -83,7 +83,7 @@ class redrawer final : public ecs_processor {
                 auto& sp = view.get<shape::sprite_animation>(entity);
 
                 current += translation.get();
-                get_world()->draw(position_converter::from_location(current),
+                get_world()->backbuffer.draw(position_converter::from_location(current),
                                   sp.current_sprite(), depth);
 
                 translation =
