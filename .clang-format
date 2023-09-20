@@ -1,0 +1,9 @@
+BasedOnStyle: LLVM
+SortIncludes: false
+TabWidth: 4
+IndentWidth: 4
+UseTab: Never
+Language: Cpp
+Standard: Cpp11
+AlignTrailingComments: Never
+PointerAlignment: Left

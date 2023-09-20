@@ -86,8 +86,8 @@ target_link_libraries  (${PROJECT_NAME} PUBLIC
                                                 EnTT::EnTT)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
-                                                NOMINMAX            # windows.h ...
-                                                WIN32_LEAN_AND_MEAN # windows.h ...
+                                                NOMINMAX            # windows.h
+                                                WIN32_LEAN_AND_MEAN # windows.h
                                         )
 
 install(TARGETS ${PROJECT_NAME}
