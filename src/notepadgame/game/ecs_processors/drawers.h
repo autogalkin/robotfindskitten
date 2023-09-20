@@ -46,7 +46,6 @@ public:
 
   void execute(entt::registry &reg, gametime::duration delta) override {
 
-    
     for (const auto view =
              reg.view<const location_buffer, const shape::sprite_animation,
                       previous_sprite, const z_depth>();
@@ -61,12 +60,13 @@ public:
         auto &[depth] = view.get<z_depth>(entity);
         get_world()->erase(position_converter::from_location(
                                view.get<location_buffer>(entity).current),
-                           sprts[view.get<previous_sprite>(entity).index], depth);
+                           sprts[view.get<previous_sprite>(entity).index],
+                           depth);
         if (is_dead)
           reg.remove<visible_in_game>(entity);
       }
     }
-    std::vector<int32_t> z_buffer(50*20);
+    std::vector<int32_t> z_buffer(50 * 20);
 
     for (const auto view =
              reg.view<location_buffer, const shape::sprite_animation,
