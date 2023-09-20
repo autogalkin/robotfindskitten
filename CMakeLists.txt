@@ -3,11 +3,15 @@ cmake_minimum_required(VERSION 3.16)
 
 
 project(notepadgame
-        DESCRIPTION "A hello world project"
+        DESCRIPTION "A game inside notepad.exe"
         VERSION 0.1.0
         HOMEPAGE_URL "https://github.com/autogalkin/notepadgame"
         LANGUAGES CXX
         )
+
+if(NOT DEFINED ENV{VCPKG_ROOT})
+    message(FATAL_ERROR "You must have vcpkg and set VCPKG_ROOT environment variable")
+endif()
 
 set(CMAKE_CXX_STANDARD          20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

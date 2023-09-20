@@ -1,60 +1,55 @@
 {
     "version": 6,
     "cmakeMinimumRequired": {
-      "major": 3,
-      "minor": 16,
-      "patch": 0
+        "major": 3,
+        "minor": 16,
+        "patch": 0
     },
-    "include": [
-    ],
+    "include": [],
     "configurePresets": [
-      {
-        "name": "x64-debug",
-        "displayName": "x64 win default debug",
-        "description": "The default debug build using the Ninja generator, MSVC and vcpkg toolchain",
-        "installDir": "${sourceDir}/out/bin/${presetName}"
-        
-        ,"condition": {
-            "type": "equals",
-            "lhs": "${hostSystemName}",
-            "rhs": "Windows"
+        {
+            "name": "x64-debug",
+            "displayName": "x64 win default debug",
+            "description": "The default debug build using the Ninja generator, MSVC and vcpkg toolchain",
+            "installDir": "${sourceDir}/out/bin/${presetName}",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_CXX_LINK_EXECUTABLE": "link.exe",
+                "CMAKE_CXX_FLAGS": " /EHsc",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "Boost_NO_WARN_NEW_VERSIONS": "1"
+            },
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=x64",
+                "strategy": "external"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Windows"
+                    ],
+                    "intelliSenseMode": "windows-msvc-x64"
+                }
+            }
         }
-        , 
-        "generator": "Ninja",
-        "binaryDir": "${sourceDir}/out/build/${presetName}",
-        "cacheVariables": {
-          "CMAKE_BUILD_TYPE": "Debug"
-        , "CMAKE_CXX_COMPILER": "cl"
-        , "CMAKE_CXX_FLAGS": " /EHsc"
-        , "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        , "Boost_NO_WARN_NEW_VERSIONS": "1"
-        
-          
-        }
-        ,"architecture": {
-          "value": "x64",
-          "strategy": "external"
-        }
-        ,"toolset": {
-          "value": "host=x64",
-          "strategy": "external"
-      }
-      ,"vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
-          "hostOS": [ "Windows" ]
-          , "intelliSenseMode": "windows-msvc-x64"
-        }
-      }
-    }
     ],
     "buildPresets": [
         {
-          "name": "x64-debug",
-            "configurePreset": "x64-debug"
-          , "description": "default debug build"
-          
-
-          
+            "name": "x64-debug",
+            "configurePreset": "x64-debug",
+            "description": "default debug build"
         }
-      ]
+    ]
 }
