@@ -10,9 +10,8 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
                       LPVOID lp_reserved) {
     //  the h_module is notepadgame.dll
 
-    gamelog::get();
-    gamelog::cout("Hi!!!");
-    if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
+
+    if (ul_reason_for_call == DLL_PROCESS_ATTACH) { 
         // Ignore thread notifications
         DisableThreadLibraryCalls(h_module);
 #ifndef NDEBUG

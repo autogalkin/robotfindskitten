@@ -42,9 +42,9 @@ private:
 
 
   int32_t width_;
-  int32_t height_;
+  //int32_t height_;
   std::vector<int32_t> z_buffer_;
-  std::vector<char_size> buffer_;
+  std::basic_string<char_size> buffer_;
 
 
 

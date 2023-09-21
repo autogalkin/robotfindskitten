@@ -35,7 +35,7 @@ HWND engine_t::create_native_window(const DWORD dwExStyle,
     show_eol(notepad_t::opts::show_eol & start_options ? 1 : 0);
 
     world_.emplace(this);
-    world_->backbuffer.init(nWidth / get_char_width(), nHeight);
+    world_->backbuffer.init(nWidth / get_char_width(), nHeight / get_line_height());
 
     return edit_window_;
 }

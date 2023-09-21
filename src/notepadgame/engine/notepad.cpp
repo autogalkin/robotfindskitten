@@ -113,7 +113,7 @@ bool hook_GetMessageW(const HMODULE module)  {
             // Handle keyboard messages
           case WM_KEYDOWN:
           case WM_SYSKEYDOWN:{
-              np.input.push(static_cast<input_state_t::key_t>(lpMsg->wParam));
+              np.input.push(static_cast<input_t::key_t>(lpMsg->wParam));
               lpMsg->message = WM_NULL;
             break;
           }
@@ -136,20 +136,16 @@ bool hook_GetMessageW(const HMODULE module)  {
 
           TranslateMessage(lpMsg);
           DispatchMessage(lpMsg);
-          lpMsg->message = WM_NULL; // send the null to original dispatch loop
+          lpMsg->message = WM_NULL; // send the null to the original dispatch loop
         }
 
-        try{
+
             static std::once_flag once;
             std::call_once(once, [] { notepad_t::get().reset_to_start(); });
 
             notepad_t::get().tick_frame();
 
-        }
-         catch([[maybe_unused]] std::exception& e){
-             gamelog::cout(e.what());
-            PostQuitMessage(0);
-        }
+        
 
         return 1;
       });

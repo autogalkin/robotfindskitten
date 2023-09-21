@@ -59,7 +59,7 @@ public:
     }
 
     close_signal_t on_close;
-    input_state_t input;
+    input_t input;
 
     void connect_to_notepad(const HMODULE module /* notepad.exe module*/,
                             const opts start_options = notepad_t::opts::empty) {
@@ -82,7 +82,7 @@ public:
 
 private:
     explicit notepad_t()
-        : engine_(std::nullopt), input(), main_window_(), original_proc_(0), on_open_(), on_close() {
+        : engine_(std::nullopt), input(), main_window_(), original_proc_(0), on_open_(std::make_unique<open_signal_t>()), on_close() {
     }
     virtual void tick_frame() override;
     std::optional<engine_t> engine_;

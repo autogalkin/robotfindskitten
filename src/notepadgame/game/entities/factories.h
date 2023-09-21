@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "details/gamelog.h"
 #include "df/dirtyflag.h"
 
 #include "details/base_types.h"
@@ -44,7 +45,7 @@ struct projectile final {
         reg.emplace<projectile>(e);
         reg.emplace<shape::sprite_animation>(
             e,
-            std::vector<shape::sprite>{{shape::sprite::from_data{U"-", 1, 1}}},
+            std::vector<shape::sprite>{{shape::sprite::from_data{"-", 1, 1}}},
             static_cast<uint8_t>(0));
         reg.emplace<visible_in_game>(e);
         reg.emplace<z_depth>(e, 1);
@@ -92,7 +93,7 @@ struct projectile final {
                 reg_.emplace<shape::sprite_animation>(
                     new_e,
                     std::vector<shape::sprite>{
-                        {shape::sprite::from_data{U"*", 1, 1}}},
+                        {shape::sprite::from_data{"*", 1, 1}}},
                     static_cast<uint8_t>(0));
                 reg_.emplace<visible_in_game>(new_e);
                 reg_.emplace<z_depth>(new_e, 1);
@@ -108,7 +109,7 @@ struct projectile final {
                             r_.emplace<shape::sprite_animation>(
                                 proj,
                                 std::vector<shape::sprite>{
-                                    {shape::sprite::from_data{U".", 1, 1}}},
+                                    {shape::sprite::from_data{".", 1, 1}}},
                                 static_cast<uint8_t>(0));
                             r_.emplace<location_buffer>(
                                 proj,
@@ -151,7 +152,7 @@ struct gun {
     static void make(entt::registry& reg, const entt::entity e, location loc) {
         reg.emplace<gun>(e);
         actor::make_base_renderable(reg, e, std::move(loc), 1,
-                                    {shape::sprite::from_data{U"¬", 1, 1}});
+                                    {shape::sprite::from_data{"<", 1, 1}});
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &gun::on_collide);
     }
@@ -207,8 +208,8 @@ struct character final {
         if (reg.all_of<gun>(collider)) {
             auto& [signal] = reg.get<input_passer::down_signal>(self);
             signal.connect([](entt::registry& reg_, const entt::entity chrcter,
-                              const input_state_t& state) {
-                if (state.has_key(input_state_t::key_t::space)){
+                              const input_t& state) {
+                if (state.has_key(input_t::key_t::space)){
                     gun::fire(reg_, chrcter);
                 }
             });
@@ -318,14 +319,30 @@ struct character final {
         });
     }
 
-    template <input_state_t::key_t UP = input_state_t::key_t::w, input_state_t::key_t LEFT = input_state_t::key_t::a,
-              input_state_t::key_t DOWN = input_state_t::key_t::s, input_state_t::key_t RIGHT = input_state_t::key_t::d>
+    template <input_t::key_t UP = input_t::key_t::w, input_t::key_t LEFT = input_t::key_t::a,
+              input_t::key_t DOWN = input_t::key_t::s, input_t::key_t RIGHT = input_t::key_t::d>
     static void process_movement_input(entt::registry& reg,
                                        const entt::entity e,
-                                       const input_state_t& state) {
-        auto& vel = reg.get<velocity>(e);
-        vel.line() += state.has_key(UP) - state.has_key(DOWN);
-        vel.index_in_line() += state.has_key(RIGHT) - state.has_key(LEFT);
+                                       const input_t& input) {
+        auto& vel = reg.get<velocity>(e); 
+        for (auto k : input.state()){
+            switch (k) {
+            case UP:
+                vel.line() -= 1;
+                break; 
+            case DOWN:
+                vel.line() += 1;
+                break;
+            case LEFT:
+                vel.index_in_line() -= 1;
+                break;
+            case RIGHT:
+                vel.index_in_line() += 1;
+                break;
+            default:
+                break;
+            }
+        }
     }
 };
 
@@ -399,7 +416,7 @@ struct monster {
     }
     static void make(entt::registry& reg, const entt::entity e, location loc) {
         actor::make_base_renderable(reg, e, std::move(loc), 1,
-                                    {shape::sprite::from_data{U"👾", 1, 1}});
+                                    {shape::sprite::from_data{"o", 1, 1}});
 
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &monster::on_collide);
@@ -433,7 +450,7 @@ struct monster {
             actor::make_base_renderable(
                 reg_, dead,
                 location{old_loc.line(), old_loc.index_in_line() - 1}, 1,
-                {shape::sprite::from_data{U"___", 1, 3}});
+                {shape::sprite::from_data{"___", 1, 3}});
             reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
             reg_.emplace<timeline::eval_direction>(dead);
             reg_.emplace<timeline::what_do>(

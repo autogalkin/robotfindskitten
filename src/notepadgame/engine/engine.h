@@ -96,8 +96,8 @@ public:
     return std::make_pair(dcall0(SCI_GETSELECTIONSTART),
                           dcall0(SCI_GETSELECTIONEND));
   }
-  void replace_selection(const std::string_view new_str) const noexcept {
-    dcall1_l(SCI_REPLACESEL, reinterpret_cast<sptr_t>(new_str.data()));
+  void replace_selection(const std::string& new_str) const noexcept {
+    dcall1_l(SCI_REPLACESEL, reinterpret_cast<sptr_t>(new_str.c_str()));
   }
   void set_new_all_text(const std::string &new_text) const noexcept {
     dcall1_l(SCI_SETTEXT, reinterpret_cast<sptr_t>(new_text.c_str()));

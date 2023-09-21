@@ -13,7 +13,7 @@
 
 using npi_t = int64_t; // notepad's index size
 
-using char_size = char32_t; // support utf-8
+using char_size = char; 
 
 class world;
 

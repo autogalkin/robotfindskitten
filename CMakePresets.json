@@ -23,7 +23,8 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_COMPILER": "cl.exe",
                 "CMAKE_CXX_LINK_EXECUTABLE": "link.exe",
-                "CMAKE_CXX_FLAGS": " /EHsc",
+                "CMAKE_CXX_LINK_FLAGS": "/DEBUG:FULL",
+                "CMAKE_CXX_FLAGS": "/FS /Zi /Od /EHsc",
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
                 "Boost_NO_WARN_NEW_VERSIONS": "1"
             },
@@ -34,14 +35,6 @@
             "toolset": {
                 "value": "host=x64",
                 "strategy": "external"
-            },
-            "vendor": {
-                "microsoft.com/VisualStudioSettings/CMake/1.0": {
-                    "hostOS": [
-                        "Windows"
-                    ],
-                    "intelliSenseMode": "windows-msvc-x64"
-                }
             }
         }
     ],

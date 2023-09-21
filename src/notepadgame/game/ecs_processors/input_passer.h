@@ -11,12 +11,12 @@
 
 class input_passer final : public ecs_processor {
   public:
-    explicit input_passer(world* w, input_state_t* i) : ecs_processor(w), input_(i) {}
+    explicit input_passer(world* w, input_t* i) : ecs_processor(w), input_(i) {}
 
     struct down_signal {
         // for customize input in runtime
         boost::signals2::signal<void(entt::registry&, entt::entity,
-                                     const input_state_t&)>
+                                     const input_t&)>
             call;
     };
 
@@ -32,5 +32,5 @@ class input_passer final : public ecs_processor {
                                                              *input_);
         }
     }
-    input_state_t* input_{nullptr};
+    input_t* input_{nullptr};
 };

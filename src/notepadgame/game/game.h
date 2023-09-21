@@ -39,7 +39,6 @@ inline void start() {
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });
-
     {
         int i = 0;
         int j = 0;
@@ -48,7 +47,7 @@ inline void start() {
             actor::make_base_renderable(
                 reg, entity,
                 {6 + static_cast<double>(i), 4 + static_cast<double>(j)}, 1,
-                {shape::sprite::from_data{U"█", 1, 1}});
+                {shape::sprite::from_data{"]", 1, 1}});
             reg.emplace<collision::agent>(entity);
             reg.emplace<collision::on_collide>(entity);
         };
@@ -63,13 +62,13 @@ inline void start() {
         // });
         w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(reg, entity, {2, 0}, 2,
-                                        {shape::sprite::from_data{U"-", 1, 1}});
+                                        {shape::sprite::from_data{"-", 1, 1}});
             reg.emplace<screen_resize>(entity, [&reg,
                                                 entity](const uint32_t width,
                                                         const uint32_t height) {
                 auto& sh = reg.get<shape::sprite_animation>(entity);
                 sh.current_sprite() = shape::sprite{shape::sprite::from_data{
-                    std::vector<char32_t>(width, U'—').data(), 1, width}};
+                    std::vector<char>(width, '-').data(), 1, width}};
             });
             reg.emplace<screen_scroll>(entity, [&reg, entity](
                                                    const position_t& new_scroll) {
@@ -82,7 +81,7 @@ inline void start() {
         w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(
                 reg, entity, {0, 0}, 2,
-                {shape::sprite::from_data{U"It's a banana! Oh, joy!", 1, 23}});
+                {shape::sprite::from_data{"It's a banana! Oh, joy!", 1, 23}});
             reg.emplace<screen_scroll>(entity, [&reg, entity](
                                                    const position_t& new_scroll) {
                 auto& [current, translation] = reg.get<location_buffer>(entity);
@@ -101,8 +100,8 @@ inline void start() {
         reg.emplace<shape::sprite_animation>(
             entity,
             std::vector<shape::sprite>{
-                {{shape::sprite::from_data{U"f-", 1, 2}},
-                 {shape::sprite::from_data{U"-f", 1, 2}}}},
+                {{shape::sprite::from_data{"f-", 1, 2}},
+                 {shape::sprite::from_data{"-f", 1, 2}}}},
             static_cast<uint8_t>(0));
 
         character::make(reg, entity, location{3, 3});
@@ -114,5 +113,6 @@ inline void start() {
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         monster::make(reg, entity, {10, 3});
     });
+
 };
 } // namespace game
