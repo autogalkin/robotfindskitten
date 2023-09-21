@@ -7,8 +7,8 @@
 #include "notepad.h"
 #include "world.h"
 
-engine_t::~engine_t() = default;
-HWND engine_t::create_native_window(const DWORD dwExStyle,
+scintilla::~scintilla() = default;
+HWND scintilla::create_native_window(const DWORD dwExStyle,
                                   const LPCWSTR lpWindowName,
                                   const DWORD dwStyle, const int X, const int Y,
                                   const int nWidth, const int nHeight,
@@ -31,16 +31,14 @@ HWND engine_t::create_native_window(const DWORD dwExStyle,
     // hide control symbol mnemonics
     dcall1(SCI_SETCONTROLCHARSYMBOL, ' ');
 
-    show_spaces(notepad_t::opts::show_spaces & start_options ? 1 : 0);
-    show_eol(notepad_t::opts::show_eol & start_options ? 1 : 0);
+    show_spaces(notepad::opts::show_spaces & start_options ? 1 : 0);
+    show_eol(notepad::opts::show_eol & start_options ? 1 : 0);
 
-    world_.emplace(this);
-    world_->backbuffer.init(nWidth / get_char_width(), nHeight / get_line_height());
 
     return edit_window_;
 }
 
-void engine_t::init_direct_access_to_scintilla() {
+void scintilla::init_direct_access_to_scintilla() {
     direct_function_ =
         reinterpret_cast<npi_t(__cdecl*)(sptr_t, int, uptr_t, sptr_t)>(
             GetProcAddress(native_dll_.get(), "Scintilla_DirectFunction"));
@@ -54,7 +52,7 @@ void engine_t::init_direct_access_to_scintilla() {
     // NOLINT(clang-diagnostic-cast-function-type)
 }
 
-uint32_t engine_t::get_window_width() const noexcept {
+uint32_t scintilla::get_window_width() const noexcept {
     RECT r;
     get_window_rect(r);
     return r.right - r.left;
@@ -62,7 +60,7 @@ uint32_t engine_t::get_window_width() const noexcept {
 
 
 
-void engine_t::set_background_color(const COLORREF c) const noexcept {
+void scintilla::set_background_color(const COLORREF c) const noexcept {
   PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_DEFAULT,
               c); // set back-color of window
   PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_LINENUMBER,
@@ -75,7 +73,7 @@ void engine_t::set_background_color(const COLORREF c) const noexcept {
 }
 
 void
-engine_t::force_set_background_color(const COLORREF c) const noexcept {
+scintilla::force_set_background_color(const COLORREF c) const noexcept {
   dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
   dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
   dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
@@ -83,7 +81,7 @@ engine_t::force_set_background_color(const COLORREF c) const noexcept {
   dcall2(SCI_STYLESETBACK, 0, c);
 }
 
-void engine_t::set_all_text_color(const COLORREF c) const noexcept {
+void scintilla::set_all_text_color(const COLORREF c) const noexcept {
   PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_DEFAULT,
               c); // set back-color of window
   PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_LINENUMBER,
@@ -95,7 +93,7 @@ void engine_t::set_all_text_color(const COLORREF c) const noexcept {
   PostMessage(get_native_window(), SCI_STYLESETFORE, 0, c);
 }
 
-void engine_t::force_set_all_text_color(const COLORREF c) const noexcept {
+void scintilla::force_set_all_text_color(const COLORREF c) const noexcept {
   dcall2(SCI_STYLESETFORE, STYLE_DEFAULT, c);
   dcall2(SCI_STYLESETFORE, STYLE_LINENUMBER, c);
   dcall2(SCI_STYLESETFORE, SC_CHARSET_DEFAULT, c);
@@ -105,33 +103,33 @@ void engine_t::force_set_all_text_color(const COLORREF c) const noexcept {
 }
 
 template <is_container_of_chars T>
-std::pair<npi_t, npi_t> engine_t::get_selection_text(T &out) const noexcept {
+std::pair<npi_t, npi_t> scintilla::get_selection_text(T &out) const noexcept {
   const auto range = get_selection_range();
   out.reserve(range.second - range.first);
   dcall1_l(SCI_GETSELTEXT, reinterpret_cast<sptr_t>(out.data()));
   return range;
 }
 
-npi_t engine_t::get_caret_index_in_line() const noexcept {
+npi_t scintilla::get_caret_index_in_line() const noexcept {
   const auto ci = get_caret_index();
   return ci - get_first_char_index_in_line(get_line_index(ci));
 }
 
 template <is_container_of_chars T>
-void engine_t::get_line_text(const npi_t line_index, T &buffer) const noexcept {
+void scintilla::get_line_text(const npi_t line_index, T &buffer) const noexcept {
   const npi_t line_length = get_line_lenght(line_index);
   buffer.reserve(line_length + 1);
   dcall2(SCI_GETLINE, line_index, reinterpret_cast<sptr_t>(buffer.data()));
 }
 
 template <is_container_of_chars T>
-void engine_t::get_all_text(T &buffer) const noexcept {
+void scintilla::get_all_text(T &buffer) const noexcept {
   const npi_t len = get_all_text_length();
   buffer.reserve(len + 1);
   dcall2(SCI_GETTEXT, len + 1, reinterpret_cast<sptr_t>(buffer.data()));
 }
 
-void engine_t::show_spaces(const bool enable) const noexcept {
+void scintilla::show_spaces(const bool enable) const noexcept {
   int flag = SCWS_INVISIBLE;
   if (enable)
     flag = SCWS_VISIBLEALWAYS;

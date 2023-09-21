@@ -1,3 +1,5 @@
 #include "input.h"
 
-input_t::~input_t(){}
+namespace input{
+thread_input::~thread_input(){}
+}

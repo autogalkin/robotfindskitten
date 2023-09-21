@@ -14,23 +14,32 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
     if (ul_reason_for_call == DLL_PROCESS_ATTACH) { 
         // Ignore thread notifications
         DisableThreadLibraryCalls(h_module);
-#ifndef NDEBUG
-        gamelog::get(); // alloc a console for the cout
-#endif // NDEBUG
+
        // run the notepad singleton
-        notepad_t& np = notepad_t::get();
+        notepad& np = notepad::get();
         const auto np_module = GetModuleHandleW(
             nullptr); // get the module handle of the notepad.exe
 
-        [[maybe_unused]] constexpr notepad_t::opts start_options =
-            notepad_t::opts::empty
+        [[maybe_unused]] constexpr notepad::opts start_options =
+            notepad::opts::empty
 #ifdef NDEBUG
             | notepad_t::opts::hide_selection | notepad_t::opts::kill_focus |
             notepad_t::opts::disable_mouse
 #endif // NDEBUG
-            | notepad_t::opts::show_eol | notepad_t::opts::show_spaces;
+            | notepad::opts::show_eol | notepad::opts::show_spaces;
 
-        np.on_open()->get().connect([] { game::start(); });
+        np.on_open()->get().connect([] (world& world, input::thread_input& i){ 
+#ifndef NDEBUG
+            gamelog::get(); // alloc a console for the cout
+#endif // NDEBUG
+            printf("Notepad is loaded and initialized. Start a game");
+            game::start(world, i); 
+
+        });
+
+        constexpr int world_widht  = 300;
+        constexpr int world_height = 100;
+
         np.connect_to_notepad(
             np_module, start_options); // start initialization and a game loop
     }

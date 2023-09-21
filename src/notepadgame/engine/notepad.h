@@ -7,6 +7,7 @@
 #include <thread>
 #pragma warning(pop)
 #include "engine.h"
+#include "world.h"
 #include "input.h"
 #include "tick.h"
 
@@ -22,23 +23,23 @@ bool hook_CreateWindowExW(HMODULE module);
 // Block window title updates
 bool hook_SetWindowTextW(HMODULE module);
 
-
 // A static Singelton for notepad.exe wrapper
-class notepad_t final : public ticker {
-   friend LRESULT CALLBACK hook_wnd_proc(HWND, UINT, WPARAM,LPARAM);
-   friend bool hook_GetMessageW(HMODULE);
-   friend bool hook_SendMessageW(HMODULE);
-   friend bool hook_CreateWindowExW(HMODULE);
-   friend bool hook_SetWindowTextW(HMODULE);
-public:
-    static notepad_t& get() {
-        static notepad_t notepad{};
+class notepad {
+    friend LRESULT CALLBACK hook_wnd_proc(HWND, UINT, WPARAM, LPARAM);
+    friend bool hook_GetMessageW(HMODULE);
+    friend bool hook_SendMessageW(HMODULE);
+    friend bool hook_CreateWindowExW(HMODULE);
+    friend bool hook_SetWindowTextW(HMODULE);
+
+  public:
+    static notepad& get() {
+        static notepad notepad{};
         return notepad;
     }
     struct opts {
         uint8_t all = static_cast<uint8_t>(values::empty);
         // Not enum class
-        enum values: uint8_t {
+        enum values : uint8_t {
             // clang-format off
             empty          = 0x0,
             kill_focus     = 0x1 << 0,
@@ -48,21 +49,22 @@ public:
             show_spaces    = 0x1 << 4
             // clang-format on
         };
-        constexpr opts(values v): all(static_cast<uint8_t>(v)){}
-        constexpr opts(int v): all(static_cast<uint8_t>(v)){}
+        constexpr opts(values v) : all(static_cast<uint8_t>(v)) {}
+        constexpr opts(int v) : all(static_cast<uint8_t>(v)) {}
     };
 
-    using open_signal_t  = boost::signals2::signal<void()>;
-    using close_signal_t = boost::signals2::signal<void()>;
-    [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t> > on_open() {
-        return on_open_ ? std::make_optional(std::ref(*on_open_)) : std::nullopt;
+    // TODO channel
+    using open_signal_t = boost::signals2::signal<void(world&, input::thread_input&)>;
+    [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
+    on_open() {
+        return on_open_ ? std::make_optional(std::ref(*on_open_))
+                        : std::nullopt;
     }
 
-    close_signal_t on_close;
-    input_t input;
-
+    input::thread_input input_state;
+    //input get_input_state()
     void connect_to_notepad(const HMODULE module /* notepad.exe module*/,
-                            const opts start_options = notepad_t::opts::empty) {
+                            const opts start_options = notepad::opts::empty) {
         options_ = start_options;
         hook_CreateWindowExW(module);
         hook_SendMessageW(module);
@@ -72,23 +74,24 @@ public:
     [[nodiscard]] HWND get_window() const { return main_window_; }
 
     // All games works after initialization this components
-    [[nodiscard]] engine_t& get_engine()  {
-        return *engine_;
-    }
+    //[[nodiscard]] scintilla& get_engine() { return *scintilla_; }
 
     void set_window_title(const std::wstring_view title) const {
         SetWindowTextW(main_window_, title.data());
     }
 
-private:
-    explicit notepad_t()
-        : engine_(std::nullopt), input(), main_window_(), original_proc_(0), on_open_(std::make_unique<open_signal_t>()), on_close() {
-    }
-    virtual void tick_frame() override;
-    std::optional<engine_t> engine_;
+  private:
+    back_buffer buf_;
+    void start_game();
+    explicit notepad();
+    ticker  render_tick;
+    //virtual void tick_frame() override;
+    std::optional<scintilla> scintilla_;
+    // important, we can't allocate dynamic memory while not connected to notepad.exe
+    //std::optional<world> world_;
     // Live only on startup
     std::unique_ptr<open_signal_t> on_open_;
-    opts options_{opts::empty};;
+    opts options_{opts::empty};
     HWND main_window_;
     LONG_PTR original_proc_; // notepad.exe window proc
 };

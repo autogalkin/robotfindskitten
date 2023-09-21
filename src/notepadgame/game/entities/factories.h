@@ -206,10 +206,17 @@ struct character final {
                                           const entt::entity collider) {
         // TODO collision functions without cast?
         if (reg.all_of<gun>(collider)) {
+            auto& animation = reg.get<shape::sprite_animation>(self);
+            animation = shape::sprite_animation(
+                std::vector<shape::sprite>{
+                    {{shape::sprite::from_data{"#-", 1, 2}},
+                     {shape::sprite::from_data{"-#", 1, 2}}}},
+                animation.rendering_i);
+
             auto& [signal] = reg.get<input_passer::down_signal>(self);
             signal.connect([](entt::registry& reg_, const entt::entity chrcter,
-                              const input_t& state) {
-                if (state.has_key(input_t::key_t::space)){
+                              const input::state_t& state) {
+                if (input::has_key(state, input::key_t::space)) {
                     gun::fire(reg_, chrcter);
                 }
             });
@@ -241,18 +248,20 @@ struct character final {
 
     static void add_top_down_camera(entt::registry& reg, const entt::entity e) {
         reg.emplace<timeline::eval_direction>(e);
+        /*
         reg.emplace<timeline::what_do>(e, [](entt::registry& reg_,
                                              const entt::entity owner,
                                              direction) {
+
             const auto& [location, _] = reg_.get<location_buffer>(owner);
             auto pos = position_converter::from_location(location);
 
-            const auto& scroll = notepad_t::get().get_engine().get_scroll();
+            const auto& scroll = notepad::get().get_engine().get_scroll();
             const npi_t width =
-                notepad_t::get().get_engine().get_window_width() /
-                notepad_t::get().get_engine().get_char_width();
+                notepad::get().get_engine().get_window_width() /
+                notepad::get().get_engine().get_char_width();
             const npi_t height =
-                notepad_t::get().get_engine().get_lines_on_screen();
+                notepad::get().get_engine().get_lines_on_screen();
 
             int c_move_pos = 0;
             if (pos.index_in_line() > width + scroll.index_in_line() ||
@@ -304,7 +313,7 @@ struct character final {
                             } else {
                                 i += 1 * l_sign;
                             }
-                            notepad_t::get().get_engine().scroll(c, l);
+                            notepad::get().get_engine().scroll(c, l);
                             ++lifetime;
                         }
                         ++t;
@@ -317,19 +326,22 @@ struct character final {
                     });
             }
         });
+    */
     }
 
-    template <input_t::key_t UP = input_t::key_t::w, input_t::key_t LEFT = input_t::key_t::a,
-              input_t::key_t DOWN = input_t::key_t::s, input_t::key_t RIGHT = input_t::key_t::d>
+    template <input::key_t UP = input::key_t::w,
+              input::key_t LEFT = input::key_t::a,
+              input::key_t DOWN = input::key_t::s,
+              input::key_t RIGHT = input::key_t::d>
     static void process_movement_input(entt::registry& reg,
                                        const entt::entity e,
-                                       const input_t& input) {
-        auto& vel = reg.get<velocity>(e); 
-        for (auto k : input.state()){
+                                       const input::state_t& state) {
+        auto& vel = reg.get<velocity>(e);
+        for (auto k : state) {
             switch (k) {
             case UP:
                 vel.line() -= 1;
-                break; 
+                break;
             case DOWN:
                 vel.line() += 1;
                 break;
@@ -393,11 +405,12 @@ struct atmosphere final {
             RGB(std::lerp(GetRValue(start), GetRValue(end), -value),
                 std::lerp(GetGValue(start), GetGValue(end), -value),
                 std::lerp(GetBValue(start), GetBValue(end), -value));
-
-        notepad_t::get().get_engine().force_set_background_color(
+        /*
+        notepad::get().get_engine().force_set_background_color(
             new_back_color);
-        notepad_t::get().get_engine().force_set_all_text_color(
+        notepad::get().get_engine().force_set_all_text_color(
             new_front_color);
+        */
     }
 
   private:

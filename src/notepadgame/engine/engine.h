@@ -16,7 +16,6 @@
 #pragma warning(pop)
 #include "details/base_types.h"
 #include "details/nonconstructors.h"
-#include "world.h"
 
 template <typename T>
 concept is_container_of_chars = requires(T t) {
@@ -32,13 +31,14 @@ class construct_key
     friend T;
 };
 
-template<> class construct_key<engine_t>{
+class scintilla;
+template<> class construct_key<scintilla>{
   friend bool hook_CreateWindowExW(HMODULE);
 };
 
 
 // this is the EDIT Control window of the notepad
-class engine_t final
+class scintilla final
     : public noncopyable,
       public nonmoveable // Deleted so engine objects can not be copied.
 {
@@ -48,7 +48,7 @@ class engine_t final
 
 public:
   // Only the hook_CreateWindowExW can create the engine
-  explicit engine_t(construct_key<engine_t>):
+  explicit scintilla(construct_key<scintilla>):
         native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {
     }
 
@@ -57,11 +57,10 @@ public:
       boost::signals2::signal<void(uint32_t width, uint32_t height)>;
 
   [[nodiscard]] HWND get_native_window() const noexcept { return edit_window_; }
-  [[nodiscard]] world& get_world() { return *world_; }
-  [[nodiscard]] scroll_changed_signal &get_on_scroll_changed() {
-    return on_scroll_changed_;
-  }
-  [[nodiscard]] size_changed_signal &get_on_resize() { return on_resize_; }
+  //[[nodiscard]] scroll_changed_signal &get_on_scroll_changed() {
+  //  return on_scroll_changed_;
+ // }
+ // [[nodiscard]] size_changed_signal &get_on_resize() { return on_resize_; }
   [[nodiscard]] const position_t &get_scroll() const { return scroll_; }
   void scroll(const npi_t columns_to_scroll,
               const npi_t lines_to_scroll) const {
@@ -99,7 +98,7 @@ public:
   void replace_selection(const std::string& new_str) const noexcept {
     dcall1_l(SCI_REPLACESEL, reinterpret_cast<sptr_t>(new_str.c_str()));
   }
-  void set_new_all_text(const std::string &new_text) const noexcept {
+  void set_new_all_text(const std::string& new_text) const noexcept {
     dcall1_l(SCI_SETTEXT, reinterpret_cast<sptr_t>(new_text.c_str()));
   }
 
@@ -191,7 +190,7 @@ public:
     return static_cast<int>(dcall0(SCI_GETZOOM));
   }
 
-  ~engine_t();
+  ~scintilla();
 
 protected:
   HWND create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
@@ -201,11 +200,11 @@ protected:
 
   void set_h_scroll(const npi_t p) {
     scroll_.index_in_line() = p;
-    on_scroll_changed_(scroll_);
+    //on_scroll_changed_(scroll_);
   }
   void set_v_scroll(const npi_t p) {
     scroll_.line() = p;
-    on_scroll_changed_(scroll_);
+    //on_scroll_changed_(scroll_);
   }
 
   void init_direct_access_to_scintilla();
@@ -226,7 +225,6 @@ private:
     return direct_function_(direct_wnd_ptr_, message, w, l);
   } // NOLINT(modernize-use-nodiscard)
 
-  std::optional<world> world_{std::nullopt};
   HWND edit_window_{nullptr};
   std::unique_ptr<std::remove_pointer_t<HMODULE>, decltype(&::FreeLibrary)>
       native_dll_;
@@ -235,7 +233,7 @@ private:
   npi_t (*direct_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
 
   position_t scroll_{};
-  scroll_changed_signal on_scroll_changed_{};
-  size_changed_signal   on_resize_{};
+  //scroll_changed_signal on_scroll_changed_{};
+  //size_changed_signal   on_resize_{};
 };
 

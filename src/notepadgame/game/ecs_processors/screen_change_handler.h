@@ -5,9 +5,10 @@
 #include "engine.h"
 #include "world.h"
 
+/*
 class screen_change_handler final : public ecs_processor {
   public:
-    explicit screen_change_handler(world* w, engine_t* e) : ecs_processor(w) {
+    explicit screen_change_handler(world* w, scintilla* e) : ecs_processor(w) {
         size_changed_connection = e->get_on_resize().connect(
             [this](const uint32_t width, const uint32_t height) {
                 on_resize(get_world()->reg_, width, height);
@@ -42,3 +43,4 @@ class screen_change_handler final : public ecs_processor {
     boost::signals2::scoped_connection scroll_changed_connection_;
     boost::signals2::scoped_connection size_changed_connection;
 };
+*/

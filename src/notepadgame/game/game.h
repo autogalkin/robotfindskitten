@@ -18,14 +18,14 @@
 #include "world.h"
 
 namespace game {
-inline void start() {
-    auto& w = notepad_t::get().get_engine().get_world();
-    auto& exec = w.executor;
+inline void start(world& w, input::thread_input& i) {
 
+
+    auto& exec = w.executor;
     // the game tick pipeline of the ecs
-    exec.push<screen_change_handler>(&w,
-        &notepad_t::get().get_engine()); // TODO its only observer
-    exec.push<input_passer>(&w,&notepad_t::get().input);
+   // exec.push<screen_change_handler>(&w,
+    //    &notepad::get().get_engine()); // TODO its only observer
+    exec.push<input_passer>(&w,&i);
     exec.push<uniform_motion>(&w);
     exec.push<non_uniform_motion>(&w);
     exec.push<timeline_executor>(&w);
@@ -39,6 +39,7 @@ inline void start() {
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });
+    //return;
     {
         int i = 0;
         int j = 0;
@@ -60,6 +61,8 @@ inline void start() {
         //     actor::make_base_renderable(reg, entity, {16, 24}, 2,
         //     {shape::sprite::from_data{U"Hello Interface!", 1, 15}});
         // });
+        // 
+        /*
         w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(reg, entity, {2, 0}, 2,
                                         {shape::sprite::from_data{"-", 1, 1}});
@@ -78,6 +81,7 @@ inline void start() {
                             current.index_in_line()};
             });
         });
+        */
         w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(
                 reg, entity, {0, 0}, 2,
@@ -100,8 +104,8 @@ inline void start() {
         reg.emplace<shape::sprite_animation>(
             entity,
             std::vector<shape::sprite>{
-                {{shape::sprite::from_data{"f-", 1, 2}},
-                 {shape::sprite::from_data{"-f", 1, 2}}}},
+                {{shape::sprite::from_data{"#", 1, 1}},
+                 {shape::sprite::from_data{"#", 1, 1}}}},
             static_cast<uint8_t>(0));
 
         character::make(reg, entity, location{3, 3});

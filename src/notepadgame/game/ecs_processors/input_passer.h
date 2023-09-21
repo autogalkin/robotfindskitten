@@ -1,4 +1,5 @@
 #pragma once
+#include "details/gamelog.h"
 #pragma warning(push, 0)
 #include "Windows.h"
 #include "boost/signals2.hpp"
@@ -11,26 +12,28 @@
 
 class input_passer final : public ecs_processor {
   public:
-    explicit input_passer(world* w, input_t* i) : ecs_processor(w), input_(i) {}
+    explicit input_passer(world* w, input::thread_input* i) : ecs_processor(w), input_(i), state_(input::state_capacity)  {}
 
     struct down_signal {
         // for customize input in runtime
         boost::signals2::signal<void(entt::registry&, entt::entity,
-                                     const input_t&)>
+                                     const input::state_t&)>
             call;
     };
 
     void execute(entt::registry& reg, gametime::duration) override {
-        ;
-        if (input_->is_empty())
+        // swap data from other thread
+        swap(*input_, state_);
+        if (state_.empty())
             return;
-
         for (const auto view = reg.view<const input_passer::down_signal>();
              const auto entity : view) {
 
             view.get<input_passer::down_signal>(entity).call(reg, entity,
-                                                             *input_);
+                                                             state_);
         }
+        state_.clear();
     }
-    input_t* input_{nullptr};
+    input::thread_input* input_{nullptr};
+    input::state_t state_;
 };
