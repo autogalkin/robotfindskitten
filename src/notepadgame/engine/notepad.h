@@ -54,7 +54,8 @@ class notepad {
     };
 
     // TODO channel
-    using open_signal_t = boost::signals2::signal<void(world&, input::thread_input&)>;
+    using open_signal_t =
+        boost::signals2::signal<void(world&, input::thread_input&)>;
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
     on_open() {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
@@ -62,7 +63,7 @@ class notepad {
     }
 
     input::thread_input input_state;
-    //input get_input_state()
+    // input get_input_state()
     void connect_to_notepad(const HMODULE module /* notepad.exe module*/,
                             const opts start_options = notepad::opts::empty) {
         options_ = start_options;
@@ -84,11 +85,12 @@ class notepad {
     back_buffer buf_;
     void start_game();
     explicit notepad();
-    ticker  render_tick;
-    //virtual void tick_frame() override;
+    ticker render_tick;
+    // virtual void tick_frame() override;
     std::optional<scintilla> scintilla_;
-    // important, we can't allocate dynamic memory while not connected to notepad.exe
-    //std::optional<world> world_;
+    // important, we can't allocate dynamic memory while not connected to
+    // notepad.exe
+    // std::optional<world> world_;
     // Live only on startup
     std::unique_ptr<open_signal_t> on_open_;
     opts options_{opts::empty};

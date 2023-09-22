@@ -23,11 +23,11 @@
 #include "notepad.h"
 #include "world.h"
 
-// TODO to inside buf
 static volatile std::atomic_bool done(false);
 
 class thread_guard : public noncopyable {
     std::thread t;
+
   public:
     explicit thread_guard(std::thread&& t_) : t(std::move(t_)) {}
     ~thread_guard() {
@@ -38,11 +38,10 @@ class thread_guard : public noncopyable {
     }
 };
 
-
 notepad::notepad()
     : scintilla_(std::nullopt), input_state(), main_window_(),
       original_proc_(0), on_open_(std::make_unique<open_signal_t>()),
-       render_tick(), buf_(150, 30) {}
+      render_tick(), buf_(150, 30) {}
 
 void notepad::start_game() {
     // render in main thread

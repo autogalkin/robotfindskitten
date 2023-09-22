@@ -8,13 +8,11 @@
 #include "world.h"
 
 scintilla::~scintilla() = default;
-HWND scintilla::create_native_window(const DWORD dwExStyle,
-                                  const LPCWSTR lpWindowName,
-                                  const DWORD dwStyle, const int X, const int Y,
-                                  const int nWidth, const int nHeight,
-                                  const HWND hWndParent, const HMENU hMenu,
-                                  const HINSTANCE hInstance,
-                                  const LPVOID lpParam, uint8_t start_options) {
+HWND scintilla::create_native_window(
+    const DWORD dwExStyle, const LPCWSTR lpWindowName, const DWORD dwStyle,
+    const int X, const int Y, const int nWidth, const int nHeight,
+    const HWND hWndParent, const HMENU hMenu, const HINSTANCE hInstance,
+    const LPVOID lpParam, uint8_t start_options) {
     edit_window_ =
         CreateWindowExW(dwExStyle, L"Scintilla", lpWindowName, dwStyle, X, Y,
                         nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
@@ -33,7 +31,6 @@ HWND scintilla::create_native_window(const DWORD dwExStyle,
 
     show_spaces(notepad::opts::show_spaces & start_options ? 1 : 0);
     show_eol(notepad::opts::show_eol & start_options ? 1 : 0);
-
 
     return edit_window_;
 }
@@ -58,80 +55,78 @@ uint32_t scintilla::get_window_width() const noexcept {
     return r.right - r.left;
 }
 
-
-
 void scintilla::set_background_color(const COLORREF c) const noexcept {
-  PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_DEFAULT,
-              c); // set back-color of window
-  PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_LINENUMBER,
-              c); // set back-color of margin
-  PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_DEFAULT,
-              c); // char back
-  PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_ANSI, c);   //
-  PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_SYMBOL, c); //
-  PostMessage(get_native_window(), SCI_STYLESETBACK, 0, c);                 //
+    PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_DEFAULT,
+                c); // set back-color of window
+    PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_LINENUMBER,
+                c); // set back-color of margin
+    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_DEFAULT,
+                c); // char back
+    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_ANSI, c); //
+    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_SYMBOL, c); //
+    PostMessage(get_native_window(), SCI_STYLESETBACK, 0, c); //
 }
 
-void
-scintilla::force_set_background_color(const COLORREF c) const noexcept {
-  dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
-  dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
-  dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
-  dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
-  dcall2(SCI_STYLESETBACK, 0, c);
+void scintilla::force_set_background_color(const COLORREF c) const noexcept {
+    dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
+    dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
+    dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
+    dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
+    dcall2(SCI_STYLESETBACK, 0, c);
 }
 
 void scintilla::set_all_text_color(const COLORREF c) const noexcept {
-  PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_DEFAULT,
-              c); // set back-color of window
-  PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_LINENUMBER,
-              c); // set back-color of margin
-  PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_DEFAULT,
-              c); // char back
-  PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_ANSI, c);
-  PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
-  PostMessage(get_native_window(), SCI_STYLESETFORE, 0, c);
+    PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_DEFAULT,
+                c); // set back-color of window
+    PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_LINENUMBER,
+                c); // set back-color of margin
+    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_DEFAULT,
+                c); // char back
+    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_ANSI, c);
+    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
+    PostMessage(get_native_window(), SCI_STYLESETFORE, 0, c);
 }
 
 void scintilla::force_set_all_text_color(const COLORREF c) const noexcept {
-  dcall2(SCI_STYLESETFORE, STYLE_DEFAULT, c);
-  dcall2(SCI_STYLESETFORE, STYLE_LINENUMBER, c);
-  dcall2(SCI_STYLESETFORE, SC_CHARSET_DEFAULT, c);
-  dcall2(SCI_STYLESETFORE, SC_CHARSET_ANSI, c);
-  dcall2(SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
-  dcall2(SCI_STYLESETFORE, 0, c);
+    dcall2(SCI_STYLESETFORE, STYLE_DEFAULT, c);
+    dcall2(SCI_STYLESETFORE, STYLE_LINENUMBER, c);
+    dcall2(SCI_STYLESETFORE, SC_CHARSET_DEFAULT, c);
+    dcall2(SCI_STYLESETFORE, SC_CHARSET_ANSI, c);
+    dcall2(SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
+    dcall2(SCI_STYLESETFORE, 0, c);
 }
 
 template <is_container_of_chars T>
-std::pair<npi_t, npi_t> scintilla::get_selection_text(T &out) const noexcept {
-  const auto range = get_selection_range();
-  out.reserve(range.second - range.first);
-  dcall1_l(SCI_GETSELTEXT, reinterpret_cast<sptr_t>(out.data()));
-  return range;
+std::pair<npi_t, npi_t> scintilla::get_selection_text(T& out) const noexcept {
+    const auto range = get_selection_range();
+    out.reserve(range.second - range.first);
+    dcall1_l(SCI_GETSELTEXT, reinterpret_cast<sptr_t>(out.data()));
+    return range;
 }
 
 npi_t scintilla::get_caret_index_in_line() const noexcept {
-  const auto ci = get_caret_index();
-  return ci - get_first_char_index_in_line(get_line_index(ci));
+    const auto ci = get_caret_index();
+    return ci - get_first_char_index_in_line(get_line_index(ci));
 }
 
 template <is_container_of_chars T>
-void scintilla::get_line_text(const npi_t line_index, T &buffer) const noexcept {
-  const npi_t line_length = get_line_lenght(line_index);
-  buffer.reserve(line_length + 1);
-  dcall2(SCI_GETLINE, line_index, reinterpret_cast<sptr_t>(buffer.data()));
+void scintilla::get_line_text(const npi_t line_index,
+                              T& buffer) const noexcept {
+    const npi_t line_length = get_line_lenght(line_index);
+    buffer.reserve(line_length + 1);
+    dcall2(SCI_GETLINE, line_index, reinterpret_cast<sptr_t>(buffer.data()));
 }
 
 template <is_container_of_chars T>
-void scintilla::get_all_text(T &buffer) const noexcept {
-  const npi_t len = get_all_text_length();
-  buffer.reserve(len + 1);
-  dcall2(SCI_GETTEXT, len + 1, reinterpret_cast<sptr_t>(buffer.data()));
+void scintilla::get_all_text(T& buffer) const noexcept {
+    const npi_t len = get_all_text_length();
+    buffer.reserve(len + 1);
+    dcall2(SCI_GETTEXT, len + 1, reinterpret_cast<sptr_t>(buffer.data()));
 }
 
 void scintilla::show_spaces(const bool enable) const noexcept {
-  int flag = SCWS_INVISIBLE;
-  if (enable)
-    flag = SCWS_VISIBLEALWAYS;
-  PostMessage(get_native_window(), SCI_SETVIEWWS, flag, 0);
+    int flag = SCWS_INVISIBLE;
+    if (enable)
+        flag = SCWS_VISIBLEALWAYS;
+    PostMessage(get_native_window(), SCI_SETVIEWWS, flag, 0);
 }

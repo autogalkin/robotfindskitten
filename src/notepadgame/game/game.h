@@ -20,12 +20,11 @@
 namespace game {
 inline void start(world& w, input::thread_input& i) {
 
-
     auto& exec = w.executor;
     // the game tick pipeline of the ecs
-   // exec.push<screen_change_handler>(&w,
+    // exec.push<screen_change_handler>(&w,
     //    &notepad::get().get_engine()); // TODO its only observer
-    exec.push<input_passer>(&w,&i);
+    exec.push<input_passer>(&w, &i);
     exec.push<uniform_motion>(&w);
     exec.push<non_uniform_motion>(&w);
     exec.push<timeline_executor>(&w);
@@ -39,7 +38,7 @@ inline void start(world& w, input::thread_input& i) {
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });
-    //return;
+    // return;
     {
         int i = 0;
         int j = 0;
@@ -61,7 +60,7 @@ inline void start(world& w, input::thread_input& i) {
         //     actor::make_base_renderable(reg, entity, {16, 24}, 2,
         //     {shape::sprite::from_data{U"Hello Interface!", 1, 15}});
         // });
-        // 
+        //
         /*
         w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(reg, entity, {2, 0}, 2,
@@ -74,8 +73,8 @@ inline void start(world& w, input::thread_input& i) {
                     std::vector<char>(width, '-').data(), 1, width}};
             });
             reg.emplace<screen_scroll>(entity, [&reg, entity](
-                                                   const position_t& new_scroll) {
-                auto& [current, translation] = reg.get<location_buffer>(entity);
+                                                   const position_t& new_scroll)
+        { auto& [current, translation] = reg.get<location_buffer>(entity);
                 translation.pin() = location{
                     0., static_cast<double>(new_scroll.index_in_line()) -
                             current.index_in_line()};
@@ -86,13 +85,14 @@ inline void start(world& w, input::thread_input& i) {
             actor::make_base_renderable(
                 reg, entity, {0, 0}, 2,
                 {shape::sprite::from_data{"It's a banana! Oh, joy!", 1, 23}});
-            reg.emplace<screen_scroll>(entity, [&reg, entity](
-                                                   const position_t& new_scroll) {
-                auto& [current, translation] = reg.get<location_buffer>(entity);
-                translation.pin() = location{
-                    0., static_cast<double>(new_scroll.index_in_line()) -
-                            current.index_in_line()};
-            });
+            reg.emplace<screen_scroll>(
+                entity, [&reg, entity](const position_t& new_scroll) {
+                    auto& [current, translation] =
+                        reg.get<location_buffer>(entity);
+                    translation.pin() = location{
+                        0., static_cast<double>(new_scroll.index_in_line()) -
+                                current.index_in_line()};
+                });
         });
     }
 
@@ -103,9 +103,8 @@ inline void start(world& w, input::thread_input& i) {
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         reg.emplace<shape::sprite_animation>(
             entity,
-            std::vector<shape::sprite>{
-                {{shape::sprite::from_data{"#", 1, 1}},
-                 {shape::sprite::from_data{"#", 1, 1}}}},
+            std::vector<shape::sprite>{{{shape::sprite::from_data{"#", 1, 1}},
+                                        {shape::sprite::from_data{"#", 1, 1}}}},
             static_cast<uint8_t>(0));
 
         character::make(reg, entity, location{3, 3});
@@ -117,6 +116,5 @@ inline void start(world& w, input::thread_input& i) {
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         monster::make(reg, entity, {10, 3});
     });
-
 };
 } // namespace game

@@ -21,8 +21,7 @@ class ticker final : public noncopyable, public nonmoveable {
         using namespace std::chrono_literals;
         lag_accumulator_ = 0ns;
     }
-    using signal_t = 
-    boost::signals2::signal<void(gametime::duration)> ;
+    using signal_t = boost::signals2::signal<void(gametime::duration)>;
     signal_t on_tick{};
 
     virtual void reset_to_start() {
@@ -77,7 +76,6 @@ class ticker final : public noncopyable, public nonmoveable {
 
     [[nodiscard]] int get_current_frame_rate() const { return frame_rate; }
 
-
   private:
     gametime::duration lag_accumulator_{};
     gametime::time_point last_time = gametime::clock::now();
@@ -94,18 +92,20 @@ class tickable_base : noncopyable, nonmoveable {
     virtual ~tickable_base() = default;
 
     explicit tickable_base(ticker::signal_t& on_tick)
-    : tick_connection(on_tick.connect(
-          [this](const gametime::duration delta) { tick(delta); })) {}
+        : tick_connection(on_tick.connect(
+              [this](const gametime::duration delta) { tick(delta); })) {}
+
   protected: // prevent slicing
-    //tickable_base(const tickable_base& rhs) noexcept : tickable_base() {} // connect to new tick
-    //tickable_base& operator=(const tickable_base&) noexcept { return *this; }
-    //tickable_base(tickable_base&& other) noexcept : tickable_base() {
-    //    other.tick_connection.disconnect();
-    //}
-   // tickable_base& operator=(tickable_base&& other) noexcept {
+    // tickable_base(const tickable_base& rhs) noexcept : tickable_base() {} //
+    // connect to new tick tickable_base& operator=(const tickable_base&)
+    // noexcept { return *this; } tickable_base(tickable_base&& other) noexcept
+    // : tickable_base() {
+    //     other.tick_connection.disconnect();
+    // }
+    // tickable_base& operator=(tickable_base&& other) noexcept {
     //    other.tick_connection.disconnect();
     //    return *this;
-   // }
+    // }
 
     virtual void tick(gametime::duration delta) = 0;
 

@@ -33,10 +33,8 @@ class back_buffer {
 
   public:
     explicit back_buffer(size_t width, size_t height)
-        : width_(width),
-          buf(std::basic_string<char_size>(width * height, ' ')),
-          rw_lock_()
-    {
+        : width_(width), buf(std::basic_string<char_size>(width * height, ' ')),
+          rw_lock_() {
         for (npi_t i = 1; i <= height; i++) {
             static constexpr int ENDL_SIZE = 1;
             buf[i * width - ENDL_SIZE] = '\n';
@@ -48,8 +46,9 @@ class back_buffer {
     void erase(const position_t& pivot, const shape::sprite& sh, int32_t depth);
 
     template <typename Visitor>
-    requires std::is_invocable_v<Visitor, const std::basic_string<char_size>&>
-    void view(Visitor&& visitor) { 
+        requires std::is_invocable_v<Visitor,
+                                     const std::basic_string<char_size>&>
+    void view(Visitor&& visitor) {
         std::shared_lock<std::shared_mutex> lock(rw_lock_);
         visitor(buf);
     }
@@ -62,7 +61,6 @@ class back_buffer {
     void traverse_sprite_positions(const position_t& pivot,
                                    const shape::sprite& sh,
                                    Visitor&& visitor) const;
-
 };
 
 template <typename Visitor>

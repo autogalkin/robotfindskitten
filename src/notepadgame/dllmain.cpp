@@ -10,12 +10,11 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
                       LPVOID lp_reserved) {
     //  the h_module is notepadgame.dll
 
-
-    if (ul_reason_for_call == DLL_PROCESS_ATTACH) { 
+    if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
         // Ignore thread notifications
         DisableThreadLibraryCalls(h_module);
 
-       // run the notepad singleton
+        // run the notepad singleton
         notepad& np = notepad::get();
         const auto np_module = GetModuleHandleW(
             nullptr); // get the module handle of the notepad.exe
@@ -28,16 +27,15 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
 #endif // NDEBUG
             | notepad::opts::show_eol | notepad::opts::show_spaces;
 
-        np.on_open()->get().connect([] (world& world, input::thread_input& i){ 
+        np.on_open()->get().connect([](world& world, input::thread_input& i) {
 #ifndef NDEBUG
             gamelog::get(); // alloc a console for the cout
 #endif // NDEBUG
             printf("Notepad is loaded and initialized. Start a game");
-            game::start(world, i); 
-
+            game::start(world, i);
         });
 
-        constexpr int world_widht  = 300;
+        constexpr int world_widht = 300;
         constexpr int world_height = 100;
 
         np.connect_to_notepad(

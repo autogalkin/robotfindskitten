@@ -36,13 +36,13 @@ class ecs_processors_executor {
     std::vector<std::unique_ptr<ecs_processor>> data_;
 };
 
-class world final : public tickable_base {//, nonmoveable, noncopyable {
+class world final : public tickable_base { //, nonmoveable, noncopyable {
   public:
     world(back_buffer* buf, ticker::signal_t& on_tick) noexcept;
     ~world() override;
 
     ecs_processors_executor executor;
-    // TODO 
+    // TODO
     back_buffer* backbuffer;
     entt::registry reg_;
     void tick(gametime::duration delta) override {

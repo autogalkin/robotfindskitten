@@ -15,8 +15,8 @@
 #include "world.h"
 #include <ranges>
 
-
-world::world(back_buffer* buf, ticker::signal_t& on_tick) noexcept : tickable_base(on_tick), backbuffer(buf) {
+world::world(back_buffer* buf, ticker::signal_t& on_tick) noexcept
+    : tickable_base(on_tick), backbuffer(buf) {
     /*
     scroll_changed_connection_ = engine_->get_on_scroll_changed().connect(
         [this](const position_t& new_scroll) { redraw_all_actors(); });

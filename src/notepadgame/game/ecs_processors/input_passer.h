@@ -12,7 +12,8 @@
 
 class input_passer final : public ecs_processor {
   public:
-    explicit input_passer(world* w, input::thread_input* i) : ecs_processor(w), input_(i), state_(input::state_capacity)  {}
+    explicit input_passer(world* w, input::thread_input* i)
+        : ecs_processor(w), input_(i), state_(input::state_capacity) {}
 
     struct down_signal {
         // for customize input in runtime

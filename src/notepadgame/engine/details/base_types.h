@@ -108,8 +108,8 @@ struct eval_direction {
 struct visible_in_game {};
 
 namespace position_converter {
-//npi_t to_notepad_index(const position_t& l);
-//position_t from_notepad_index(npi_t i);
+// npi_t to_notepad_index(const position_t& l);
+// position_t from_notepad_index(npi_t i);
 inline position_t from_location(const location& location) {
     return {std::lround(location.line()),
             std::lround(location.index_in_line())};
