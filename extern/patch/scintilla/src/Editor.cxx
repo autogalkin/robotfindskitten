@@ -450,7 +450,7 @@ Sci::Line Editor::LineFromLocation(Point pt) const {
 void Editor::SetTopLine(Sci::Line topLineNew) {
 	if ((topLine != topLineNew) && (topLineNew >= 0)) {
 		topLine = topLineNew;
-		ContainerNeedsUpdate(SC_UPDATE_V_SCROLL);
+		//ContainerNeedsUpdate(SC_UPDATE_V_SCROLL);
 	}
 	posTopLine = pdoc->LineStart(pcs->DocFromDisplay(topLine));
 }
@@ -1833,6 +1833,9 @@ int Editor::TextWidth(int style, const char *text) {
 void Editor::ReconfigureScrollBars() {}
 
 void Editor::SetScrollBars() {
+    // THIS PART CHANGED BY NOTEPADGAME FOR DISABLE AUTOMATIC VERTICAL SCROLLING
+    return;
+    /*
 	RefreshStyleData();
 
 	const Sci::Line nMax = MaxScrollPos();
@@ -1854,6 +1857,7 @@ void Editor::SetScrollBars() {
 			Redraw();
 	}
 	//Platform::DebugPrintf("end max = %d page = %d\n", nMax, nPage);
+    */
 }
 
 void Editor::ChangeSize() {
@@ -2657,14 +2661,16 @@ void Editor::NotifyModified(Document *, DocModification mh, void *) {
 		}
 		CheckModificationForWrap(mh);
 		if (mh.linesAdded != 0) {
+            // THIS PART CHANGED BY NOTEPADGAME FOR DISABLE AUTOMATIC VERTICAL SCROLLING
+            //
 			// Avoid scrolling of display if change before current display
-			if (mh.position < posTopLine && !CanDeferToLastStep(mh)) {
-				const Sci::Line newTop = std::clamp<Sci::Line>(topLine + mh.linesAdded, 0, MaxScrollPos());
-				if (newTop != topLine) {
-					SetTopLine(newTop);
-					SetVerticalScrollPos();
-				}
-			}
+			//if (mh.position < posTopLine && !CanDeferToLastStep(mh)) {
+			//	const Sci::Line newTop = std::clamp<Sci::Line>(topLine + mh.linesAdded, 0, MaxScrollPos());
+		    //	if (newTop != topLine) {
+					//SetTopLine(newTop);
+					//SetVerticalScrollPos();
+			//	}
+		    //}
 
 			if (paintState == notPainting && !CanDeferToLastStep(mh)) {
 				if (SynchronousStylingToVisible()) {
