@@ -42,7 +42,7 @@ class thread_guard : public noncopyable {
 notepad::notepad()
     : scintilla_(std::nullopt), input_state(), main_window_(),
       original_proc_(0), on_open_(std::make_unique<open_signal_t>()),
-      render_tick(), buf_(150, 30)
+      render_tick(), buf_(150, 100)
       , local_commands_(32)
         , commands_()
 {}
