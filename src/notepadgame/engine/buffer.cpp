@@ -24,11 +24,7 @@
 // #include "world.h"
 #include <ranges>
 
-bool back_buffer::is_in_buffer(
-    const position_t& global_position) const noexcept {
-    return global_position.index_in_line() < width_ &&
-           global_position.line() < buf.size() / width_;
-}
+
 
 void back_buffer::draw(const position_t& pivot, const shape::sprite& sh,
                        int32_t depth) {

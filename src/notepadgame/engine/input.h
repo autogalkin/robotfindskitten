@@ -44,7 +44,6 @@ class thread_input : public noncopyable, public nonmoveable {
     }
     void push(const key_t key) {
         std::lock_guard<std::mutex> lock(mutex_);
-        // if (key_state_.size() <= key_state_.max_size())
         key_state_.push_back(key);
     };
     thread_input() : key_state_(state_capacity) {}

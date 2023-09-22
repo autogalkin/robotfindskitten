@@ -1,5 +1,4 @@
 #pragma once
-#include "details/nonconstructors.h"
 #include <stdint.h>
 #include <string_view>
 #include <type_traits>
@@ -8,13 +7,9 @@
 #include <memory>
 #include <vector>
 #pragma warning(pop)
-#include "details/base_types.h"
-#include "ecs_processor_base.h"
-#include "tick.h"
 
 #include "details/base_types.h"
 #include "details/gamelog.h"
-#include "df/dirtyflag.h"
 #include <algorithm>
 #include <numeric>
 #include "range/v3/view/enumerate.hpp"
@@ -22,14 +17,13 @@
 #include <ranges>
 #include "shared_mutex"
 
-class scintilla;
 
 // the array of chars on the screen
 class back_buffer {
     size_t width_;
     // ensure null-terminated
     std::basic_string<char_size> buf;
-    std::shared_mutex rw_lock_;
+    mutable std::shared_mutex rw_lock_;
 
   public:
     explicit back_buffer(size_t width, size_t height)
@@ -40,21 +34,19 @@ class back_buffer {
             buf[i * width - ENDL_SIZE] = '\n';
         }
     }
-    [[nodiscard]] bool
-    is_in_buffer(const position_t& global_position) const noexcept;
     void draw(const position_t& pivot, const shape::sprite& sh, int32_t depth);
     void erase(const position_t& pivot, const shape::sprite& sh, int32_t depth);
 
     template <typename Visitor>
         requires std::is_invocable_v<Visitor,
                                      const std::basic_string<char_size>&>
-    void view(Visitor&& visitor) {
+    void view(Visitor&& visitor) const {
         std::shared_lock<std::shared_mutex> lock(rw_lock_);
         visitor(buf);
     }
 
   private:
-    [[nodiscard]] virtual char_size& at(const position_t& char_on_screen);
+    [[nodiscard]] char_size& at(const position_t& char_on_screen);
     // visitor traverse all sprite matrix
     template <typename Visitor>
         requires std::is_invocable_v<Visitor, const position_t&, char_size>

@@ -59,7 +59,7 @@ class scintilla final
     //  return on_scroll_changed_;
     // }
     // [[nodiscard]] size_changed_signal &get_on_resize() { return on_resize_; }
-    [[nodiscard]] const position_t& get_scroll() const { return scroll_; }
+    //[[nodiscard]] const position_t& get_scroll() const { return scroll_; }
     void scroll(const npi_t columns_to_scroll,
                 const npi_t lines_to_scroll) const {
         dcall2(SCI_LINESCROLL, columns_to_scroll, lines_to_scroll);
@@ -199,14 +199,14 @@ class scintilla final
                               HINSTANCE hInstance, LPVOID lpParam,
                               uint8_t start_options);
 
-    void set_h_scroll(const npi_t p) {
-        scroll_.index_in_line() = p;
-        // on_scroll_changed_(scroll_);
-    }
-    void set_v_scroll(const npi_t p) {
-        scroll_.line() = p;
-        // on_scroll_changed_(scroll_);
-    }
+    // void set_h_scroll(const npi_t p) {
+    //     scroll_.index_in_line() = p;
+    //  on_scroll_changed_(scroll_);
+    // }
+    // void set_v_scroll(const npi_t p) {
+    //    scroll_.line() = p;
+    // on_scroll_changed_(scroll_);
+    // }
 
     void init_direct_access_to_scintilla();
 
@@ -226,14 +226,13 @@ class scintilla final
         return direct_function_(direct_wnd_ptr_, message, w, l);
     } // NOLINT(modernize-use-nodiscard)
 
-    HWND edit_window_{nullptr};
     std::unique_ptr<std::remove_pointer_t<HMODULE>, decltype(&::FreeLibrary)>
         native_dll_;
-
+    HWND edit_window_{nullptr};
     sptr_t direct_wnd_ptr_{0};
     npi_t (*direct_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
 
-    position_t scroll_{};
-    // scroll_changed_signal on_scroll_changed_{};
-    // size_changed_signal   on_resize_{};
+    // position_t scroll_{};
+    //  scroll_changed_signal on_scroll_changed_{};
+    //  size_changed_signal   on_resize_{};
 };
