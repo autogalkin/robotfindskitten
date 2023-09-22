@@ -1,6 +1,7 @@
 ﻿#include "ecs_processors/collision.h"
 #include "df/dirtyflag.h"
-#include "notepader.h"
+#include "notepad.h"
+#include <queue>
 
 collision::index collision::quad_tree::insert(const id_type id,
                                               const boundbox& bbox) {
@@ -225,7 +226,7 @@ collision::quad_tree::get_quadrant(const boundbox& node_box,
 
 boundbox collision::quad_tree::compute_child_box(const boundbox& parent,
                                                  const quadrant child) {
-    position child_size = parent.size / 2;
+    position_t child_size = parent.size / 2;
     switch (child) {
     case quadrant::top_left:
         return {parent.pivot, child_size};
@@ -261,8 +262,7 @@ collision::query::query(world* w) : ecs_processor{w} {
     // position& new_scroll){
     //   on_scroll_changed(new_scroll);
     //});
-    w->get_registry()
-        .on_construct<collision::agent>()
+    w->reg_.on_construct<collision::agent>()
         .connect<&entt::registry::emplace_or_replace<need_update_entity>>();
 }
 

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "details/gamelog.h"
 #include "df/dirtyflag.h"
 
 #include "details/base_types.h"
@@ -7,7 +8,7 @@
 #include "ecs_processors/collision.h"
 #include "ecs_processors/input_passer.h"
 #include "input.h"
-#include "notepader.h"
+#include "notepad.h"
 
 struct coin;
 struct character;
@@ -44,7 +45,7 @@ struct projectile final {
         reg.emplace<projectile>(e);
         reg.emplace<shape::sprite_animation>(
             e,
-            std::vector<shape::sprite>{{shape::sprite::from_data{U"-", 1, 1}}},
+            std::vector<shape::sprite>{{shape::sprite::from_data{"-", 1, 1}}},
             static_cast<uint8_t>(0));
         reg.emplace<visible_in_game>(e);
         reg.emplace<z_depth>(e, 1);
@@ -92,7 +93,7 @@ struct projectile final {
                 reg_.emplace<shape::sprite_animation>(
                     new_e,
                     std::vector<shape::sprite>{
-                        {shape::sprite::from_data{U"*", 1, 1}}},
+                        {shape::sprite::from_data{"*", 1, 1}}},
                     static_cast<uint8_t>(0));
                 reg_.emplace<visible_in_game>(new_e);
                 reg_.emplace<z_depth>(new_e, 1);
@@ -108,7 +109,7 @@ struct projectile final {
                             r_.emplace<shape::sprite_animation>(
                                 proj,
                                 std::vector<shape::sprite>{
-                                    {shape::sprite::from_data{U".", 1, 1}}},
+                                    {shape::sprite::from_data{".", 1, 1}}},
                                 static_cast<uint8_t>(0));
                             r_.emplace<location_buffer>(
                                 proj,
@@ -151,7 +152,7 @@ struct gun {
     static void make(entt::registry& reg, const entt::entity e, location loc) {
         reg.emplace<gun>(e);
         actor::make_base_renderable(reg, e, std::move(loc), 1,
-                                    {shape::sprite::from_data{U"¬", 1, 1}});
+                                    {shape::sprite::from_data{"<", 1, 1}});
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &gun::on_collide);
     }
@@ -205,11 +206,17 @@ struct character final {
                                           const entt::entity collider) {
         // TODO collision functions without cast?
         if (reg.all_of<gun>(collider)) {
+            auto& animation = reg.get<shape::sprite_animation>(self);
+            animation = shape::sprite_animation(
+                std::vector<shape::sprite>{
+                    {{shape::sprite::from_data{"#-", 1, 2}},
+                     {shape::sprite::from_data{"-#", 1, 2}}}},
+                animation.rendering_i);
+
             auto& [signal] = reg.get<input_passer::down_signal>(self);
             signal.connect([](entt::registry& reg_, const entt::entity chrcter,
-                              const input::key_state_type& state) {
-                if (const auto it = std::ranges::find(state, input::key::space);
-                    it != state.end()) {
+                              const input::state_t& state) {
+                if (input::has_key(state, input::key_t::space)) {
                     gun::fire(reg_, chrcter);
                 }
             });
@@ -241,18 +248,20 @@ struct character final {
 
     static void add_top_down_camera(entt::registry& reg, const entt::entity e) {
         reg.emplace<timeline::eval_direction>(e);
+        /*
         reg.emplace<timeline::what_do>(e, [](entt::registry& reg_,
                                              const entt::entity owner,
                                              direction) {
+
             const auto& [location, _] = reg_.get<location_buffer>(owner);
             auto pos = position_converter::from_location(location);
 
-            const auto& scroll = notepader::get().get_engine()->get_scroll();
+            const auto& scroll = notepad::get().get_engine().get_scroll();
             const npi_t width =
-                notepader::get().get_engine()->get_window_width() /
-                notepader::get().get_engine()->get_char_width();
+                notepad::get().get_engine().get_window_width() /
+                notepad::get().get_engine().get_char_width();
             const npi_t height =
-                notepader::get().get_engine()->get_lines_on_screen();
+                notepad::get().get_engine().get_lines_on_screen();
 
             int c_move_pos = 0;
             if (pos.index_in_line() > width + scroll.index_in_line() ||
@@ -304,7 +313,7 @@ struct character final {
                             } else {
                                 i += 1 * l_sign;
                             }
-                            notepader::get().get_engine()->scroll(c, l);
+                            notepad::get().get_engine().scroll(c, l);
                             ++lifetime;
                         }
                         ++t;
@@ -317,25 +326,27 @@ struct character final {
                     });
             }
         });
+    */
     }
 
-    template <input::key UP = input::key::w, input::key LEFT = input::key::a,
-              input::key DOWN = input::key::s, input::key RIGHT = input::key::d>
+    template <input::key_t UP = input::key_t::w,
+              input::key_t LEFT = input::key_t::a,
+              input::key_t DOWN = input::key_t::s,
+              input::key_t RIGHT = input::key_t::d>
     static void process_movement_input(entt::registry& reg,
                                        const entt::entity e,
-                                       const input::key_state_type& state) {
+                                       const input::state_t& state) {
         auto& vel = reg.get<velocity>(e);
-
-        for (auto& key : state) {
-            switch (key) {
+        for (auto k : state) {
+            switch (k) {
             case UP:
                 vel.line() -= 1;
                 break;
-            case LEFT:
-                vel.index_in_line() -= 1;
-                break;
             case DOWN:
                 vel.line() += 1;
+                break;
+            case LEFT:
+                vel.index_in_line() -= 1;
                 break;
             case RIGHT:
                 vel.index_in_line() += 1;
@@ -361,6 +372,7 @@ struct atmosphere final {
                        reg.get<timeline::eval_direction>(timer).value);
 
         reg.emplace<color_range>(cycle_timeline);
+        reg.emplace<render_command>(cycle_timeline);
         reg.emplace<life::death_last_will>(
             cycle_timeline,
             [](entt::registry& reg_, const entt::entity cycle_timeline_) {
@@ -379,8 +391,6 @@ struct atmosphere final {
         const auto& [start, end] = reg.get<color_range>(e);
         const auto& [current_lifetime] = reg.get<life::lifetime>(e);
 
-        // new_value = ( (old_value - old_min) / (old_max - old_min) ) *
-        // (new_max - new_min) + new_min
         double value = (current_lifetime - cycle_duration) /
                        (std::chrono::duration<double>{0} - cycle_duration);
         value *= static_cast<double>(d);
@@ -394,11 +404,10 @@ struct atmosphere final {
             RGB(std::lerp(GetRValue(start), GetRValue(end), -value),
                 std::lerp(GetGValue(start), GetGValue(end), -value),
                 std::lerp(GetBValue(start), GetBValue(end), -value));
-
-        notepader::get().get_engine()->force_set_background_color(
-            new_back_color);
-        notepader::get().get_engine()->force_set_all_text_color(
-            new_front_color);
+        reg.get<render_command>(e) = render_command([new_back_color, new_front_color](scintilla* sct){
+            sct->force_set_background_color(new_back_color);
+            sct->force_set_all_text_color(new_front_color);
+        });
     }
 
   private:
@@ -417,7 +426,7 @@ struct monster {
     }
     static void make(entt::registry& reg, const entt::entity e, location loc) {
         actor::make_base_renderable(reg, e, std::move(loc), 1,
-                                    {shape::sprite::from_data{U"👾", 1, 1}});
+                                    {shape::sprite::from_data{"o", 1, 1}});
 
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &monster::on_collide);
@@ -451,7 +460,7 @@ struct monster {
             actor::make_base_renderable(
                 reg_, dead,
                 location{old_loc.line(), old_loc.index_in_line() - 1}, 1,
-                {shape::sprite::from_data{U"___", 1, 3}});
+                {shape::sprite::from_data{"___", 1, 3}});
             reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
             reg_.emplace<timeline::eval_direction>(dead);
             reg_.emplace<timeline::what_do>(

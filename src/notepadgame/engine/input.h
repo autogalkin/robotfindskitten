@@ -1,52 +1,57 @@
 ﻿#pragma once
 
+#include "details/nonconstructors.h"
+#include <functional>
+#include <type_traits>
 #pragma warning(push, 0)
 #include "Windows.h"
-#include "boost/signals2.hpp"
-#include <entt/entt.hpp>
-#include <queue>
+#include "boost/container/static_vector.hpp"
+#include <ranges>
 #pragma warning(pop)
-
 #include "details/base_types.h"
-#include "ecs_processor_base.h"
-#include "tick.h"
+#include "details/gamelog.h"
+#include <mutex>
 
-class input final : public tickable, public noncopyable, public nonmoveable {
+namespace input {
+
+using key_size = WPARAM;
+// https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+enum class key_t : key_size {
+    w = 0x57,
+    a = 0x41,
+    s = 0x53,
+    d = 0x44,
+    l = 0x49,
+    space = VK_SPACE,
+    up = VK_UP,
+    right = VK_RIGHT,
+    left = VK_LEFT,
+    down = VK_DOWN,
+};
+static constexpr size_t state_capacity = 5;
+using state_t = std::vector<key_t>;
+
+[[nodiscard]] static bool has_key(const state_t& state, key_t key) {
+    return std::ranges::any_of(state, [key](key_t k) { return k == key; });
+}
+
+class thread_input : public noncopyable, public nonmoveable {
   public:
-    // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-    enum class key : WPARAM {
-        w = 0x57,
-        a = 0x41,
-        s = 0x53,
-        d = 0x44,
-        l = 0x49,
-        space = VK_SPACE,
-        up = VK_UP,
-        right = VK_RIGHT,
-        left = VK_LEFT,
-        down = VK_DOWN
-
-    };
-
-    using key_state_type = std::vector<input::key>;
-    using signal_type =
-        boost::signals2::signal<void(const key_state_type& key_state)>;
-
-    explicit input() = default;
-    ~input() override;
-
-    virtual void tick(gametime::duration) override;
-    void send_input();
-    void receive(const LPMSG msg);
-    [[nodiscard]] const key_state_type& get_down_key_state() const {
-        return down_key_state_;
+    // 111111
+    friend void swap(input::thread_input& input, state_t& other) {
+        std::lock_guard<std::mutex> lock(input.mutex_);
+        std::swap(input.key_state_, other);
     }
-    [[nodiscard]] input::signal_type& get_down_signal() { return on_down; }
-    void clear_input() { down_key_state_.clear(); }
+    void push(const key_t key) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        key_state_.push_back(key);
+    };
+    thread_input() : key_state_(state_capacity) {}
+    ~thread_input();
 
   private:
-    signal_type on_down;
-    signal_type on_up;
-    key_state_type down_key_state_;
-    key_state_type up_key_state_;
+    mutable std::mutex mutex_;
+    state_t key_state_;
 };
+
+} // namespace input

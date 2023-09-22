@@ -13,7 +13,7 @@
 
 using npi_t = int64_t; // notepad's index size
 
-using char_size = char32_t; // support utf-8
+using char_size = char;
 
 class world;
 
@@ -76,7 +76,7 @@ struct vec_t : public Eigen::Vector2<SizeType> {
 };
 
 // notepad's col-row position
-using position = vec_t<npi_t>;
+using position_t = vec_t<npi_t>;
 
 // an actor location, used for smooth move
 using location = vec_t<double>;
@@ -108,9 +108,9 @@ struct eval_direction {
 struct visible_in_game {};
 
 namespace position_converter {
-npi_t to_notepad_index(const position& l);
-position from_notepad_index(npi_t i);
-inline position from_location(const location& location) {
+// npi_t to_notepad_index(const position_t& l);
+// position_t from_notepad_index(npi_t i);
+inline position_t from_location(const location& location) {
     return {std::lround(location.line()),
             std::lround(location.index_in_line())};
 }
@@ -140,17 +140,17 @@ struct death_last_will {
 } // namespace life
 
 struct boundbox {
-    position pivot{};
-    position size{};
+    position_t pivot{};
+    position_t size{};
 
-    boundbox operator+(const position& loc) const {
+    boundbox operator+(const position_t& loc) const {
         return {pivot + loc, size};
     }
-    [[nodiscard]] position center() const {
+    [[nodiscard]] position_t center() const {
         return {pivot.line() + size.line() / 2,
                 pivot.index_in_line() + size.index_in_line() / 2};
     }
-    [[nodiscard]] position end() const { return {pivot + size}; }
+    [[nodiscard]] position_t end() const { return {pivot + size}; }
     [[nodiscard]] bool contains(const boundbox& b) const {
         return pivot.line() <= b.pivot.line() &&
                end().line() <= b.end().line() &&
@@ -163,6 +163,11 @@ struct boundbox {
                  pivot.index_in_line() >= b.end().index_in_line() ||
                  end().index_in_line() <= b.pivot.index_in_line());
     }
+};
+
+class scintilla;
+struct render_command {
+    std::function<void(scintilla*)> command{};
 };
 
 namespace shape {
@@ -216,5 +221,5 @@ struct screen_resize {
     std::function<void(const uint32_t width, const uint32_t height)> call;
 };
 struct screen_scroll {
-    std::function<void(const position& new_scroll)> call;
+    std::function<void(const position_t& new_scroll)> call;
 };

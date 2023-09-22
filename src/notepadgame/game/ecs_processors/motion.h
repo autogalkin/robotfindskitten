@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "details/base_types.h"
 #include "ecs_processor_base.h"
-#include "notepader.h"
+#include "notepad.h"
 #include "world.h"
 
 class non_uniform_motion final : public ecs_processor {

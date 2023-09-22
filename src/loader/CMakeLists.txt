@@ -10,6 +10,10 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
                                           WIN32_LEAN_AND_MEAN # windows.h
                                           _CRT_SECURE_NO_WARNINGS # getenv
                                         )
+install(FILES $<TARGET_PDB_FILE:${PROJECT_NAME}>
+        CONFIGURATIONS Debug
+        RUNTIME DESTINATION ./ OPTIONAL)
+
 install(TARGETS ${PROJECT_NAME}
         CONFIGURATIONS Debug
         RUNTIME DESTINATION ./)
