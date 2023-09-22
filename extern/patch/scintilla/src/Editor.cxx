@@ -409,7 +409,7 @@ Sci::Line Editor::LineFromLocation(Point pt) const noexcept {
 void Editor::SetTopLine(Sci::Line topLineNew) {
 	if ((topLine != topLineNew) && (topLineNew >= 0)) {
 		topLine = topLineNew;
-		ContainerNeedsUpdate(Update::VScroll);
+		//ContainerNeedsUpdate(SC_UPDATE_V_SCROLL);
 	}
 	posTopLine = pdoc->LineStart(pcs->DocFromDisplay(topLine));
 }
@@ -1947,7 +1947,10 @@ long Editor::TextWidth(uptr_t style, const char *text) {
 // Empty method is overridden on GTK+ to show / hide scrollbars
 void Editor::ReconfigureScrollBars() {}
 
-void Editor::ChangeScrollBars() {
+void Editor::SetScrollBars() {
+    // THIS PART CHANGED BY NOTEPADGAME FOR DISABLE AUTOMATIC VERTICAL SCROLLING
+    return;
+    /*
 	RefreshStyleData();
 
 	const Sci::Line nMax = MaxScrollPos();
@@ -1969,6 +1972,7 @@ void Editor::ChangeScrollBars() {
 			Redraw();
 	}
 	//Platform::DebugPrintf("end max = %d page = %d\n", nMax, nPage);
+    */
 }
 
 void Editor::SetScrollBars() {
@@ -2772,14 +2776,16 @@ void Editor::NotifyModified(Document *, DocModification mh, void *) {
 		}
 		CheckModificationForWrap(mh);
 		if (mh.linesAdded != 0) {
+            // THIS PART CHANGED BY NOTEPADGAME FOR DISABLE AUTOMATIC VERTICAL SCROLLING
+            //
 			// Avoid scrolling of display if change before current display
-			if (mh.position < posTopLine && !CanDeferToLastStep(mh)) {
-				const Sci::Line newTop = std::clamp<Sci::Line>(topLine + mh.linesAdded, 0, MaxScrollPos());
-				if (newTop != topLine) {
-					SetTopLine(newTop);
-					SetVerticalScrollPos();
-				}
-			}
+			//if (mh.position < posTopLine && !CanDeferToLastStep(mh)) {
+			//	const Sci::Line newTop = std::clamp<Sci::Line>(topLine + mh.linesAdded, 0, MaxScrollPos());
+		    //	if (newTop != topLine) {
+					//SetTopLine(newTop);
+					//SetVerticalScrollPos();
+			//	}
+		    //}
 
 			if (paintState == PaintState::notPainting && !CanDeferToLastStep(mh)) {
 				if (SynchronousStylingToVisible()) {
