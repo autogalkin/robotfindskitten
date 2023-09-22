@@ -27,12 +27,12 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
 #endif // NDEBUG
             | notepad::opts::show_eol | notepad::opts::show_spaces;
 
-        np.on_open()->get().connect([](world& world, input::thread_input& i) {
+        np.on_open()->get().connect([](world& world, input::thread_input& i,  thread_commands& cmds) {
 #ifndef NDEBUG
             gamelog::get(); // alloc a console for the cout
 #endif // NDEBUG
             printf("Notepad is loaded and initialized. Start a game");
-            game::start(world, i);
+            game::start(world, i, cmds);
         });
 
         constexpr int world_widht = 300;

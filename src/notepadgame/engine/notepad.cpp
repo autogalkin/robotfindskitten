@@ -2,6 +2,7 @@
 #include "details/nonconstructors.h"
 #include "tick.h"
 #include <boost/utility/in_place_factory.hpp>
+#include <memory>
 #include <optional>
 #pragma warning(push, 0)
 // clang-format off
@@ -41,19 +42,28 @@ class thread_guard : public noncopyable {
 notepad::notepad()
     : scintilla_(std::nullopt), input_state(), main_window_(),
       original_proc_(0), on_open_(std::make_unique<open_signal_t>()),
-      render_tick(), buf_(150, 30) {}
+      render_tick(), buf_(150, 30)
+      , local_commands_(32)
+        , commands_()
+{}
 
 void notepad::start_game() {
     // render in main thread
     render_tick.on_tick.connect([this](gametime::duration d) {
-        const auto pos = scintilla_->get_caret_index();
-        {
-            buf_.view([this](const std::basic_string<char_size>& buf) {
-                scintilla_->set_new_all_text(buf);
-            });
+        swap(commands_, local_commands_);
+        scintilla* p = &*scintilla_;
+        // TODO any other queue implementation?
+        for (auto& c : local_commands_){
+            if(c)
+                c(p);
         }
+        local_commands_.clear();
+        const auto pos = scintilla_->get_caret_index();
+        buf_.view([this](const std::basic_string<char_size>& buf) {
+            scintilla_->set_new_all_text(buf);
+        });
         scintilla_->set_caret_index(pos);
-        set_window_title(L"notepadgame fps: " +
+        set_window_title(L"fps: " +
                          std::to_wstring(render_tick.get_current_frame_rate()));
     });
 
@@ -62,10 +72,10 @@ void notepad::start_game() {
         [buf = &buf_,
          on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
-         &input = input_state]() {
+         &input = input_state, &cmds=commands_]() {
             ticker game_ticker;
             world w{buf, game_ticker.on_tick};
-            (*on_open)(w, input);
+            (*on_open)(w, input, cmds);
             game_ticker.reset_to_start();
             while (!done.load()) {
                 game_ticker.tick_frame();

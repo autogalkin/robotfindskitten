@@ -12,13 +12,14 @@
 #include "ecs_processors/motion.h"
 #include "ecs_processors/screen_change_handler.h"
 #include "ecs_processors/timers.h"
+#include "ecs_processors/render_commands.h"
 #include "engine.h"
 #include "entities/factories.h"
 #include "notepad.h"
 #include "world.h"
 
 namespace game {
-inline void start(world& w, input::thread_input& i) {
+inline void start(world& w, input::thread_input& i, thread_commands& cmds) {
 
     auto& exec = w.executor;
     // the game tick pipeline of the ecs
@@ -31,6 +32,7 @@ inline void start(world& w, input::thread_input& i) {
     exec.push<rotate_animator>(&w);
     exec.push<collision::query>(&w);
     exec.push<redrawer>(&w);
+    exec.push<render_commands>(&w, &cmds);
     exec.push<death_last_will_executor>(&w);
     exec.push<killer>(&w);
     exec.push<lifetime_ticker>(&w);

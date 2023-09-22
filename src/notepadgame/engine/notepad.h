@@ -23,6 +23,30 @@ bool hook_CreateWindowExW(HMODULE module);
 // Block window title updates
 bool hook_SetWindowTextW(HMODULE module);
 
+class thread_commands {
+public:
+    using command_t = std::function<void(scintilla*)>;
+    using queue_t = std::vector<command_t>;
+    friend void swap(queue_t& other, thread_commands& commands) {
+        std::lock_guard<std::mutex> lock(commands.mutex_);
+        std::swap(other, commands.queue_);
+    }
+    friend void swap(thread_commands& commands, queue_t& other ) {
+        std::lock_guard<std::mutex> lock(commands.mutex_);
+        std::swap(commands.queue_,  other);
+    }
+    void push(command_t key) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        queue_.push_back(key);
+    };
+    thread_commands() : queue_(32, [](scintilla*){}) {}
+    //~thread_commands();
+
+private:
+    queue_t queue_;
+    mutable std::mutex mutex_;
+};
+
 // A static Singelton for notepad.exe wrapper
 class notepad {
     friend LRESULT CALLBACK hook_wnd_proc(HWND, UINT, WPARAM, LPARAM);
@@ -30,12 +54,11 @@ class notepad {
     friend bool hook_SendMessageW(HMODULE);
     friend bool hook_CreateWindowExW(HMODULE);
     friend bool hook_SetWindowTextW(HMODULE);
+    friend BOOL APIENTRY DllMain(const HMODULE h_module,
+                                 const DWORD ul_reason_for_call,
+                                 LPVOID lp_reserved);
 
   public:
-    static notepad& get() {
-        static notepad notepad{};
-        return notepad;
-    }
     struct opts {
         uint8_t all = static_cast<uint8_t>(values::empty);
         // Not enum class
@@ -55,7 +78,7 @@ class notepad {
 
     // TODO channel
     using open_signal_t =
-        boost::signals2::signal<void(world&, input::thread_input&)>;
+        boost::signals2::signal<void(world&, input::thread_input&,  thread_commands&)>;
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
     on_open() {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
@@ -74,26 +97,29 @@ class notepad {
     }
     [[nodiscard]] HWND get_window() const { return main_window_; }
 
-    // All games works after initialization this components
-    //[[nodiscard]] scintilla& get_engine() { return *scintilla_; }
-
     void set_window_title(const std::wstring_view title) const {
         SetWindowTextW(main_window_, title.data());
     }
 
   private:
-    back_buffer buf_;
+    static notepad& get() {
+        static notepad notepad{};
+        return notepad;
+    }
+    // TODO rewrite
+    thread_commands commands_;
+    thread_commands::queue_t local_commands_;
     void start_game();
     explicit notepad();
+    opts options_{opts::empty};
+    back_buffer buf_;
+    HWND main_window_;
     ticker render_tick;
-    // virtual void tick_frame() override;
-    std::optional<scintilla> scintilla_;
-    // important, we can't allocate dynamic memory while not connected to
-    // notepad.exe
-    // std::optional<world> world_;
     // Live only on startup
     std::unique_ptr<open_signal_t> on_open_;
-    opts options_{opts::empty};
-    HWND main_window_;
     LONG_PTR original_proc_; // notepad.exe window proc
+    std::optional<scintilla> scintilla_;
 };
+
+
+

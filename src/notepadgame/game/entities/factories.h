@@ -372,6 +372,7 @@ struct atmosphere final {
                        reg.get<timeline::eval_direction>(timer).value);
 
         reg.emplace<color_range>(cycle_timeline);
+        reg.emplace<render_command>(cycle_timeline);
         reg.emplace<life::death_last_will>(
             cycle_timeline,
             [](entt::registry& reg_, const entt::entity cycle_timeline_) {
@@ -390,8 +391,6 @@ struct atmosphere final {
         const auto& [start, end] = reg.get<color_range>(e);
         const auto& [current_lifetime] = reg.get<life::lifetime>(e);
 
-        // new_value = ( (old_value - old_min) / (old_max - old_min) ) *
-        // (new_max - new_min) + new_min
         double value = (current_lifetime - cycle_duration) /
                        (std::chrono::duration<double>{0} - cycle_duration);
         value *= static_cast<double>(d);
@@ -405,12 +404,10 @@ struct atmosphere final {
             RGB(std::lerp(GetRValue(start), GetRValue(end), -value),
                 std::lerp(GetGValue(start), GetGValue(end), -value),
                 std::lerp(GetBValue(start), GetBValue(end), -value));
-        /*
-        notepad::get().get_engine().force_set_background_color(
-            new_back_color);
-        notepad::get().get_engine().force_set_all_text_color(
-            new_front_color);
-        */
+        reg.get<render_command>(e) = render_command([new_back_color, new_front_color](scintilla* sct){
+            sct->force_set_background_color(new_back_color);
+            sct->force_set_all_text_color(new_front_color);
+        });
     }
 
   private:

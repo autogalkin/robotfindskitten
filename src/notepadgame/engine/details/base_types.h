@@ -165,6 +165,11 @@ struct boundbox {
     }
 };
 
+class scintilla;
+struct render_command {
+    std::function<void(scintilla*)> command{};
+};
+
 namespace shape {
 inline static constexpr char whitespace = ' ';
 
