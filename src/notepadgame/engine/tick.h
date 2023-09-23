@@ -6,6 +6,7 @@
 #include "details/nonconstructors.h"
 
 namespace gametime {
+// most suitable for measuring intervals
 using clock = std::chrono::steady_clock;
 // fixed time step
 static auto constexpr dt =
