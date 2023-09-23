@@ -23,13 +23,21 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 get_filename_component(NPGAME_SCINTILLA_DIR
                        "${CMAKE_SOURCE_DIR}/extern/thirdparty/scintilla"
                        ABSOLUTE)
-# compile the dll injector
-add_subdirectory(src/loader)
-# compile engine
-add_subdirectory(src/notepadgame)
+# dll injector
+add_subdirectory(
+    src/loader 
+)
+# game
+add_subdirectory(
+    src/notepadgame
+)
 
-#create a hard link for the compile_commands.json in the root directory for clangd
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E create_hardlink "${CMAKE_BINARY_DIR}/compile_commands.json" "${CMAKE_SOURCE_DIR}/compile_commands.json"
-     COMMAND_ECHO STDOUT
-    )
+set(COMPILE_COMMANDS_FILE  "${CMAKE_SOURCE_DIR}/compile_commands.json")
+if(IS_SYMLINK COMPILE_COMMANDS_FILE)
+    execute_process(
+            COMMAND ${CMAKE_COMMAND} -E create_hardlink 
+            "${CMAKE_BINARY_DIR}/compile_commands.json" ${COMPILE_COMMANDS_FILE}
+            COMMAND_ECHO STDOUT
+            )
+endif()
+

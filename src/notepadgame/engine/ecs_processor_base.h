@@ -1,13 +1,13 @@
 #pragma once
 #include "details/nonconstructors.h"
-#include "time.h"
+#include "engine/timer.h"
 #include <entt/entt.hpp>
 class world;
 
 class ecs_processor : public noncopyable, public nonmoveable {
   public:
     explicit ecs_processor(world* w) : w_(w) {}
-    virtual void execute(entt::registry& reg, time::duration delta) = 0;
+    virtual void execute(entt::registry& reg, time2::duration delta) = 0;
 
     virtual ~ecs_processor() = default;
 

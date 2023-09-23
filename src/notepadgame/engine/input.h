@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "details/nonconstructors.h"
+#include "engine/details/nonconstructors.h"
 #include <functional>
 #include <type_traits>
 #pragma warning(push, 0)
@@ -8,8 +8,8 @@
 #include "boost/container/static_vector.hpp"
 #include <ranges>
 #pragma warning(pop)
-#include "details/base_types.h"
-#include "details/gamelog.h"
+#include "engine/details/base_types.h"
+#include "engine/details/gamelog.h"
 #include <mutex>
 
 namespace input {

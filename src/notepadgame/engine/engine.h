@@ -12,8 +12,8 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include "details/base_types.h"
-#include "details/nonconstructors.h"
+#include "engine/details/base_types.h"
+#include "engine/details/nonconstructors.h"
 
 template <typename T>
 concept is_container_of_chars = requires(T t) {

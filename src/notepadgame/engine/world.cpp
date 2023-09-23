@@ -1,18 +1,17 @@
 ﻿
-#include "details/base_types.h"
-#include "details/gamelog.h"
+#include "engine/details/base_types.h"
+#include "engine/details/gamelog.h"
 #include "df/dirtyflag.h"
-#include "time.h"
+#include "engine/timer.h"
 #include <algorithm>
 #include <numeric>
 #pragma warning(push, 0)
 #include "range/v3/view/enumerate.hpp"
 #include "range/v3/view/filter.hpp"
-#include "utf8cpp/utf8.h"
 #pragma warning(pop)
-#include "engine.h"
-#include "notepad.h"
-#include "world.h"
+#include "engine/engine.h"
+#include "engine/notepad.h"
+#include "engine/world.h"
 #include <ranges>
 
 world::world(back_buffer* buf) noexcept

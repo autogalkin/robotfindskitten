@@ -1,14 +1,13 @@
 ﻿#pragma once
-
-#include "details/gamelog.h"
+#include "engine/details/gamelog.h"
 #include "df/dirtyflag.h"
 
-#include "details/base_types.h"
-#include "easing.h"
-#include "ecs_processors/collision.h"
-#include "ecs_processors/input_passer.h"
-#include "input.h"
-#include "notepad.h"
+#include "engine/details/base_types.h"
+#include "libs/easing/easing.h"
+#include "game/ecs_processors/collision.h"
+#include "game/ecs_processors/input_passer.h"
+#include "engine/input.h"
+#include "engine/notepad.h"
 
 struct coin;
 struct character;

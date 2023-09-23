@@ -1,14 +1,14 @@
 #pragma once
-#include "details/gamelog.h"
+#include "engine/details/gamelog.h"
 #pragma warning(push, 0)
 #include "Windows.h"
 #include "boost/signals2.hpp"
 #include <entt/entt.hpp>
 #pragma warning(pop)
 
-#include "details/base_types.h"
-#include "ecs_processor_base.h"
-#include "input.h"
+#include "engine/details/base_types.h"
+#include "engine/ecs_processor_base.h"
+#include "engine/input.h"
 
 class input_passer final : public ecs_processor {
   public:
@@ -22,7 +22,7 @@ class input_passer final : public ecs_processor {
             call;
     };
 
-    void execute(entt::registry& reg, time::duration) override {
+    void execute(entt::registry& reg, time2::duration) override {
         // swap data from other thread
         swap(*input_, state_);
         if (state_.empty())

@@ -7,9 +7,9 @@
 #include <variant>
 #pragma warning(pop)
 
-#include "details/base_types.h"
-#include "details/gamelog.h"
-#include "ecs_processor_base.h"
+#include "engine/details/base_types.h"
+#include "engine/details/gamelog.h"
+#include "engine/ecs_processor_base.h"
 
 namespace collision {
 class query;
@@ -196,7 +196,7 @@ class query final : public ecs_processor {
     explicit query(world* w);
 
     virtual void execute(entt::registry& reg,
-                         gametime::duration delta) override;
+                         time2::duration delta) override;
 
   private:
     // mark entity to remove from tree and insert again

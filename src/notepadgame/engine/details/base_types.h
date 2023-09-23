@@ -9,7 +9,7 @@
 #include <utility>
 #pragma warning(pop)
 
-#include "time.h"
+#include "engine/timer.h"
 
 using npi_t = int64_t; // notepad's index size
 
@@ -131,7 +131,7 @@ namespace life {
 struct begin_die {};
 
 struct lifetime {
-    time::duration duration;
+    time2::duration duration;
 };
 
 struct death_last_will {

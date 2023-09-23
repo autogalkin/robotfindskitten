@@ -1,6 +1,6 @@
-﻿#include "base_types.h"
-#include "engine.h"
-#include "notepad.h"
+﻿#include "engine/details/base_types.h"
+#include "engine/engine.h"
+#include "engine/notepad.h"
 
 /*
 npi_t position_converter::to_notepad_index(const position_t& l) {

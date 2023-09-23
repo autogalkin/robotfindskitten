@@ -1,11 +1,9 @@
-﻿#pragma warning(push, 0)
-#include "Windows.h"
+﻿#include "Windows.h"
 #include <CommCtrl.h>
 #include <Richedit.h>
-#pragma warning(pop)
-#include "engine.h"
-#include "notepad.h"
-#include "world.h"
+#include "engine/engine.h"
+#include "engine/notepad.h"
+#include "engine/world.h"
 
 scintilla::~scintilla() = default;
 HWND scintilla::create_native_window(

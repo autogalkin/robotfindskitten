@@ -4,19 +4,19 @@
 #include <Windows.h>
 #pragma warning(pop)
 
-#include "details/base_types.h"
-#include "details/gamelog.h"
-#include "ecs_processors/drawers.h"
-#include "ecs_processors/input_passer.h"
-#include "ecs_processors/killer.h"
-#include "ecs_processors/motion.h"
-#include "ecs_processors/screen_change_handler.h"
-#include "ecs_processors/timers.h"
-#include "ecs_processors/render_commands.h"
-#include "engine.h"
-#include "entities/factories.h"
-#include "notepad.h"
-#include "world.h"
+#include "engine/details/base_types.h"
+#include "engine/details/gamelog.h"
+#include "game/ecs_processors/drawers.h"
+#include "game/ecs_processors/input_passer.h"
+#include "game/ecs_processors/killer.h"
+#include "game/ecs_processors/motion.h"
+#include "game/ecs_processors/screen_change_handler.h"
+#include "game/ecs_processors/timers.h"
+#include "game/ecs_processors/render_commands.h"
+#include "engine/engine.h"
+#include "game/entities/factories.h"
+#include "engine/notepad.h"
+#include "engine/world.h"
 
 namespace game {
 inline void start(world& w, input::thread_input& i, thread_commands& cmds) {

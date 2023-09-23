@@ -1,9 +1,9 @@
 #pragma once
 
-#include "details/base_types.h"
-#include "ecs_processor_base.h"
-#include "engine.h"
-#include "world.h"
+#include "engine/details/base_types.h"
+#include "engine/ecs_processor_base.h"
+#include "engine/engine.h"
+#include "engine/world.h"
 
 /*
 class screen_change_handler final : public ecs_processor {
@@ -19,7 +19,7 @@ class screen_change_handler final : public ecs_processor {
             });
     }
 
-    void execute(entt::registry& reg, gametime::duration delta) override{
+    void execute(entt::registry& reg, gametimer::duration delta) override{
         // nothing to do
     };
 

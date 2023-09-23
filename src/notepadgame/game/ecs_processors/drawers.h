@@ -1,15 +1,15 @@
 ﻿#pragma once
 #include "df/dirtyflag.h"
 
-#include "details/base_types.h"
-#include "ecs_processor_base.h"
-#include "world.h"
+#include "engine/details/base_types.h"
+#include "engine/ecs_processor_base.h"
+#include "engine/world.h"
 
 class rotate_animator final : public ecs_processor {
   public:
     explicit rotate_animator(world* w) : ecs_processor(w) {}
 
-    void execute(entt::registry& reg, time::duration delta) override {
+    void execute(entt::registry& reg, time2::duration delta) override {
         for (const auto view =
                  reg.view<location_buffer, shape::sprite_animation,
                           shape::on_change_direction,
@@ -45,7 +45,7 @@ class redrawer final : public ecs_processor {
             .connect<&redrawer::upd_visible>();
     }
 
-    void execute(entt::registry& reg, time::duration delta) override {
+    void execute(entt::registry& reg, time2::duration delta) override {
 
         for (const auto view =
                  reg.view<const location_buffer, const shape::sprite_animation,

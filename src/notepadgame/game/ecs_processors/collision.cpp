@@ -1,6 +1,6 @@
-﻿#include "ecs_processors/collision.h"
+﻿#include "game/ecs_processors/collision.h"
 #include "df/dirtyflag.h"
-#include "notepad.h"
+#include "engine/notepad.h"
 #include <queue>
 
 collision::index collision::quad_tree::insert(const id_type id,
@@ -266,7 +266,7 @@ collision::query::query(world* w) : ecs_processor{w} {
         .connect<&entt::registry::emplace_or_replace<need_update_entity>>();
 }
 
-void collision::query::execute(entt::registry& reg, gametime::duration delta) {
+void collision::query::execute(entt::registry& reg, time2::duration delta) {
 
     // insert moved actors into tree
     for (const auto view =

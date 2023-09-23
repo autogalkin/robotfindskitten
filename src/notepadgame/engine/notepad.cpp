@@ -1,6 +1,6 @@
-﻿#include "buffer.h"
-#include "details/nonconstructors.h"
-#include "time.h"
+﻿#include "engine/buffer.h"
+#include "engine/details/nonconstructors.h"
+#include "engine/timer.h"
 #include <boost/utility/in_place_factory.hpp>
 #include <memory>
 #include <optional>
@@ -17,12 +17,12 @@
 #include <thread>
 #pragma warning(pop)
 
-#include "details/gamelog.h"
-#include "engine.h"
-#include "iat_hook.h"
-#include "input.h"
-#include "notepad.h"
-#include "world.h"
+#include "engine/details/gamelog.h"
+#include "engine/engine.h"
+#include "engine/details/iat_hook.h"
+#include "engine/input.h"
+#include "engine/notepad.h"
+#include "engine/world.h"
 
 static volatile std::atomic_bool done(false);
 
@@ -50,7 +50,7 @@ notepad::notepad()
 void notepad::start_game() {
     // render in main thread
     /*
-    render_tick.on_tick.connect([this](gametime::duration d) {
+    render_tick.on_tick.connect([this](gametimer::duration d) {
         swap(commands_, local_commands_);
         scintilla* p = &*scintilla_;
         // TODO any other queue implementation?
@@ -75,7 +75,7 @@ void notepad::start_game() {
          on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
          &input = input_state, &cmds=commands_]() {
-         time::fixed_time_step fixed_time_step;
+         time2::fixed_time_step fixed_time_step;
             world w{buf};
             (*on_open)(w, input, cmds);
             while (!done.load()) {
@@ -204,7 +204,7 @@ bool hook_GetMessageW(const HMODULE module) {
 
             static std::once_flag once;
             std::call_once(once,
-                           [] { notepad::get().fixed_time_step_ = time::fixed_time_step(); });
+                           [] { notepad::get().fixed_time_step_ = time2::fixed_time_step(); });
             notepad::get().fixed_time_step_.sleep();
             // TODO tick here
             return 1;

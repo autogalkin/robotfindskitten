@@ -6,11 +6,10 @@
 #include <memory>
 #include <thread>
 #pragma warning(pop)
-#include "engine.h"
-#include "world.h"
-#include "input.h"
-#include "time.h"
-
+#include "engine/engine.h"
+#include "engine/world.h"
+#include "engine/input.h"
+#include "engine/timer.h"
 // custom WindowProc
 static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp,
                                       LPARAM lp);
@@ -114,8 +113,8 @@ class notepad {
     opts options_{opts::empty};
     back_buffer buf_;
     HWND main_window_;
-    time::fixed_time_step fixed_time_step_;
-    time::fps_count fps_count_;
+    time2::fixed_time_step fixed_time_step_;
+    time2::fps_count fps_count_;
     // Live only on startup
     std::unique_ptr<open_signal_t> on_open_;
     LONG_PTR original_proc_; // notepad.exe window proc

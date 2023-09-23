@@ -1,7 +1,7 @@
 ﻿
 #pragma once
 
-#include "details/nonconstructors.h"
+#include "engine/details/nonconstructors.h"
 #include <iostream>
 
 class gamelog final : public noncopyable, public nonmoveable {
