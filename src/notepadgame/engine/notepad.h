@@ -9,7 +9,7 @@
 #include "engine.h"
 #include "world.h"
 #include "input.h"
-#include "tick.h"
+#include "time.h"
 
 // custom WindowProc
 static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp,
@@ -39,7 +39,7 @@ public:
         std::lock_guard<std::mutex> lock(mutex_);
         queue_.push_back(key);
     };
-    thread_commands() : queue_(32, [](scintilla*){}) {}
+    thread_commands() : queue_(32) {}
     //~thread_commands();
 
 private:
@@ -114,7 +114,8 @@ class notepad {
     opts options_{opts::empty};
     back_buffer buf_;
     HWND main_window_;
-    ticker render_tick;
+    time::fixed_time_step fixed_time_step_;
+    time::fps_count fps_count_;
     // Live only on startup
     std::unique_ptr<open_signal_t> on_open_;
     LONG_PTR original_proc_; // notepad.exe window proc

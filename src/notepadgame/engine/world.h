@@ -9,7 +9,7 @@
 #pragma warning(pop)
 #include "details/base_types.h"
 #include "ecs_processor_base.h"
-#include "tick.h"
+#include "time.h"
 #include "buffer.h"
 
 class ecs_processors_executor {
@@ -19,7 +19,7 @@ class ecs_processors_executor {
         std::unique_ptr<ecs_processor> who,
         const std::type_info& near_with, /* usage: typeid(ecs_processor) */
         const insert_order where = insert_order::before);
-    void execute(entt::registry& reg, const gametime::duration delta) const {
+    void execute(entt::registry& reg, const time::duration delta) const {
         for (const auto& i : data_) {
             i->execute(reg, delta);
         }
@@ -35,19 +35,19 @@ class ecs_processors_executor {
   private:
     std::vector<std::unique_ptr<ecs_processor>> data_;
 };
-
-class world final : public tickable_base { //, nonmoveable, noncopyable {
+// final : public tickable_base 
+class world { //, nonmoveable, noncopyable {
   public:
-    world(back_buffer* buf, ticker::signal_t& on_tick) noexcept;
-    ~world() override;
+    world(back_buffer* buf) noexcept;
+    ~world();
 
     ecs_processors_executor executor;
     // TODO
     back_buffer* backbuffer;
     entt::registry reg_;
-    void tick(gametime::duration delta) override {
-        executor.execute(reg_, delta);
-    }
+    //void tick(gametime::duration delta) override {
+    //    executor.execute(reg_, delta);
+   // }
 
     template <typename F>
         requires std::is_invocable_v<F, entt::registry&, const entt::entity>

@@ -1,6 +1,6 @@
 ﻿#include "buffer.h"
 #include "details/nonconstructors.h"
-#include "tick.h"
+#include "time.h"
 #include <boost/utility/in_place_factory.hpp>
 #include <memory>
 #include <optional>
@@ -42,13 +42,14 @@ class thread_guard : public noncopyable {
 notepad::notepad()
     : scintilla_(std::nullopt), input_state(), main_window_(),
       original_proc_(0), on_open_(std::make_unique<open_signal_t>()),
-      render_tick(), buf_(150, 100)
+      fixed_time_step_(), fps_count_(), buf_(150, 100)
       , local_commands_(32)
         , commands_()
 {}
 
 void notepad::start_game() {
     // render in main thread
+    /*
     render_tick.on_tick.connect([this](gametime::duration d) {
         swap(commands_, local_commands_);
         scintilla* p = &*scintilla_;
@@ -66,6 +67,7 @@ void notepad::start_game() {
         set_window_title(L"fps: " +
                          std::to_wstring(render_tick.get_current_frame_rate()));
     });
+    */
 
     // game in another thread
     static thread_guard game_thread = thread_guard(std::thread(
@@ -73,12 +75,12 @@ void notepad::start_game() {
          on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
          &input = input_state, &cmds=commands_]() {
-            ticker game_ticker;
-            world w{buf, game_ticker.on_tick};
+         time::fixed_time_step fixed_time_step;
+            world w{buf};
             (*on_open)(w, input, cmds);
-            game_ticker.reset_to_start();
             while (!done.load()) {
-                game_ticker.tick_frame();
+                fixed_time_step.sleep();
+                // TODO tick here
             }
         }));
 }
@@ -202,9 +204,9 @@ bool hook_GetMessageW(const HMODULE module) {
 
             static std::once_flag once;
             std::call_once(once,
-                           [] { notepad::get().render_tick.reset_to_start(); });
-            notepad::get().render_tick.tick_frame();
-
+                           [] { notepad::get().fixed_time_step_ = time::fixed_time_step(); });
+            notepad::get().fixed_time_step_.sleep();
+            // TODO tick here
             return 1;
         });
 }

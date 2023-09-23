@@ -5,7 +5,6 @@
       "boost",
       "eigen3",
       "range-v3",
-      "utfcpp"
-      , "entt"
+      "entt"
     ]
   }

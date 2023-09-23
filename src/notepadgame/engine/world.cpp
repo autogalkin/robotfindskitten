@@ -2,7 +2,7 @@
 #include "details/base_types.h"
 #include "details/gamelog.h"
 #include "df/dirtyflag.h"
-#include "tick.h"
+#include "time.h"
 #include <algorithm>
 #include <numeric>
 #pragma warning(push, 0)
@@ -15,8 +15,8 @@
 #include "world.h"
 #include <ranges>
 
-world::world(back_buffer* buf, ticker::signal_t& on_tick) noexcept
-    : tickable_base(on_tick), backbuffer(buf) {
+world::world(back_buffer* buf) noexcept
+    :backbuffer(buf) {
     /*
     scroll_changed_connection_ = engine_->get_on_scroll_changed().connect(
         [this](const position_t& new_scroll) { redraw_all_actors(); });

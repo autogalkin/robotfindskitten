@@ -2,7 +2,7 @@
 #include "world.h"
 
 void non_uniform_motion::execute(entt::registry& reg,
-                                 gametime::duration delta) {
+                                 time::duration delta) {
 
     for (const auto view =
              reg.view<location_buffer, velocity, non_uniform_movement_tag>();
@@ -20,7 +20,7 @@ void non_uniform_motion::execute(entt::registry& reg,
     }
 }
 
-void uniform_motion::execute(entt::registry& reg, gametime::duration delta) {
+void uniform_motion::execute(entt::registry& reg, time::duration delta) {
 
     for (const auto view =
              reg.view<location_buffer, velocity, const uniform_movement_tag>();

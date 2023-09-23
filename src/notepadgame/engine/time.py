@@ -2,7 +2,7 @@ import time
 import sys
 
 
-class FPSCounter:
+class FPSCount:
     def __init__(self):
         self._start = time.time()
         self._frames = 0
@@ -43,7 +43,7 @@ class FixedTimeStep:
 
 
 def main():
-    fps_counter     = FPSCounter();
+    fps_counter     = FPSCount();
     fixed_time_step = FixedTimeStep()
     while True:
         fixed_time_step.sleep();

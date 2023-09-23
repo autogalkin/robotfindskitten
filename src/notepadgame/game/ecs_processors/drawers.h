@@ -9,7 +9,7 @@ class rotate_animator final : public ecs_processor {
   public:
     explicit rotate_animator(world* w) : ecs_processor(w) {}
 
-    void execute(entt::registry& reg, gametime::duration delta) override {
+    void execute(entt::registry& reg, time::duration delta) override {
         for (const auto view =
                  reg.view<location_buffer, shape::sprite_animation,
                           shape::on_change_direction,
@@ -45,7 +45,7 @@ class redrawer final : public ecs_processor {
             .connect<&redrawer::upd_visible>();
     }
 
-    void execute(entt::registry& reg, gametime::duration delta) override {
+    void execute(entt::registry& reg, time::duration delta) override {
 
         for (const auto view =
                  reg.view<const location_buffer, const shape::sprite_animation,

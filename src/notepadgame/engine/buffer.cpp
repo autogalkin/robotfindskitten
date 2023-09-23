@@ -10,7 +10,6 @@
 #pragma warning(pop)
 #include "details/base_types.h"
 #include "ecs_processor_base.h"
-#include "tick.h"
 
 #include "details/base_types.h"
 #include "details/gamelog.h"

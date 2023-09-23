@@ -2,7 +2,6 @@
 
 #include <optional>
 #include <utility>
-#pragma warning(push, 0)
 #include "Scintilla.h"
 #include "boost/signals2/signal.hpp"
 // clang-format off
@@ -13,7 +12,6 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#pragma warning(pop)
 #include "details/base_types.h"
 #include "details/nonconstructors.h"
 

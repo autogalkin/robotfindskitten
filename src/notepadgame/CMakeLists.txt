@@ -62,7 +62,6 @@ find_package(range-v3 CONFIG REQUIRED)
 find_package(Eigen3   CONFIG REQUIRED)
 find_package(EnTT     CONFIG REQUIRED)
 find_package(Boost COMPONENTS container) # and signals2
-find_package(utf8cpp  CONFIG REQUIRED)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/engine/CMakeLists.txt")
 include("${CMAKE_CURRENT_SOURCE_DIR}/game/CMakeLists.txt")
@@ -80,7 +79,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/extern/th
 
 target_link_libraries  (${PROJECT_NAME} PUBLIC  
                                                 Boost::container
-                                                utf8::cpp
                                                 range-v3::range-v3
                                                 Eigen3::Eigen
                                                 EnTT::EnTT)
