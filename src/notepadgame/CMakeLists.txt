@@ -55,7 +55,7 @@ endif()
 add_custom_target(
     scintilla ALL
     COMMAND ${NPGAME_SCIBUILD_COMMAND}
-    BYPRODUCT ${NPGAME_SCI_OUT_FILE}
+    BYPRODUCTS  ${NPGAME_SCI_OUT_FILE}
     WORKING_DIRECTORY "${NPGAME_SCINTILLA_DIR}/win32"
     DEPENDS ${SCI_PACHED_STAMP}
     COMMENT "Build Scintilla with original Makefile")
@@ -137,7 +137,6 @@ target_link_libraries(
 
 install(
     TARGETS ${PROJECT_NAME}
-    RUNTIME_DEPENDENCIES $<TARGET_PDB_FILE:${PROJECT_NAME}> 
     CONFIGURATIONS Debug
     RUNTIME DESTINATION .)
 install(
