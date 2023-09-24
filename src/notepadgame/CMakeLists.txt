@@ -55,7 +55,7 @@ endif()
 add_custom_target(
     scintilla ALL
     COMMAND ${NPGAME_SCIBUILD_COMMAND}
-    BYPRODUCTS  ${NPGAME_SCI_OUT_FILE}
+    BYPRODUCTS ${NPGAME_SCI_OUT_FILE}
     WORKING_DIRECTORY "${NPGAME_SCINTILLA_DIR}/win32"
     DEPENDS ${SCI_PACHED_STAMP}
     COMMENT "Build Scintilla with original Makefile")
@@ -87,7 +87,8 @@ find_package(Boost COMPONENTS container) # and header-only signals2
 
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-# project splits into static libraries
+# project splits into static libraries !IMPORTANT include needs to make include
+# namespaces for libraries e.g notepad.h -> engine/notepad.h
 include(engine/CMakeLists.txt)
 include(game/CMakeLists.txt)
 
@@ -133,7 +134,6 @@ target_link_libraries(
     PRIVATE engine
             game
             ${THIRD_PARTY_LIBRARIES})
-
 
 install(
     TARGETS ${PROJECT_NAME}
