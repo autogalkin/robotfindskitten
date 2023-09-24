@@ -22,11 +22,11 @@ HWND scintilla::create_native_window(
     dcall2(SCI_STYLESETBOLD, STYLE_DEFAULT, 1); // bold
     dcall2(SCI_STYLESETSIZE, STYLE_DEFAULT, 16); // pt size
     // dcall2(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT,1);
-    dcall2(SCI_SETHSCROLLBAR, 1, 0);
-
+    dcall1(SCI_SETHSCROLLBAR, 0);
+    dcall1(SCI_SETVSCROLLBAR, 0);
+    ShowScrollBar(edit_window_, SB_BOTH, FALSE);
     // hide control symbol mnemonics
     dcall1(SCI_SETCONTROLCHARSYMBOL, ' ');
-
     show_spaces(notepad::opts::show_spaces & start_options ? 1 : 0);
     show_eol(notepad::opts::show_eol & start_options ? 1 : 0);
 
