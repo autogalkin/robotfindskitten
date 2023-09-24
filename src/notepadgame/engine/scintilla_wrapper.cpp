@@ -20,6 +20,7 @@ HWND scintilla::create_native_window(
     dcall2(SCI_STYLESETFONT, STYLE_DEFAULT,
            reinterpret_cast<sptr_t>("Lucida Console"));
     dcall2(SCI_STYLESETBOLD, STYLE_DEFAULT, 1); // bold
+    dcall2(SCI_STYLESETITALIC, STYLE_DEFAULT, 1); // italic
     dcall2(SCI_STYLESETSIZE, STYLE_DEFAULT, 16); // pt size
     // dcall2(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT,1);
     dcall1(SCI_SETHSCROLLBAR, 0);
