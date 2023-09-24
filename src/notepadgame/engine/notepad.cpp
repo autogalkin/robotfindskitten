@@ -15,6 +15,7 @@
 #include <locale>
 #include <shared_mutex>
 #include <mutex>
+#include <stdint.h>
 #include <thread>
 
 
@@ -24,7 +25,8 @@
 #include "engine/notepad.h"
 #include "engine/world.h"
 
-extern const position_t GAME_AREA;
+
+extern const int GAME_AREA[2];
 
 static volatile std::atomic_bool done(false);
 
@@ -44,7 +46,7 @@ class thread_guard : public noncopyable {
 notepad::notepad()
     : scintilla_(std::nullopt), input_state(), main_window_(),
       original_proc_(0), on_open_(std::make_unique<open_signal_t>()),
-      fixed_time_step_(), fps_count_(), buf_(150, 100), local_commands_(32),
+      fixed_time_step_(), fps_count_(), buf_(GAME_AREA[0],GAME_AREA[1]), local_commands_(32),
       commands_() {}
 
 void notepad::tick_render() {

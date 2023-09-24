@@ -193,7 +193,7 @@ struct on_collide {
 
 class query final : public ecs_processor {
   public:
-    explicit query(world* w);
+    explicit query(world* w, const int game_area[2]);
 
     virtual void execute(entt::registry& reg,
                          timings::duration delta) override;
@@ -201,7 +201,7 @@ class query final : public ecs_processor {
   private:
     // mark entity to remove from tree and insert again
     struct need_update_entity {};
-    quad_tree tree{boundbox{{0, 0}, {1000, 1000}}, 4};
+    quad_tree tree_;
 };
 
 } // namespace collision

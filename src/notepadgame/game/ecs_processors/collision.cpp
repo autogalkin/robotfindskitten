@@ -257,7 +257,8 @@ collision::quad_tree::find_leaves(const quad_node_data& start,
     return leaves;
 }
 
-collision::query::query(world* w) : ecs_processor{w} {
+collision::query::query(world* w, const int game_area[2]) : ecs_processor{w},
+    tree_{boundbox{{0, 0}, {game_area[0], game_area[1]}}, 4} {;
     // notepader::get().get_engine()->get_on_scroll_changed().connect([this](const
     // position& new_scroll){
     //   on_scroll_changed(new_scroll);
@@ -277,7 +278,7 @@ void collision::query::execute(entt::registry& reg, timings::duration delta) {
         auto& sh = view.get<shape::sprite_animation>(entity);
         const auto& [current_location, translation] =
             view.get<location_buffer>(entity);
-        view.get<collision::agent>(entity).index_in_quad_tree = tree.insert(
+        view.get<collision::agent>(entity).index_in_quad_tree = tree_.insert(
             entity, sh.current_sprite().bound_box() +
                         position_converter::from_location(current_location));
         reg.remove<need_update_entity>(entity);
@@ -298,7 +299,7 @@ void collision::query::execute(entt::registry& reg, timings::duration delta) {
                 continue; // check only dynamic
 
             std::vector<size_t> collides;
-            tree.query(view.get<shape::sprite_animation>(entity)
+            tree_.query(view.get<shape::sprite_animation>(entity)
                                .current_sprite()
                                .bound_box() +
                            (position_converter::from_location(
@@ -308,7 +309,7 @@ void collision::query::execute(entt::registry& reg, timings::duration delta) {
                 // TODO on collide func
                 //
                 for (const auto collide : collides) {
-                    if (const auto cl = tree.get_entity(collide).id;
+                    if (const auto cl = tree_.get_entity(collide).id;
                         cl != entity) {
                         const auto cl_resp =
                             view.get<on_collide>(cl).call(reg, cl, entity);
@@ -331,11 +332,11 @@ void collision::query::execute(entt::registry& reg, timings::duration delta) {
                      .is_null() ||
                 reg.all_of<life::begin_die>(entity)) {
                 auto& [index_in_quad_tree] = view.get<collision::agent>(entity);
-                tree.remove(index_in_quad_tree);
+                tree_.remove(index_in_quad_tree);
                 index_in_quad_tree = collision::invalid_index;
                 reg.emplace_or_replace<need_update_entity>(entity);
             }
         }
     }
-    tree.cleanup();
+    tree_.cleanup();
 }

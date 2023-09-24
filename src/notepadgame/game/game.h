@@ -21,7 +21,7 @@
 #include "engine/world.h"
 
 namespace game {
-inline void start(world& w, input::thread_input& i, thread_commands& cmds) {
+inline void start(world& w, input::thread_input& i, thread_commands& cmds, const int game_area[2]) {
 
     auto& exec = w.executor;
     // the game tick pipeline of the ecs
@@ -32,7 +32,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds) {
     exec.push<non_uniform_motion>(&w);
     exec.push<timeline_executor>(&w);
     exec.push<rotate_animator>(&w);
-    exec.push<collision::query>(&w);
+    exec.push<collision::query>(&w, game_area);
     exec.push<redrawer>(&w);
     exec.push<render_commands>(&w, &cmds);
     exec.push<death_last_will_executor>(&w);

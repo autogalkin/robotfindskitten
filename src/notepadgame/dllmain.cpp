@@ -5,7 +5,7 @@
 #include "engine/notepad.h"
 #include "game/game.h"
 
-static constexpr std::pair<uint8_t, uint8_t> GAME_AREA{150, 300};
+extern constexpr int GAME_AREA[2] = {150, 300};
 
 class console final : public noncopyable, public nonmoveable {
   public:
@@ -62,7 +62,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
             static auto log_console = console::allocate();
 #endif // NDEBUG
             printf("Notepad is loaded and initialized. Start a game");
-            game::start(world, i, cmds);
+            game::start(world, i, cmds, GAME_AREA);
         });
 
         constexpr int world_widht = 300;
