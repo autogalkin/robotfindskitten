@@ -221,12 +221,6 @@ struct character final {
             });
             return collision::responce::ignore;
         }
-        /*
-        if(reg.all_of<coin>(collider))
-        {
-            return collision::responce::ignore;
-        }
-        */
         return collision::responce::block;
     }
 
@@ -244,90 +238,7 @@ struct character final {
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &character::on_collide);
     }
-
-    static void add_top_down_camera(entt::registry& reg, const entt::entity e) {
-        reg.emplace<timeline::eval_direction>(e);
-        /*
-        reg.emplace<timeline::what_do>(e, [](entt::registry& reg_,
-                                             const entt::entity owner,
-                                             direction) {
-
-            const auto& [location, _] = reg_.get<location_buffer>(owner);
-            auto pos = position_converter::from_location(location);
-
-            const auto& scroll = notepad::get().get_engine().get_scroll();
-            const npi_t width =
-                notepad::get().get_engine().get_window_width() /
-                notepad::get().get_engine().get_char_width();
-            const npi_t height =
-                notepad::get().get_engine().get_lines_on_screen();
-
-            int c_move_pos = 0;
-            if (pos.index_in_line() > width + scroll.index_in_line() ||
-                pos.index_in_line() < scroll.index_in_line()) {
-                c_move_pos = static_cast<int>(
-                    pos.index_in_line() - scroll.index_in_line() - width / 2);
-            }
-            int l_move_pos = 0;
-            if (pos.line() > height + scroll.line() ||
-                pos.line() < scroll.line()) {
-                l_move_pos =
-                    static_cast<int>(pos.line() - scroll.line() - height / 2);
-            }
-
-            if (l_move_pos != 0 || c_move_pos != 0) {
-                reg_.remove<timeline::what_do>(owner);
-                reg_.remove<timeline::eval_direction>(owner);
-
-                const auto scroll_timeline = reg_.create();
-
-                reg_.emplace<timeline::eval_direction>(scroll_timeline);
-
-                // TODO refactor this
-                reg_.emplace<timeline::what_do>(
-                    scroll_timeline,
-                    [lifetime = 0, t = 0, i = 0, j = 0, c_move_pos,
-                     c_sign = static_cast<int>(std::copysign(1, c_move_pos)),
-                     l_move_pos,
-                     l_sign = static_cast<int>(std::copysign(1, l_move_pos))](
-                        entt::registry& registry,
-                        const entt::entity scr_timeline, direction) mutable {
-                        if (lifetime > std::max(std::abs(c_move_pos),
-                                                std::abs(l_move_pos))) {
-                            registry.emplace<life::begin_die>(scr_timeline);
-                        }
-                        if (t > 3) {
-
-                            t = 0;
-                            int l = 1 * l_sign;
-                            int c = 1 * c_sign;
-
-                            if (j == c_move_pos) {
-                                c = 0;
-                            } else {
-                                j += 1 * c_sign;
-                            }
-                            if (i == l_move_pos) {
-                                l = 0;
-                            } else {
-                                i += 1 * l_sign;
-                            }
-                            notepad::get().get_engine().scroll(c, l);
-                            ++lifetime;
-                        }
-                        ++t;
-                    });
-
-                reg_.emplace<life::death_last_will>(
-                    scroll_timeline,
-                    [owner](entt::registry& r_, const entt::entity) {
-                        add_top_down_camera(r_, owner);
-                    });
-            }
-        });
-    */
-    }
-
+  
     template <input::key_t UP = input::key_t::w,
               input::key_t LEFT = input::key_t::a,
               input::key_t DOWN = input::key_t::s,

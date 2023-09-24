@@ -35,8 +35,8 @@ class ecs_processors_executor {
   private:
     std::vector<std::unique_ptr<ecs_processor>> data_;
 };
-// final : public tickable_base 
-class world { //, nonmoveable, noncopyable {
+
+class world {
   public:
     world(back_buffer* buf) noexcept;
     ~world();
@@ -58,6 +58,4 @@ class world { //, nonmoveable, noncopyable {
 
   private:
     void redraw_all_actors();
-    /// boost::signals2::scoped_connection scroll_changed_connection_;
-    // boost::signals2::scoped_connection size_changed_connection;
 };

@@ -1,7 +1,4 @@
-﻿#include "engine/buffer.h"
-#include "engine/details/base_types.h"
-#include "engine/details/nonconstructors.h"
-#include "engine/time.h"
+﻿
 #include <boost/utility/in_place_factory.hpp>
 #include <memory>
 #include <optional>
@@ -18,11 +15,15 @@
 #include <stdint.h>
 #include <thread>
 
+#include "engine/buffer.h"
+#include "engine/details/base_types.h"
+#include "engine/details/nonconstructors.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/details/iat_hook.h"
 #include "engine/input.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
+#include "engine/time.h"
 
 extern const int GAME_AREA[2];
 
@@ -116,35 +117,6 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         return 0;
     }
     case WM_NOTIFY: {
-
-        // scintilla notifications
-        if (const auto* n = reinterpret_cast<SCNotification*>(lp)) {
-            switch (n->updated) {
-            case SC_UPDATE_H_SCROLL: {
-                // auto &e = np.get_engine();
-                // e.set_h_scroll(e.get_horizontal_scroll_offset() /
-                //                 e.get_char_width());
-                break;
-            }
-            case SC_UPDATE_V_SCROLL: {
-                // auto &e = np.get_engine();
-                // e.set_v_scroll(e.get_first_visible_line());
-                break;
-            }
-            default:
-                break;
-            }
-        }
-
-        break;
-    }
-    case WM_SIZING:
-    case WM_SIZE: {
-        const UINT width = LOWORD(lp);
-        const UINT height = HIWORD(lp);
-        if (np.scintilla_) {
-        }
-        // np.scintilla_->get_on_resize()(width, height);
         break;
     }
     default:

@@ -16,13 +16,6 @@
 
 world::world(back_buffer* buf) noexcept
     :backbuffer(buf) {
-    /*
-    scroll_changed_connection_ = engine_->get_on_scroll_changed().connect(
-        [this](const position_t& new_scroll) { redraw_all_actors(); });
-
-    size_changed_connection = engine_->get_on_resize().connect(
-        [this](uint32_t width, uint32_t height) { redraw_all_actors(); });
-    */
 }
 
 world::~world() = default;

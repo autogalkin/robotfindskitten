@@ -12,7 +12,6 @@
 #include "game/ecs_processors/input_passer.h"
 #include "game/ecs_processors/killer.h"
 #include "game/ecs_processors/motion.h"
-#include "game/ecs_processors/screen_change_handler.h"
 #include "game/ecs_processors/timers.h"
 #include "game/ecs_processors/render_commands.h"
 #include "engine/scintilla_wrapper.h"
@@ -24,9 +23,7 @@ namespace game {
 inline void start(world& w, input::thread_input& i, thread_commands& cmds, const int game_area[2]) {
 
     auto& exec = w.executor;
-    // the game tick pipeline of the ecs
-    // exec.push<screen_change_handler>(&w,
-    //    &notepad::get().get_engine()); // TODO its only observer
+
     exec.push<input_passer>(&w, &i);
     exec.push<uniform_motion>(&w);
     exec.push<non_uniform_motion>(&w);
@@ -74,35 +71,11 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds, const
             ++j;
             w.spawn_actor(spawn_block);
         }
-        // w->spawn_actor([](entt::registry& reg, const entt::entity entity){
-        //     actor::make_base_renderable(reg, entity, {16, 24}, 2,
-        //     {shape::sprite::from_data{U"Hello Interface!", 1, 15}});
-        // });
-        //
-        /*
-        w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-            actor::make_base_renderable(reg, entity, {2, 0}, 2,
-                                        {shape::sprite::from_data{"-", 1, 1}});
-            reg.emplace<screen_resize>(entity, [&reg,
-                                                entity](const uint32_t width,
-                                                        const uint32_t height) {
-                auto& sh = reg.get<shape::sprite_animation>(entity);
-                sh.current_sprite() = shape::sprite{shape::sprite::from_data{
-                    std::vector<char>(width, '-').data(), 1, width}};
-            });
-            reg.emplace<screen_scroll>(entity, [&reg, entity](
-                                                   const position_t& new_scroll)
-        { auto& [current, translation] = reg.get<location_buffer>(entity);
-                translation.pin() = location{
-                    0., static_cast<double>(new_scroll.index_in_line()) -
-                            current.index_in_line()};
-            });
-        });
-        */
         w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(
                 reg, entity, {0, 0}, 2,
                 {shape::sprite::from_data{"It's a banana! Oh, joy!", 1, 23}});
+            /*
             reg.emplace<screen_scroll>(
                 entity, [&reg, entity](const position_t& new_scroll) {
                     auto& [current, translation] =
@@ -111,6 +84,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds, const
                         0., static_cast<double>(new_scroll.index_in_line()) -
                                 current.index_in_line()};
                 });
+            */
         });
     }
 

@@ -45,23 +45,15 @@ class scintilla final
     explicit scintilla(construct_key<scintilla>)
         : native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {}
 
-    using scroll_changed_signal =
-        boost::signals2::signal<void(const position_t&)>;
-    using size_changed_signal =
-        boost::signals2::signal<void(uint32_t width, uint32_t height)>;
-
     [[nodiscard]] HWND get_native_window() const noexcept {
         return edit_window_;
     }
-    //[[nodiscard]] scroll_changed_signal &get_on_scroll_changed() {
-    //  return on_scroll_changed_;
-    // }
-    // [[nodiscard]] size_changed_signal &get_on_resize() { return on_resize_; }
-    //[[nodiscard]] const position_t& get_scroll() const { return scroll_; }
+
     void scroll(const npi_t columns_to_scroll,
                 const npi_t lines_to_scroll) const {
         dcall2(SCI_LINESCROLL, columns_to_scroll, lines_to_scroll);
     }
+
     // caret
     [[nodiscard]] npi_t get_caret_index() const noexcept {
         return dcall0(SCI_GETCURRENTPOS);
@@ -197,16 +189,6 @@ class scintilla final
                               int nHeight, HWND hWndParent, HMENU hMenu,
                               HINSTANCE hInstance, LPVOID lpParam,
                               uint8_t start_options);
-
-    // void set_h_scroll(const npi_t p) {
-    //     scroll_.index_in_line() = p;
-    //  on_scroll_changed_(scroll_);
-    // }
-    // void set_v_scroll(const npi_t p) {
-    //    scroll_.line() = p;
-    // on_scroll_changed_(scroll_);
-    // }
-
     void init_direct_access_to_scintilla();
 
   private:
@@ -230,8 +212,4 @@ class scintilla final
     HWND edit_window_{nullptr};
     sptr_t direct_wnd_ptr_{0};
     npi_t (*direct_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
-
-    // position_t scroll_{};
-    //  scroll_changed_signal on_scroll_changed_{};
-    //  size_changed_signal   on_resize_{};
 };

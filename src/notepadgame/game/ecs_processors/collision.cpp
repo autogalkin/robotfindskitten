@@ -259,10 +259,6 @@ collision::quad_tree::find_leaves(const quad_node_data& start,
 
 collision::query::query(world* w, const int game_area[2]) : ecs_processor{w},
     tree_{boundbox{{0, 0}, {game_area[0], game_area[1]}}, 4} {;
-    // notepader::get().get_engine()->get_on_scroll_changed().connect([this](const
-    // position& new_scroll){
-    //   on_scroll_changed(new_scroll);
-    //});
     w->reg_.on_construct<collision::agent>()
         .connect<&entt::registry::emplace_or_replace<need_update_entity>>();
 }
