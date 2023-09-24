@@ -18,13 +18,11 @@
 #include <stdint.h>
 #include <thread>
 
-
 #include "engine/scintilla_wrapper.h"
 #include "engine/details/iat_hook.h"
 #include "engine/input.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
-
 
 extern const int GAME_AREA[2];
 
@@ -46,8 +44,8 @@ class thread_guard : public noncopyable {
 notepad::notepad()
     : scintilla_(std::nullopt), input_state(), main_window_(),
       original_proc_(0), on_open_(std::make_unique<open_signal_t>()),
-      fixed_time_step_(), fps_count_(), buf_(GAME_AREA[0],GAME_AREA[1]), local_commands_(32),
-      commands_() {}
+      fixed_time_step_(), fps_count_(), buf_(GAME_AREA[0], GAME_AREA[1]),
+      local_commands_(32), commands_() {}
 
 void notepad::tick_render() {
     fps_count_.fps([](auto fps) {
@@ -173,6 +171,15 @@ bool hook_GetMessageW(const HMODULE module) {
                 switch (lpMsg->message) {
                 case WM_QUIT:
                     return 0;
+                case WM_MOUSEWHEEL: {
+                    // horizontal scroll
+                    if (LOWORD(lpMsg->wParam) & MK_SHIFT) {
+                        np.scintilla_->scroll(
+                            GET_WHEEL_DELTA_WPARAM(lpMsg->wParam) > 0 ? -3 : 3,
+                            0);
+                    }
+                    break;
+                }
 
                     // Handle keyboard messages
                 case WM_KEYDOWN:
@@ -182,7 +189,6 @@ bool hook_GetMessageW(const HMODULE module) {
                     lpMsg->message = WM_NULL;
                     break;
                 }
-
                     // handle mouse
                 case WM_MOUSEMOVE:
                 case WM_LBUTTONDOWN:
@@ -198,7 +204,7 @@ bool hook_GetMessageW(const HMODULE module) {
                 default:
                     break;
                 }
-
+                // work as PeekMessage for the notepad.exe
                 TranslateMessage(lpMsg);
                 DispatchMessage(lpMsg);
                 lpMsg->message =
