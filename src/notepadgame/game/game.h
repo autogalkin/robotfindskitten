@@ -4,7 +4,6 @@
 #include <Windows.h>
 #include <string>
 
-
 #include "engine/details/base_types.h"
 
 #include "engine/time.h"
@@ -20,7 +19,8 @@
 #include "engine/world.h"
 
 namespace game {
-inline void start(world& w, input::thread_input& i, thread_commands& cmds, const int game_area[2]) {
+inline void start(world& w, input::thread_input& i, thread_commands& cmds,
+                  const int game_area[2]) {
 
     auto& exec = w.executor;
 
@@ -35,25 +35,39 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds, const
     exec.push<death_last_will_executor>(&w);
     exec.push<killer>(&w);
     exec.push<lifetime_ticker>(&w);
-    static auto fps_count = timings::fps_count{};
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-        reg.emplace<timeline::what_do>(entity, std::move([]
-                (entt::registry& reg, const entt::entity e, const direction) mutable {
-            fps_count.fps([&reg, e](auto fps){
-                reg.get<notepad_thread_command>(e) = notepad_thread_command([fps](notepad*np, scintilla*){
-                auto start_it = np->window_title.find(L"game_thread ");
-                np->window_title.replace(start_it + 12, np->window_title.find(L" | ") - (start_it + 12), std::format(L"{:02}", fps));
-
+        reg.emplace<timeline::what_do>(
+            entity, std::move([fps_count = timings::fps_count{}](
+                                  entt::registry& reg, const entt::entity e,
+                                  const direction) mutable {
+                fps_count.fps([&reg, e](auto fps) {
+                    reg.get<notepad_thread_command>(e) =
+                        notepad_thread_command([fps](notepad* np, scintilla*) {
+                            np->window_title.game_thread_fps = fps;
+                        });
                 });
-            });
-        }));
+            }));
         reg.emplace<timeline::eval_direction>(entity, direction::forward);
         reg.emplace<notepad_thread_command>(entity);
     });
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });
-    // return;
+    // Message Area
+    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
+        actor::make_base_renderable(
+            reg, entity, {1, 0}, 3,
+            {shape::sprite::from_data{"It's a banana! Oh, joy!", 1, 23}});
+    });
+    {
+        const auto frame = std::vector<char_size>(game_area[1], '_');
+        w.spawn_actor([&frame, game_area](entt::registry& reg,
+                                          const entt::entity entity) {
+            actor::make_base_renderable(
+                reg, entity, {3, 0}, 4,
+                {shape::sprite::from_data{frame.data(), 1, game_area[1]}});
+        });
+    }
     {
         int i = 0;
         int j = 0;
@@ -71,21 +85,6 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds, const
             ++j;
             w.spawn_actor(spawn_block);
         }
-        w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-            actor::make_base_renderable(
-                reg, entity, {0, 0}, 3,
-                {shape::sprite::from_data{"It's a banana! Oh, joy!", 1, 23}});
-            /*
-            reg.emplace<screen_scroll>(
-                entity, [&reg, entity](const position_t& new_scroll) {
-                    auto& [current, translation] =
-                        reg.get<location_buffer>(entity);
-                    translation.pin() = location{
-                        0., static_cast<double>(new_scroll.index_in_line()) -
-                                current.index_in_line()};
-                });
-            */
-        });
     }
 
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
@@ -99,7 +98,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds, const
                                         {shape::sprite::from_data{"#", 1, 1}}}},
             static_cast<uint8_t>(0));
 
-        character::make(reg, entity, location{3, 3});
+        character::make(reg, entity, location{7, 24});
         auto& [input_callback] = reg.emplace<input_passer::down_signal>(entity);
         input_callback.connect(&character::process_movement_input<>);
     });

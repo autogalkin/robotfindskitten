@@ -4,6 +4,7 @@
 #include "boost/signals2.hpp"
 #include <Windows.h>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <thread>
 #include "engine/scintilla_wrapper.h"
@@ -40,11 +41,20 @@ public:
         queue_.push_back(key);
     };
     thread_commands() : queue_(32) {}
-    //~thread_commands();
 
 private:
     queue_t queue_;
     mutable std::mutex mutex_;
+};
+
+class title_line{
+    static constexpr auto buf_ = L"robotfindskitten, fps: game_thread {:02} | render_thread {:02}";
+public:
+   uint64_t game_thread_fps;
+   uint64_t render_thread_fps;
+    std::wstring make(){
+        return std::format(buf_, game_thread_fps, render_thread_fps);
+    };
 };
 
 // A static Singelton for notepad.exe wrapper
@@ -84,7 +94,7 @@ class notepad {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
                         : std::nullopt;
     }
-    std::wstring window_title = L"fps: game_thread 0 | render_thread 0";
+    title_line window_title{};
     input::thread_input input_state;
     // input get_input_state()
     void connect_to_notepad(const HMODULE module /* notepad.exe module*/,
@@ -106,7 +116,7 @@ class notepad {
         static notepad notepad{};
         return notepad;
     }
-    // TODO rewrite
+    // TODO rewrite commads
     thread_commands commands_;
     thread_commands::queue_t local_commands_;
     void start_game();

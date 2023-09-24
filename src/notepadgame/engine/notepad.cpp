@@ -52,9 +52,7 @@ void notepad::tick_render() {
     fps_count_.fps([](auto fps) {
         auto& np = notepad::get();
         auto sub = std::wstring(L"| render_thread ");
-        np.window_title.replace(np.window_title.rfind(L' ') + 1,
-                                np.window_title.length(),
-                                std::format(L"{:02}", fps));
+        np.window_title.render_thread_fps = fps;
     });
     swap(commands_, local_commands_);
     scintilla* p = &*scintilla_;
@@ -63,7 +61,7 @@ void notepad::tick_render() {
         if (c)
             c(this, p);
     }
-    notepad::get().set_window_title(notepad::get().window_title);
+    notepad::get().set_window_title(notepad::get().window_title.make());
     local_commands_.clear();
     const auto pos = scintilla_->get_caret_index();
     buf_.view([this](const std::basic_string<char_size>& buf) {

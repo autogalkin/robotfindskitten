@@ -1,6 +1,5 @@
 set(ENGINE_SOURCES
     engine/buffer.cpp
-    engine/details/base_types.cpp
     engine/scintilla_wrapper.cpp
     engine/input.cpp
     engine/notepad.cpp
