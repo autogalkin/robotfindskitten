@@ -266,7 +266,7 @@ collision::query::query(world* w) : ecs_processor{w} {
         .connect<&entt::registry::emplace_or_replace<need_update_entity>>();
 }
 
-void collision::query::execute(entt::registry& reg, time2::duration delta) {
+void collision::query::execute(entt::registry& reg, timings::duration delta) {
 
     // insert moved actors into tree
     for (const auto view =

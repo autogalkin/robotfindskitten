@@ -19,7 +19,7 @@ class ecs_processors_executor {
         std::unique_ptr<ecs_processor> who,
         const std::type_info& near_with, /* usage: typeid(ecs_processor) */
         const insert_order where = insert_order::before);
-    void execute(entt::registry& reg, const time2::duration delta) const {
+    void execute(entt::registry& reg, const timings::duration delta) const {
         for (const auto& i : data_) {
             i->execute(reg, delta);
         }
@@ -45,9 +45,9 @@ class world { //, nonmoveable, noncopyable {
     // TODO
     back_buffer* backbuffer;
     entt::registry reg_;
-    //void tick(gametimer::duration delta) override {
-    //    executor.execute(reg_, delta);
-   // }
+    void tick(timings::duration delta) {
+        executor.execute(reg_, delta);
+    }
 
     template <typename F>
         requires std::is_invocable_v<F, entt::registry&, const entt::entity>

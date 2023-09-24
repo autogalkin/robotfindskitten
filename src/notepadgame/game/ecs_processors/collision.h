@@ -196,7 +196,7 @@ class query final : public ecs_processor {
     explicit query(world* w);
 
     virtual void execute(entt::registry& reg,
-                         time2::duration delta) override;
+                         timings::duration delta) override;
 
   private:
     // mark entity to remove from tree and insert again

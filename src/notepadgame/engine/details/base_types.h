@@ -128,7 +128,7 @@ namespace life {
 struct begin_die {};
 
 struct lifetime {
-    time2::duration duration;
+    timings::duration duration;
 };
 
 struct death_last_will {

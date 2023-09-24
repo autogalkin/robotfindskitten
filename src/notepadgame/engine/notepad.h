@@ -109,12 +109,13 @@ class notepad {
     thread_commands commands_;
     thread_commands::queue_t local_commands_;
     void start_game();
+    void tick_render();
     explicit notepad();
     opts options_{opts::empty};
     back_buffer buf_;
     HWND main_window_;
-    time2::fixed_time_step fixed_time_step_;
-    time2::fps_count fps_count_;
+    timings::fixed_time_step fixed_time_step_;
+    timings::fps_count fps_count_;
     // Live only on startup
     std::unique_ptr<open_signal_t> on_open_;
     LONG_PTR original_proc_; // notepad.exe window proc

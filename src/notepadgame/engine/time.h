@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include <chrono>
+#include <type_traits>
 
-namespace time2 {
+namespace timings {
 using namespace std::chrono_literals;
 // most suitable for measuring intervals
 using clock = std::chrono::steady_clock;
@@ -11,46 +12,46 @@ using duration = decltype(clock::duration{} + dt);
 using point = std::chrono::time_point<clock, duration>;
 
 class fixed_time_step {
-    time2::duration lag_accum_ = 0ms;
-    time2::point prev_point_ = time2::clock::now();
+    duration lag_accum_ = 0ms;
+    point prev_point_ = clock::now();
 
   public:
     void sleep() {
-        const time2::point new_point = time2::clock::now();
+        const point new_point = clock::now();
         /*250ms is the limit put in place on the frame time to cope with the
          *spiral of death.*/
         const auto frame_time = std::min<std::common_type_t<
-            decltype(prev_point_ + time2::dt - new_point), decltype(250ms)>>(
-            new_point - prev_point_ + time2::dt, 250ms);
+            decltype(prev_point_ + dt - new_point), decltype(250ms)>>(
+            new_point - prev_point_ + dt, 250ms);
 
         lag_accum_ += frame_time;
 
         if (lag_accum_ > 0ms) {
-            const auto sleep_start = time2::clock::now();
+            const auto sleep_start = clock::now();
             std::this_thread::sleep_for(lag_accum_);
-            const auto sleep_end = time2::clock::now();
+            const auto sleep_end = clock::now();
             lag_accum_ -= sleep_end - sleep_start;
         }
-        prev_point_ = time2::clock::now();
+        prev_point_ = clock::now();
     }
 };
 
 class fps_count {
-    time2::point start_point_ = time2::clock::now();
-    time2::duration frames_ = 0ms;
+    point start_point_ = clock::now();
+    duration frames_ = 0ms;
 
   public:
-    uint64_t fps() {
+    template<typename Printer>
+    requires std::is_invocable_v<Printer, uint64_t>
+    void fps(Printer&& printer) {
         ++frames_;
-        const time2::point new_point_ = time2::clock::now();
+        const point new_point_ = clock::now();
         const auto delta = new_point_ - start_point_;
         if (delta > 1s) {
-            const auto fps = frames_ / delta;
+            printer(frames_ / delta);
             frames_ = 0ms;
-            start_point_ = time2::clock::now();
-            return fps;
+            start_point_ = clock::now();
         }
-        return 0;
     }
 };
 /*

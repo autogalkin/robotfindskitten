@@ -22,7 +22,7 @@ class input_passer final : public ecs_processor {
             call;
     };
 
-    void execute(entt::registry& reg, time2::duration) override {
+    void execute(entt::registry& reg, timings::duration) override {
         // swap data from other thread
         swap(*input_, state_);
         if (state_.empty())

@@ -47,40 +47,38 @@ notepad::notepad()
         , commands_()
 {}
 
-void notepad::start_game() {
-    // render in main thread
-    /*
-    render_tick.on_tick.connect([this](gametimer::duration d) {
-        swap(commands_, local_commands_);
-        scintilla* p = &*scintilla_;
-        // TODO any other queue implementation?
-        for (auto& c : local_commands_){
-            if(c)
-                c(p);
-        }
-        local_commands_.clear();
-        const auto pos = scintilla_->get_caret_index();
-        buf_.view([this](const std::basic_string<char_size>& buf) {
-            scintilla_->set_new_all_text(buf);
-        });
-        scintilla_->set_caret_index(pos);
-        set_window_title(L"fps: " +
-                         std::to_wstring(render_tick.get_current_frame_rate()));
+void notepad::tick_render() {
+    swap(commands_, local_commands_);
+    scintilla* p = &*scintilla_;
+    // TODO any other queue implementation?
+    for (auto& c : local_commands_){
+        if(c)
+            c(p);
+    }
+    local_commands_.clear();
+    const auto pos = scintilla_->get_caret_index();
+    buf_.view([this](const std::basic_string<char_size>& buf) {
+        scintilla_->set_new_all_text(buf);
     });
-    */
-
-    // game in another thread
+    scintilla_->set_caret_index(pos);
+    fps_count_.fps([](uint64_t fps){
+                    notepad::get().set_window_title(L"fps: " +
+                         std::to_wstring(fps));
+            });
+}
+// game in another thread
+void notepad::start_game() {
     static thread_guard game_thread = thread_guard(std::thread(
         [buf = &buf_,
          on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
          &input = input_state, &cmds=commands_]() {
-         time2::fixed_time_step fixed_time_step;
+         timings::fixed_time_step fixed_time_step;
             world w{buf};
             (*on_open)(w, input, cmds);
             while (!done.load()) {
                 fixed_time_step.sleep();
-                // TODO tick here
+                w.tick(timings::dt);
             }
         }));
 }
@@ -204,8 +202,11 @@ bool hook_GetMessageW(const HMODULE module) {
 
             static std::once_flag once;
             std::call_once(once,
-                           [] { notepad::get().fixed_time_step_ = time2::fixed_time_step(); });
-            notepad::get().fixed_time_step_.sleep();
+                           [] { notepad::get().fixed_time_step_ = timings::fixed_time_step(); });
+            np.fixed_time_step_.sleep();
+            np.tick_render();
+           
+
             // TODO tick here
             return 1;
         });
