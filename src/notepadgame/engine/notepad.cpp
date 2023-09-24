@@ -17,7 +17,7 @@
 #include <thread>
 
 #include "engine/details/gamelog.h"
-#include "engine/engine.h"
+#include "engine/scintilla_wrapper.h"
 #include "engine/details/iat_hook.h"
 #include "engine/input.h"
 #include "engine/notepad.h"

@@ -1,7 +1,7 @@
 ﻿#include "Windows.h"
 #include <CommCtrl.h>
 #include <Richedit.h>
-#include "engine/engine.h"
+#include "engine/scintilla_wrapper.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
 

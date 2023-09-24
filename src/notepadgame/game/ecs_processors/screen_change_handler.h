@@ -2,7 +2,7 @@
 
 #include "engine/details/base_types.h"
 #include "engine/ecs_processor_base.h"
-#include "engine/engine.h"
+#include "engine/scintilla_wrapper.h"
 #include "engine/world.h"
 
 /*

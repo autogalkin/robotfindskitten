@@ -15,7 +15,7 @@
 #include "game/ecs_processors/screen_change_handler.h"
 #include "game/ecs_processors/timers.h"
 #include "game/ecs_processors/render_commands.h"
-#include "engine/engine.h"
+#include "engine/scintilla_wrapper.h"
 #include "game/entities/factories.h"
 #include "engine/notepad.h"
 #include "engine/world.h"

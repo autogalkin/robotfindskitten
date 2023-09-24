@@ -9,7 +9,7 @@
 #include "range/v3/view/enumerate.hpp"
 #include "range/v3/view/filter.hpp"
 
-#include "engine/engine.h"
+#include "engine/scintilla_wrapper.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
 #include <ranges>

@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 #include <thread>
-#include "engine/engine.h"
+#include "engine/scintilla_wrapper.h"
 #include "engine/world.h"
 #include "engine/input.h"
 #include "engine/time.h"

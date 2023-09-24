@@ -1,5 +1,5 @@
 ﻿#include "engine/details/base_types.h"
-#include "engine/engine.h"
+#include "engine/scintilla_wrapper.h"
 #include "engine/notepad.h"
 
 /*

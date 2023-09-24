@@ -2,7 +2,7 @@ set(ENGINE_SOURCES
     engine/buffer.cpp
     engine/details/base_types.cpp
     engine/details/gamelog.cpp
-    engine/engine.cpp
+    engine/scintilla_wrapper.cpp
     engine/input.cpp
     engine/notepad.cpp
     engine/world.cpp)
@@ -13,7 +13,7 @@ set(ENGINE_HEADERS
     engine/details/iat_hook.h
     engine/details/nonconstructors.h
     engine/ecs_processor_base.h
-    engine/engine.h
+    engine/scintilla_wrapper.h
     engine/input.h
     engine/notepad.h
     engine/time.h
