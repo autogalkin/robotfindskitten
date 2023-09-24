@@ -102,7 +102,6 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds, const
         character::make(reg, entity, location{3, 3});
         auto& [input_callback] = reg.emplace<input_passer::down_signal>(entity);
         input_callback.connect(&character::process_movement_input<>);
-        character::add_top_down_camera(reg, entity);
     });
 
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {

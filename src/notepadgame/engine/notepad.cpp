@@ -144,11 +144,33 @@ bool hook_GetMessageW(const HMODULE module) {
                 case WM_QUIT:
                     return 0;
                 case WM_MOUSEWHEEL: {
+                    auto scroll_delta = GET_WHEEL_DELTA_WPARAM(lpMsg->wParam);
                     // horizontal scroll
                     if (LOWORD(lpMsg->wParam) & MK_SHIFT) {
+                        auto char_width = np.scintilla_->get_char_width();
                         np.scintilla_->scroll(
-                            GET_WHEEL_DELTA_WPARAM(lpMsg->wParam) > 0 ? -3 : 3,
+                            scroll_delta > 0
+                                ? -3
+                                : (np.scintilla_->get_horizontal_scroll_offset() /
+                                                   char_width +
+                                               (np.scintilla_
+                                                        ->get_window_width() /
+                                                    char_width +
+                                                3) <
+                                           GAME_AREA[1]
+                                       ? 3
+                                       : 0),
                             0);
+                    } else {
+                        np.scintilla_->scroll(
+                            0, scroll_delta > 0
+                                   ? -3
+                                   : (np.scintilla_->get_lines_on_screen()-1 <
+                                              GAME_AREA[0]
+                                          ? 3
+                                          : 0)
+
+                        );
                     }
                     break;
                 }

@@ -28,7 +28,7 @@ class back_buffer {
     explicit back_buffer(size_t height, size_t width)
         : width_(width), buf(std::basic_string<char_size>(width * height, ' ')),
           rw_lock_() {
-        for (npi_t i = 1; i <= height; i++) {
+        for (npi_t i = 1; i < height; i++) {
             static constexpr int ENDL_SIZE = 1;
             buf[i * width - ENDL_SIZE] = '\n';
         }
