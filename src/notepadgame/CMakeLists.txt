@@ -1,5 +1,5 @@
 project(
-    notepadgamedll
+    notepadgame
     DESCRIPTION ""
     VERSION 0.0.1)
 
