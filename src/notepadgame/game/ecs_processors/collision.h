@@ -1,5 +1,5 @@
 ﻿#pragma once
-#pragma warning(push, 0)
+
 #include "boost/container/small_vector.hpp"
 #include "range/v3/view/iota.hpp"
 #include <chrono>

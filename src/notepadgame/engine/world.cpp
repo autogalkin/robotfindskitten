@@ -5,7 +5,7 @@
 #include "engine/timer.h"
 #include <algorithm>
 #include <numeric>
-#pragma warning(push, 0)
+
 #include "range/v3/view/enumerate.hpp"
 #include "range/v3/view/filter.hpp"
 #pragma warning(pop)

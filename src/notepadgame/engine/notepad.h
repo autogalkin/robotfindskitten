@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <optional>
-#pragma warning(push, 0)
+
 #include "boost/signals2.hpp"
 #include <Windows.h>
 #include <memory>

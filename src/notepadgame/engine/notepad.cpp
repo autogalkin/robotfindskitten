@@ -4,7 +4,7 @@
 #include <boost/utility/in_place_factory.hpp>
 #include <memory>
 #include <optional>
-#pragma warning(push, 0)
+
 // clang-format off
 #include "Richedit.h"
 #include <Windows.h>

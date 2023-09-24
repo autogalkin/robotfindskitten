@@ -1,6 +1,6 @@
 #pragma once
 #include "engine/details/gamelog.h"
-#pragma warning(push, 0)
+
 #include "Windows.h"
 #include "boost/signals2.hpp"
 #include <entt/entt.hpp>

@@ -1,4 +1,4 @@
-#pragma warning(push, 0)
+
 #include <Windows.h>
 #include <stdint.h>
 #pragma warning(pop)

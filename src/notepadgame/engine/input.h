@@ -3,7 +3,7 @@
 #include "engine/details/nonconstructors.h"
 #include <functional>
 #include <type_traits>
-#pragma warning(push, 0)
+
 #include "Windows.h"
 #include "boost/container/static_vector.hpp"
 #include <ranges>

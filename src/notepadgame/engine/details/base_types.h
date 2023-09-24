@@ -1,13 +1,11 @@
 ﻿#pragma once
-#pragma warning(push, 0)
-#include "Windows.h"
 #include "df/dirtyflag.h"
 #include <Eigen/Dense>
 #include <chrono>
 #include <cstdint>
 #include <entt/entt.hpp>
 #include <utility>
-#pragma warning(pop)
+#include "Windows.h"
 
 #include "engine/timer.h"
 

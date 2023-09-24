@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <string_view>
 #include <type_traits>
-#pragma warning(push, 0)
+
 #include "df/dirtyflag.h"
 #include <memory>
 #include <vector>
