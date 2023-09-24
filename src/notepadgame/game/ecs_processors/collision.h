@@ -5,7 +5,7 @@
 #include <chrono>
 #include <entt/entt.hpp>
 #include <variant>
-#pragma warning(pop)
+
 
 #include "engine/details/base_types.h"
 #include "engine/details/gamelog.h"

@@ -8,7 +8,7 @@
 
 #include "range/v3/view/enumerate.hpp"
 #include "range/v3/view/filter.hpp"
-#pragma warning(pop)
+
 #include "engine/engine.h"
 #include "engine/notepad.h"
 #include "engine/world.h"

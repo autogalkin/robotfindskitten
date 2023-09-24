@@ -1,7 +1,7 @@
 
 #include <Windows.h>
 #include <stdint.h>
-#pragma warning(pop)
+
 #include "engine/details/gamelog.h"
 #include "engine/notepad.h"
 #include "game/game.h"

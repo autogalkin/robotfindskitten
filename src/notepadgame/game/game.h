@@ -2,7 +2,7 @@
 #include <array>
 
 #include <Windows.h>
-#pragma warning(pop)
+
 
 #include "engine/details/base_types.h"
 #include "engine/details/gamelog.h"

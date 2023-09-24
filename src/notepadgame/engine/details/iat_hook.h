@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Windows.h"
-#pragma warning(pop)
+
 
 class iat_hook {
 

@@ -15,7 +15,7 @@
 #include <shared_mutex>
 #include <mutex>
 #include <thread>
-#pragma warning(pop)
+
 
 #include "engine/details/gamelog.h"
 #include "engine/engine.h"

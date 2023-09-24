@@ -5,11 +5,11 @@
 #include <Windows.h>
 #include <memory>
 #include <thread>
-#pragma warning(pop)
 #include "engine/engine.h"
 #include "engine/world.h"
 #include "engine/input.h"
 #include "engine/timer.h"
+
 // custom WindowProc
 static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp,
                                       LPARAM lp);

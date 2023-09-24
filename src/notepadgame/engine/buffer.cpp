@@ -7,7 +7,7 @@
 #include "df/dirtyflag.h"
 #include <memory>
 #include <vector>
-#pragma warning(pop)
+
 #include "engine/ecs_processor_base.h"
 
 #include "engine/details/base_types.h"

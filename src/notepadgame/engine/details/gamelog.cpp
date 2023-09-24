@@ -1,6 +1,6 @@
 ﻿
 #include <Windows.h>
-#pragma warning(pop)
+
 #include "engine/details/gamelog.h"
 gamelog& gamelog::get() {
     static gamelog glog{};

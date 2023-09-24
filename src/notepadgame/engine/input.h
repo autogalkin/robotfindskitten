@@ -7,7 +7,7 @@
 #include "Windows.h"
 #include "boost/container/static_vector.hpp"
 #include <ranges>
-#pragma warning(pop)
+
 #include "engine/details/base_types.h"
 #include "engine/details/gamelog.h"
 #include <mutex>

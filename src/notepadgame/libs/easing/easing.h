@@ -3,7 +3,7 @@
 #include <cmath>
 #include <numbers>
 #include <utility>
-#pragma warning(pop)
+
 
 // from the https://easings.net/ and
 // https://github.com/nicolausYes/easing-functions

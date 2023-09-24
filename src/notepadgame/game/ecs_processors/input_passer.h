@@ -4,7 +4,7 @@
 #include "Windows.h"
 #include "boost/signals2.hpp"
 #include <entt/entt.hpp>
-#pragma warning(pop)
+
 
 #include "engine/details/base_types.h"
 #include "engine/ecs_processor_base.h"

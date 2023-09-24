@@ -6,7 +6,7 @@
 #include "df/dirtyflag.h"
 #include <memory>
 #include <vector>
-#pragma warning(pop)
+
 
 #include "engine/details/base_types.h"
 #include "engine/details/gamelog.h"
