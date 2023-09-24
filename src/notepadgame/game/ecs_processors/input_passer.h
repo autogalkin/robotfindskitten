@@ -1,5 +1,5 @@
 #pragma once
-#include "engine/details/gamelog.h"
+
 
 #include "Windows.h"
 #include "boost/signals2.hpp"

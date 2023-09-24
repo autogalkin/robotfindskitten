@@ -1,6 +1,6 @@
 #pragma once
 #include "engine/details/base_types.h"
-#include "engine/details/gamelog.h"
+
 #include "engine/ecs_processor_base.h"
 #include "engine/notepad.h"
 #include "engine/world.h"

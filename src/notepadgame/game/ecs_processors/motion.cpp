@@ -28,9 +28,9 @@ void uniform_motion::execute(entt::registry& reg, timings::duration delta) {
         auto& vel = view.get<velocity>(entity);
         auto& [current, translation] = view.get<location_buffer>(entity);
 
-        if (vel != velocity::null())
+        if (vel != velocity::make_null())
             translation.pin() = vel;
 
-        vel = velocity::null();
+        vel = velocity::make_null();
     }
 }

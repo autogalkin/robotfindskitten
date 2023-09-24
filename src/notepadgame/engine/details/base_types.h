@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdint>
 #include <entt/entt.hpp>
+#include <type_traits>
 #include <utility>
 #include "engine/time.h"
 #include "Windows.h"
@@ -18,55 +19,60 @@ template <typename SizeType>
     requires std::is_arithmetic_v<SizeType>
 struct vec_t : public Eigen::Vector2<SizeType> {
     using size_type = SizeType;
-    constexpr vec_t() { *this << 0, 0; }
-    constexpr vec_t(const SizeType& line, const SizeType& index_in_line)
+    /* implicit*/ vec_t() { *this << 0, 0; }
+    vec_t(const SizeType& line, const SizeType& index_in_line) noexcept
         : Eigen::Vector2<SizeType>{line, index_in_line} {}
-
+    // implicit from eigens
     template <typename OtherDerived>
-    vec_t(const Eigen::EigenBase<OtherDerived>& other)
+    vec_t(const Eigen::EigenBase<OtherDerived>& other) noexcept
         : Eigen::Vector2<SizeType>{other} {}
     template <typename OtherDerived>
-    vec_t(const Eigen::EigenBase<OtherDerived>&& other)
+    vec_t(const Eigen::EigenBase<OtherDerived>&& other) noexcept
         : Eigen::Vector2<SizeType>{other} {}
 
     template <typename T>
         requires std::is_convertible_v<T, SizeType>
-    vec_t<SizeType>& operator=(const vec_t<T>& rhs) {
+    vec_t<SizeType>& operator=(const vec_t<T>& rhs) noexcept {
         line() = rhs.line();
         index_in_line() = rhs.index_in_line();
         return *this;
     }
 
-    [[nodiscard]] SizeType& line() { return this->operator()(0); }
-    [[nodiscard]] SizeType& index_in_line() { return this->operator()(1); }
-    [[nodiscard]] const SizeType& line() const { return this->operator()(0); }
-    [[nodiscard]] const SizeType& index_in_line() const {
+    [[nodiscard]] SizeType& line() noexcept { return this->operator()(0); }
+    [[nodiscard]] SizeType& index_in_line() noexcept {
+        return this->operator()(1);
+    }
+    [[nodiscard]] const SizeType& line() const noexcept {
+        return this->operator()(0);
+    }
+    [[nodiscard]] const SizeType& index_in_line() const noexcept {
         return this->operator()(1);
     }
 
     template <typename T>
     vec_t<std::common_type_t<SizeType, T>>
-    operator+(const vec_t<T>& rhs) const {
+    operator+(const vec_t<T>& rhs) const noexcept {
         return vec_t<std::common_type_t<SizeType, T>>{
             line() + rhs.line(), index_in_line() + rhs.index_in_line()};
     }
     template <typename T>
     vec_t<std::common_type_t<SizeType, T>>
-    operator*(const vec_t<T>& rhs) const {
+    operator*(const vec_t<T>& rhs) const noexcept {
         return vec_t<std::common_type_t<SizeType, T>>{
             line() * rhs.line(), index_in_line() * rhs.index_in_line()};
     }
     template <typename T>
         requires std::is_arithmetic_v<T>
-    vec_t<std::common_type_t<SizeType, T>> operator*(const T& rhs) const {
+    vec_t<std::common_type_t<SizeType, T>>
+    operator*(const T& rhs) const noexcept {
         return vec_t<std::common_type_t<SizeType, T>>{line() * rhs,
                                                       index_in_line() * rhs};
     }
-    [[nodiscard]] bool is_null() const {
+    [[nodiscard]] bool is_null() const noexcept {
         return line() == static_cast<SizeType>(0) &&
                index_in_line() == static_cast<SizeType>(0);
     }
-    static vec_t<SizeType> null() {
+    static vec_t<SizeType> make_null() noexcept {
         return vec_t<SizeType>{static_cast<SizeType>(0),
                                static_cast<SizeType>(0)};
     }
@@ -74,6 +80,8 @@ struct vec_t : public Eigen::Vector2<SizeType> {
 
 // notepad's col-row position
 using position_t = vec_t<npi_t>;
+
+inline void foo() { position_t b = Eigen::Vector2<npi_t>(); }
 
 // an actor location, used for smooth move
 using location = vec_t<double>;
@@ -105,8 +113,6 @@ struct eval_direction {
 struct visible_in_game {};
 
 namespace position_converter {
-// npi_t to_notepad_index(const position_t& l);
-// position_t from_notepad_index(npi_t i);
 inline position_t from_location(const location& location) {
     return {std::lround(location.line()),
             std::lround(location.index_in_line())};

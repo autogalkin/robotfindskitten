@@ -1,4 +1,5 @@
 ﻿#include "engine/buffer.h"
+#include "engine/details/base_types.h"
 #include "engine/details/nonconstructors.h"
 #include "engine/time.h"
 #include <boost/utility/in_place_factory.hpp>
@@ -16,12 +17,14 @@
 #include <mutex>
 #include <thread>
 
-#include "engine/details/gamelog.h"
+
 #include "engine/scintilla_wrapper.h"
 #include "engine/details/iat_hook.h"
 #include "engine/input.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
+
+extern const position_t GAME_AREA;
 
 static volatile std::atomic_bool done(false);
 
@@ -165,7 +168,6 @@ bool hook_GetMessageW(const HMODULE module) {
             // TODO описание как из getmessage в peek message
             while (PeekMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax,
                                 PM_REMOVE)) {
-                // gamelog::cout(std::hex, "get message", lpMsg->message);
                 switch (lpMsg->message) {
                 case WM_QUIT:
                     return 0;

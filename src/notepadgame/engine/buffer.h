@@ -9,7 +9,6 @@
 
 
 #include "engine/details/base_types.h"
-#include "engine/details/gamelog.h"
 #include <algorithm>
 #include <numeric>
 #include "range/v3/view/enumerate.hpp"

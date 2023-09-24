@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "engine/details/gamelog.h"
+
 #include "df/dirtyflag.h"
 
 #include "engine/details/base_types.h"

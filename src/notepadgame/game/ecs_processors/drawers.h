@@ -87,7 +87,7 @@ class redrawer final : public ecs_processor {
                     sp.current_sprite(), depth);
 
                 translation =
-                    df::dirtyflag<location>{location::null(), df::state::clean};
+                    df::dirtyflag<location>{location::make_null(), df::state::clean};
 
                 reg.emplace_or_replace<previous_sprite>(
                     entity, static_cast<int8_t>(sp.rendering_i));

@@ -11,7 +11,7 @@
 #include "engine/ecs_processor_base.h"
 
 #include "engine/details/base_types.h"
-#include "engine/details/gamelog.h"
+
 #include "df/dirtyflag.h"
 #include <algorithm>
 #include <numeric>

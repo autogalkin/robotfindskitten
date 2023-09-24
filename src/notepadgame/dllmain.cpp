@@ -2,9 +2,39 @@
 #include <Windows.h>
 #include <stdint.h>
 
-#include "engine/details/gamelog.h"
 #include "engine/notepad.h"
 #include "game/game.h"
+
+static constexpr std::pair<uint8_t, uint8_t> GAME_AREA{150, 300};
+
+class console final : public noncopyable, public nonmoveable {
+  public:
+    static console allocate(); 
+    ~console(){
+        FreeConsole();
+    }
+  private:
+    explicit console(){};
+
+};
+
+inline console console::allocate() {
+    AllocConsole();
+    FILE* fdummy;
+    auto err = freopen_s(&fdummy, "CONOUT$", "w", stdout);
+    err = freopen_s(&fdummy, "CONOUT$", "w", stderr);
+    std::cout.clear();
+    std::clog.clear();
+    const HANDLE hConOut =
+        CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                    FILE_ATTRIBUTE_NORMAL, NULL);
+    SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
+    SetStdHandle(STD_ERROR_HANDLE, hConOut);
+    std::wcout.clear();
+    std::wclog.clear();
+    return console();
+}
 
 BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
                       LPVOID lp_reserved) {
@@ -29,7 +59,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
 
         np.on_open()->get().connect([](world& world, input::thread_input& i,  thread_commands& cmds) {
 #ifndef NDEBUG
-            gamelog::get(); // alloc a console for the cout
+            static auto log_console = console::allocate();
 #endif // NDEBUG
             printf("Notepad is loaded and initialized. Start a game");
             game::start(world, i, cmds);

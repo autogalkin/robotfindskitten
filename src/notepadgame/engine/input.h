@@ -9,7 +9,7 @@
 #include <ranges>
 
 #include "engine/details/base_types.h"
-#include "engine/details/gamelog.h"
+
 #include <mutex>
 
 namespace input {

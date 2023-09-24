@@ -1,7 +1,6 @@
 set(ENGINE_SOURCES
     engine/buffer.cpp
     engine/details/base_types.cpp
-    engine/details/gamelog.cpp
     engine/scintilla_wrapper.cpp
     engine/input.cpp
     engine/notepad.cpp
@@ -9,7 +8,6 @@ set(ENGINE_SOURCES
 set(ENGINE_HEADERS
     engine/buffer.h
     engine/details/base_types.h
-    engine/details/gamelog.h
     engine/details/iat_hook.h
     engine/details/nonconstructors.h
     engine/ecs_processor_base.h

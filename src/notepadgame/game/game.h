@@ -6,7 +6,7 @@
 
 
 #include "engine/details/base_types.h"
-#include "engine/details/gamelog.h"
+
 #include "engine/time.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input_passer.h"

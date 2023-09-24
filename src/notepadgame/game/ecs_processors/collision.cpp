@@ -316,7 +316,7 @@ void collision::query::execute(entt::registry& reg, timings::duration delta) {
                                 reg, entity, cl);
                             cl_resp == responce::block &&
                             resp == responce::block) {
-                            translation = df::dirtyflag{location::null(),
+                            translation = df::dirtyflag{location::make_null(),
                                                         df::state::dirty};
                             view.get<location_buffer>(cl).translation.mark();
                         }
