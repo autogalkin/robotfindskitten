@@ -8,7 +8,7 @@
 
 #include "engine/time.h"
 #include "game/ecs_processors/drawers.h"
-#include "game/ecs_processors/input_passer.h"
+#include "game/ecs_processors/input.h"
 #include "game/ecs_processors/killer.h"
 #include "game/ecs_processors/motion.h"
 #include "game/ecs_processors/timers.h"
@@ -24,7 +24,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
 
     auto& exec = w.executor;
 
-    exec.push<input_passer>(&w, &i);
+    exec.push<input_processor>(&w, &i);
     exec.push<uniform_motion>(&w);
     exec.push<non_uniform_motion>(&w);
     exec.push<timeline_executor>(&w);
@@ -99,7 +99,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
             static_cast<uint8_t>(0));
 
         character::make(reg, entity, location{7, 24});
-        auto& [input_callback] = reg.emplace<input_passer::down_signal>(entity);
+        auto& [input_callback] = reg.emplace<input_processor::down_signal>(entity);
         input_callback.connect(&character::process_movement_input<>);
     });
 

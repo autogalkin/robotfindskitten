@@ -10,9 +10,9 @@
 #include "engine/ecs_processor_base.h"
 #include "engine/input.h"
 
-class input_passer final : public ecs_processor {
+class input_processor final : public ecs_processor {
   public:
-    explicit input_passer(world* w, input::thread_input* i)
+    explicit input_processor(world* w, input::thread_input* i)
         : ecs_processor(w), input_(i), state_(input::state_capacity) {}
 
     struct down_signal {
@@ -27,10 +27,10 @@ class input_passer final : public ecs_processor {
         swap(*input_, state_);
         if (state_.empty())
             return;
-        for (const auto view = reg.view<const input_passer::down_signal>();
+        for (const auto view = reg.view<const input_processor::down_signal>();
              const auto entity : view) {
 
-            view.get<input_passer::down_signal>(entity).call(reg, entity,
+            view.get<input_processor::down_signal>(entity).call(reg, entity,
                                                              state_);
         }
         state_.clear();

@@ -168,7 +168,7 @@ struct boundbox {
     }
 };
 
-// TODO reference
+// TODO references
 class scintilla;
 class notepad;
 struct notepad_thread_command {

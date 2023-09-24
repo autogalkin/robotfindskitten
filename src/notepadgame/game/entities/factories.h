@@ -5,7 +5,7 @@
 #include "engine/details/base_types.h"
 #include "libs/easing/easing.h"
 #include "game/ecs_processors/collision.h"
-#include "game/ecs_processors/input_passer.h"
+#include "game/ecs_processors/input.h"
 #include "engine/input.h"
 #include "engine/notepad.h"
 
@@ -212,7 +212,7 @@ struct character final {
                      {shape::sprite::from_data{"-#", 1, 2}}}},
                 animation.rendering_i);
 
-            auto& [signal] = reg.get<input_passer::down_signal>(self);
+            auto& [signal] = reg.get<input_processor::down_signal>(self);
             signal.connect([](entt::registry& reg_, const entt::entity chrcter,
                               const input::state_t& state) {
                 if (input::has_key(state, input::key_t::space)) {
