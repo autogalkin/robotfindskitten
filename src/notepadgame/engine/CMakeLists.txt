@@ -16,5 +16,5 @@ set(ENGINE_HEADERS
     engine/engine.h
     engine/input.h
     engine/notepad.h
-    engine/timer.h
+    engine/time.h
     engine/world.h)

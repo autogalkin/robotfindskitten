@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <entt/entt.hpp>
 #include <utility>
-#include "engine/timer.h"
+#include "engine/time.h"
 #include "Windows.h"
 
 using npi_t = int64_t; // notepad's index size

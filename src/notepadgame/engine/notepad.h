@@ -8,7 +8,7 @@
 #include "engine/engine.h"
 #include "engine/world.h"
 #include "engine/input.h"
-#include "engine/timer.h"
+#include "engine/time.h"
 
 // custom WindowProc
 static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp,
