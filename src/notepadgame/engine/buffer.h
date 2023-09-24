@@ -25,7 +25,7 @@ class back_buffer {
     mutable std::shared_mutex rw_lock_;
 
   public:
-    explicit back_buffer(size_t width, size_t height)
+    explicit back_buffer(size_t height, size_t width)
         : width_(width), buf(std::basic_string<char_size>(width * height, ' ')),
           rw_lock_() {
         for (npi_t i = 1; i <= height; i++) {
@@ -54,13 +54,12 @@ class back_buffer {
                                    Visitor&& visitor) const;
 };
 
+
 template <typename Visitor>
     requires std::is_invocable_v<Visitor, const position_t&, char_size>
-void back_buffer::traverse_sprite_positions(const position_t& pivot,
+void back_buffer::traverse_sprite_positions(const position_t& sprite_pivot,
                                             const shape::sprite& sh,
                                             Visitor&& visitor) const {
-    const position_t screen_pivot = pivot;
-
     for (auto rows = sh.data.rowwise();
          auto [line, row] : rows | ranges::views::enumerate) {
         for (int byte_i{-1};
@@ -70,9 +69,9 @@ void back_buffer::traverse_sprite_positions(const position_t& pivot,
                  return c != shape::whitespace;
              })) {
             if (position_t p =
-                    screen_pivot + position_t{static_cast<npi_t>(line), byte_i};
-                p.index_in_line() >= 0 && p.index_in_line() <= width_ &&
-                p.line() >= 0 && p.line() <= buf.size() / width_) {
+                    sprite_pivot + position_t{static_cast<npi_t>(line), byte_i};
+                p.index_in_line() >= 0 && p.index_in_line() < width_-1 &&
+                p.line() >= 0 && p.line() < buf.size() / (width_-1)) {
                 visitor(p, part_of_sprite);
             }
         }

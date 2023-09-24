@@ -5,7 +5,7 @@
 #include "engine/notepad.h"
 #include "game/game.h"
 
-extern constexpr int GAME_AREA[2] = {150, 300};
+extern constexpr int GAME_AREA[2] = {100, 150};
 
 class console final : public noncopyable, public nonmoveable {
   public:
@@ -52,10 +52,13 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
         [[maybe_unused]] constexpr notepad::opts start_options =
             notepad::opts::empty
 #ifdef NDEBUG
-            | notepad_t::opts::hide_selection | notepad_t::opts::kill_focus |
-            notepad_t::opts::disable_mouse
+            //| notepad::opts::kill_focus 
+            //| notepad::opts::disable_mouse
+#else 
+            | notepad::opts::show_eol 
 #endif // NDEBUG
-            | notepad::opts::show_eol | notepad::opts::show_spaces;
+            | notepad::opts::hide_selection 
+            | notepad::opts::show_spaces;
 
         np.on_open()->get().connect([](world& world, input::thread_input& i,  thread_commands& cmds) {
 #ifndef NDEBUG
@@ -64,9 +67,6 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
             printf("Notepad is loaded and initialized. Start a game");
             game::start(world, i, cmds, GAME_AREA);
         });
-
-        constexpr int world_widht = 300;
-        constexpr int world_height = 100;
 
         np.connect_to_notepad(
             np_module, start_options); // start initialization and a game loop
