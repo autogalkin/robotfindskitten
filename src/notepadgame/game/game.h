@@ -2,10 +2,12 @@
 #include <array>
 
 #include <Windows.h>
+#include <string>
 
 
 #include "engine/details/base_types.h"
 #include "engine/details/gamelog.h"
+#include "engine/time.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input_passer.h"
 #include "game/ecs_processors/killer.h"
@@ -36,7 +38,21 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds) {
     exec.push<death_last_will_executor>(&w);
     exec.push<killer>(&w);
     exec.push<lifetime_ticker>(&w);
+    static auto fps_count = timings::fps_count{};
+    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
+        reg.emplace<timeline::what_do>(entity, std::move([]
+                (entt::registry& reg, const entt::entity e, const direction) mutable {
+            fps_count.fps([&reg, e](auto fps){
+                reg.get<notepad_thread_command>(e) = notepad_thread_command([fps](notepad*np, scintilla*){
+                auto start_it = np->window_title.find(L"game_thread ");
+                np->window_title.replace(start_it + 12, np->window_title.find(L" | ") - (start_it + 12), std::format(L"{:02}", fps));
 
+                });
+            });
+        }));
+        reg.emplace<timeline::eval_direction>(entity, direction::forward);
+        reg.emplace<notepad_thread_command>(entity);
+    });
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });

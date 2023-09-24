@@ -162,9 +162,11 @@ struct boundbox {
     }
 };
 
+// TODO reference
 class scintilla;
-struct render_command {
-    std::function<void(scintilla*)> command{};
+class notepad;
+struct notepad_thread_command {
+    std::function<void(notepad*, scintilla*)> command{};
 };
 
 namespace shape {

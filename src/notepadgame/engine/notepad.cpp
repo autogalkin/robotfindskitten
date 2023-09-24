@@ -16,7 +16,6 @@
 #include <mutex>
 #include <thread>
 
-
 #include "engine/details/gamelog.h"
 #include "engine/engine.h"
 #include "engine/details/iat_hook.h"
@@ -42,29 +41,31 @@ class thread_guard : public noncopyable {
 notepad::notepad()
     : scintilla_(std::nullopt), input_state(), main_window_(),
       original_proc_(0), on_open_(std::make_unique<open_signal_t>()),
-      fixed_time_step_(), fps_count_(), buf_(150, 100)
-      , local_commands_(32)
-        , commands_()
-{}
+      fixed_time_step_(), fps_count_(), buf_(150, 100), local_commands_(32),
+      commands_() {}
 
 void notepad::tick_render() {
+    fps_count_.fps([](auto fps) {
+        auto& np = notepad::get();
+        auto sub = std::wstring(L"| render_thread ");
+        np.window_title.replace(np.window_title.rfind(L' ') + 1,
+                                np.window_title.length(),
+                                std::format(L"{:02}", fps));
+    });
     swap(commands_, local_commands_);
     scintilla* p = &*scintilla_;
     // TODO any other queue implementation?
-    for (auto& c : local_commands_){
-        if(c)
-            c(p);
+    for (auto& c : local_commands_) {
+        if (c)
+            c(this, p);
     }
+    notepad::get().set_window_title(notepad::get().window_title);
     local_commands_.clear();
     const auto pos = scintilla_->get_caret_index();
     buf_.view([this](const std::basic_string<char_size>& buf) {
         scintilla_->set_new_all_text(buf);
     });
     scintilla_->set_caret_index(pos);
-    fps_count_.fps([](uint64_t fps){
-                    notepad::get().set_window_title(L"fps: " +
-                         std::to_wstring(fps));
-            });
 }
 // game in another thread
 void notepad::start_game() {
@@ -72,8 +73,8 @@ void notepad::start_game() {
         [buf = &buf_,
          on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
-         &input = input_state, &cmds=commands_]() {
-         timings::fixed_time_step fixed_time_step;
+         &input = input_state, &cmds = commands_]() {
+            timings::fixed_time_step fixed_time_step;
             world w{buf};
             (*on_open)(w, input, cmds);
             while (!done.load()) {
@@ -201,13 +202,12 @@ bool hook_GetMessageW(const HMODULE module) {
             }
 
             static std::once_flag once;
-            std::call_once(once,
-                           [] { notepad::get().fixed_time_step_ = timings::fixed_time_step(); });
+            std::call_once(once, [] {
+                notepad::get().fixed_time_step_ = timings::fixed_time_step();
+            });
             np.fixed_time_step_.sleep();
             np.tick_render();
-           
 
-            // TODO tick here
             return 1;
         });
 }

@@ -371,7 +371,7 @@ struct atmosphere final {
                        reg.get<timeline::eval_direction>(timer).value);
 
         reg.emplace<color_range>(cycle_timeline);
-        reg.emplace<render_command>(cycle_timeline);
+        reg.emplace<notepad_thread_command>(cycle_timeline);
         reg.emplace<life::death_last_will>(
             cycle_timeline,
             [](entt::registry& reg_, const entt::entity cycle_timeline_) {
@@ -403,7 +403,7 @@ struct atmosphere final {
             RGB(std::lerp(GetRValue(start), GetRValue(end), -value),
                 std::lerp(GetGValue(start), GetGValue(end), -value),
                 std::lerp(GetBValue(start), GetBValue(end), -value));
-        reg.get<render_command>(e) = render_command([new_back_color, new_front_color](scintilla* sct){
+        reg.get<notepad_thread_command>(e) = notepad_thread_command([new_back_color, new_front_color](notepad*, scintilla* sct){
             sct->force_set_background_color(new_back_color);
             sct->force_set_all_text_color(new_front_color);
         });

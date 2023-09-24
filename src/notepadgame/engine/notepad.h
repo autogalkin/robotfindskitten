@@ -4,6 +4,7 @@
 #include "boost/signals2.hpp"
 #include <Windows.h>
 #include <memory>
+#include <string>
 #include <thread>
 #include "engine/engine.h"
 #include "engine/world.h"
@@ -24,7 +25,7 @@ bool hook_SetWindowTextW(HMODULE module);
 
 class thread_commands {
 public:
-    using command_t = std::function<void(scintilla*)>;
+    using command_t = std::function<void(notepad*, scintilla*)>;
     using queue_t = std::vector<command_t>;
     friend void swap(queue_t& other, thread_commands& commands) {
         std::lock_guard<std::mutex> lock(commands.mutex_);
@@ -83,7 +84,7 @@ class notepad {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
                         : std::nullopt;
     }
-
+    std::wstring window_title = L"fps: game_thread 0 | render_thread 0";
     input::thread_input input_state;
     // input get_input_state()
     void connect_to_notepad(const HMODULE module /* notepad.exe module*/,

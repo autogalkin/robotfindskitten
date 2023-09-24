@@ -1,6 +1,9 @@
 ﻿#pragma once
+#include <__msvc_chrono.hpp>
 #include <chrono>
+#include <stdint.h>
 #include <type_traits>
+#include <iostream>
 
 namespace timings {
 using namespace std::chrono_literals;
@@ -18,14 +21,12 @@ class fixed_time_step {
   public:
     void sleep() {
         const point new_point = clock::now();
+        auto frame_time = prev_point_ + dt - new_point;
         /*250ms is the limit put in place on the frame time to cope with the
          *spiral of death.*/
-        const auto frame_time = std::min<std::common_type_t<
-            decltype(prev_point_ + dt - new_point), decltype(250ms)>>(
-            new_point - prev_point_ + dt, 250ms);
-
+        if(frame_time > 250ms)
+            frame_time = 250ms;
         lag_accum_ += frame_time;
-
         if (lag_accum_ > 0ms) {
             const auto sleep_start = clock::now();
             std::this_thread::sleep_for(lag_accum_);
@@ -38,53 +39,21 @@ class fixed_time_step {
 
 class fps_count {
     point start_point_ = clock::now();
-    duration frames_ = 0ms;
+    uint64_t frames_ = 0;
 
   public:
     template<typename Printer>
-    requires std::is_invocable_v<Printer, uint64_t>
+    requires std::is_invocable_v<Printer, double>
     void fps(Printer&& printer) {
-        ++frames_;
+        frames_++;
         const point new_point_ = clock::now();
-        const auto delta = new_point_ - start_point_;
-        if (delta > 1s) {
-            printer(frames_ / delta);
-            frames_ = 0ms;
-            start_point_ = clock::now();
+        const auto  delta = new_point_ - start_point_;
+        if (delta >= 1s) {
+            printer(frames_ / std::chrono::duration_cast<std::chrono::seconds>(delta).count());
+            frames_ = 0;
+            start_point_ = new_point_;
         }
     }
 };
-/*
-using signal_t = boost::signals2::signal<void(timer::duration)>;
-// signal_t on_tick{};
 
-class tickable_base : noncopyable, nonmoveable {
-  public:
-    virtual ~tickable_base() = default;
-
-    explicit tickable_base(timer::signal_t& on_tick)
-        : tick_connection(on_tick.connect(
-              [this](const timer::duration delta) { tick(delta); })) {}
-
-  protected: // prevent slicing
-    // tickable_base(const tickable_base& rhs) noexcept : tickable_base() {} //
-    // connect to new tick tickable_base& operator=(const tickable_base&)
-    // noexcept { return *this; } tickable_base(tickable_base&& other) noexcept
-    // : tickable_base() {
-    //     other.tick_connection.disconnect();
-    // }
-    // tickable_base& operator=(tickable_base&& other) noexcept {
-    //    other.tick_connection.disconnect();
-    //    return *this;
-    // }
-
-    virtual void tick(timer::duration delta) = 0;
-
-  private:
-    boost::signals2::scoped_connection tick_connection;
-};
-  //
-*/
-
-
-} // namespace time
+} // namespace timings
