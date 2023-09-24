@@ -43,13 +43,13 @@ class fps_count {
 
   public:
     template<typename Printer>
-    requires std::is_invocable_v<Printer, double>
+    requires std::is_invocable_v<Printer, uint64_t>
     void fps(Printer&& printer) {
         frames_++;
         const point new_point_ = clock::now();
         const auto  delta = new_point_ - start_point_;
         if (delta >= 1s) {
-            printer(frames_ / std::chrono::duration_cast<std::chrono::seconds>(delta).count());
+            printer(std::round(frames_ / (std::chrono::duration<double>(delta).count())));
             frames_ = 0;
             start_point_ = new_point_;
         }
