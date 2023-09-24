@@ -33,11 +33,9 @@ add_subdirectory(src/loader)
 # game
 add_subdirectory(src/notepadgame)
 
-set(COMPILE_COMMANDS_FILE "${CMAKE_SOURCE_DIR}/compile_commands.json")
-if(IS_SYMLINK COMPILE_COMMANDS_FILE)
-    execute_process(
-        COMMAND
-            ${CMAKE_COMMAND} -E create_hardlink
-            "${CMAKE_BINARY_DIR}/compile_commands.json"
-            ${COMPILE_COMMANDS_FILE} COMMAND_ECHO STDOUT)
-endif()
+add_custom_target(
+    copy-compile-commands ALL
+    ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_BINARY_DIR}/compile_commands.json
+        "${CMAKE_SOURCE_DIR}/compile_commands.json"
+    )
