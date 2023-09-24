@@ -117,7 +117,7 @@ struct projectile final {
                                              offset.index_in_line()},
                                 df::dirtyflag<location>{{}, df::state::dirty});
                             r_.emplace<visible_in_game>(proj);
-                            r_.emplace<z_depth>(proj, 1);
+                            r_.emplace<z_depth>(proj, 0);
                             r_.emplace<velocity>(proj, dir_.line(),
                                                  dir_.index_in_line());
                             r_.emplace<life::lifetime>(proj,
@@ -226,7 +226,7 @@ struct character final {
 
     static void make(entt::registry& reg, const entt::entity e, location l) {
         reg.emplace<character>(e);
-        reg.emplace<z_depth>(e, 1);
+        reg.emplace<z_depth>(e, 2);
         reg.emplace<shape::on_change_direction>(e,
                                                 &actor::invert_shape_direction);
         reg.emplace<shape::render_direction>(e, direction::forward);
@@ -335,7 +335,7 @@ struct monster {
         return collision::responce::block;
     }
     static void make(entt::registry& reg, const entt::entity e, location loc) {
-        actor::make_base_renderable(reg, e, std::move(loc), 1,
+        actor::make_base_renderable(reg, e, std::move(loc), 4,
                                     {shape::sprite::from_data{"o", 1, 1}});
 
         reg.emplace<collision::agent>(e);
@@ -369,7 +369,7 @@ struct monster {
 
             actor::make_base_renderable(
                 reg_, dead,
-                location{old_loc.line(), old_loc.index_in_line() - 1}, 1,
+                location{old_loc.line(), old_loc.index_in_line() - 1}, 2,
                 {shape::sprite::from_data{"___", 1, 3}});
             reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
             reg_.emplace<timeline::eval_direction>(dead);

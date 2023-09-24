@@ -61,7 +61,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds, const
                                     const entt::entity entity) {
             actor::make_base_renderable(
                 reg, entity,
-                {6 + static_cast<double>(i), 4 + static_cast<double>(j)}, 1,
+                {6 + static_cast<double>(i), 4 + static_cast<double>(j)}, 3,
                 {shape::sprite::from_data{"]", 1, 1}});
             reg.emplace<collision::agent>(entity);
             reg.emplace<collision::on_collide>(entity);
@@ -73,7 +73,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds, const
         }
         w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
             actor::make_base_renderable(
-                reg, entity, {0, 0}, 2,
+                reg, entity, {0, 0}, 3,
                 {shape::sprite::from_data{"It's a banana! Oh, joy!", 1, 23}});
             /*
             reg.emplace<screen_scroll>(
