@@ -98,6 +98,7 @@ class scintilla final
     }
     void set_new_all_text(const std::string& new_text) const noexcept {
         dcall1_l(SCI_SETTEXT, reinterpret_cast<sptr_t>(new_text.c_str()));
+        dcall0(SCI_EMPTYUNDOBUFFER);
     }
 
     // getters
