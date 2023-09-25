@@ -1951,34 +1951,12 @@ void Editor::SetScrollBars() {
     // THIS PART CHANGED BY NOTEPADGAME FOR DISABLE AUTOMATIC VERTICAL SCROLLING
     return;
     /*
-	RefreshStyleData();
-
-	const Sci::Line nMax = MaxScrollPos();
-	const Sci::Line nPage = LinesOnScreen();
-	const bool modified = ModifyScrollBars(nMax + nPage - 1, nPage);
-	if (modified) {
-		DwellEnd(true);
-	}
-
-	// TODO: ensure always showing as many lines as possible
-	// May not be, if, for example, window made larger
-	if (topLine > MaxScrollPos()) {
-		SetTopLine(std::clamp<Sci::Line>(topLine, 0, MaxScrollPos()));
-		SetVerticalScrollPos();
-		Redraw();
-	}
-	if (modified) {
-		if (!AbandonPaint())
-			Redraw();
-	}
-	//Platform::DebugPrintf("end max = %d page = %d\n", nMax, nPage);
+	// Overridden on GTK to defer to idle
+	ChangeScrollBars();
     */
 }
 
-void Editor::SetScrollBars() {
-	// Overridden on GTK to defer to idle
-	ChangeScrollBars();
-}
+
 
 void Editor::ChangeSize() {
 	DropGraphics();
