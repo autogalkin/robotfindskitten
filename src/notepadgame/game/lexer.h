@@ -69,7 +69,7 @@ class lexer : public Lexilla::DefaultLexer {
                     ctx.SetState(STYLE_DEFAULT);
                     ctx.Forward();
                     ctx.SetState(STYLE_DEFAULT);
-                } else if (ctx.currentLine < 4) {
+                } else if (ctx.currentLine < 3) {
                     if (ctx.ch == ' '){
                         ctx.SetState(int(ctx.ch) + 100);
                     } else {
