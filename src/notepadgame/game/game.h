@@ -1,4 +1,4 @@
-
+#pragma once
 #include <array>
 
 #include <Windows.h>
@@ -22,6 +22,17 @@
 
 namespace game {
 
+inline void define_all_styles(scintilla* sc){
+    static_assert(int(' ')+100 == 132);
+    int style = 132;
+    // TODO
+    sc->dcall0(SCI_STYLECLEARALL);
+    for(auto i : ALL_COLORS){
+        sc->dcall2(SCI_STYLESETITALIC, style, 0); // italic
+        sc->dcall2(SCI_STYLESETFORE, style, i);
+        style++;
+    }
+}
 static lexer game_lexer{};
 inline void start(world& w, input::thread_input& i, thread_commands& cmds,
                   const int game_area[2]) {
@@ -35,6 +46,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
             [](notepad*, scintilla* sc) { 
             printf("set lexer");
             sc->set_lexer(&game_lexer); 
+            define_all_styles(sc);
             sc->dcall2(SCI_STYLESETFORE, 228, RGB(255, 0, 0));
         });});
     });
@@ -74,6 +86,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
             reg, entity, {1, 0}, 3,
             {shape::sprite::from_data{"It's a banana! Oh, joy!", 1, 23}});
     });
+    /*
     {
         const auto frame = std::vector<char_size>(game_area[1], '_');
         w.spawn_actor([&frame, game_area](entt::registry& reg,
@@ -83,6 +96,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
                 {shape::sprite::from_data{frame.data(), 1, game_area[1]}});
         });
     }
+    */
     {
         int i = 0;
         int j = 0;

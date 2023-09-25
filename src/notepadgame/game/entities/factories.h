@@ -8,6 +8,7 @@
 #include "game/ecs_processors/input.h"
 #include "engine/input.h"
 #include "engine/notepad.h"
+#include "game/lexer.h"
 
 struct coin;
 struct character;
@@ -315,8 +316,18 @@ struct atmosphere final {
                 std::lerp(GetGValue(start), GetGValue(end), -value),
                 std::lerp(GetBValue(start), GetBValue(end), -value));
         reg.get<notepad_thread_command>(e) = notepad_thread_command([new_back_color, new_front_color](notepad*, scintilla* sct){
-            sct->force_set_background_color(new_back_color);
-            //sct->force_set_all_text_color(new_front_color);
+
+            static_assert(int(' ')+100 == 132);
+            int style = 132;
+            // TODO
+            sct->dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, new_back_color);
+            sct->dcall2(SCI_STYLESETBACK, 0, new_back_color);
+            sct->dcall2(SCI_STYLESETFORE,STYLE_DEFAULT, new_front_color);
+            sct->dcall2(SCI_STYLESETFORE, 0, new_front_color);
+            for(auto i : ALL_COLORS){
+                sct->dcall2(SCI_STYLESETBACK, style, new_back_color);
+                style++;
+            }
         });
     }
 

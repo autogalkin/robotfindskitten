@@ -170,7 +170,7 @@ class scintilla final
     void
     force_set_background_color(const COLORREF c) const noexcept; // send message
     [[nodiscard]] COLORREF get_background_color() const noexcept {
-        return static_cast<COLORREF>(dcall1(SCI_STYLESETBACK, STYLE_DEFAULT));
+        return static_cast<COLORREF>(dcall1(SCI_STYLEGETBACK, STYLE_DEFAULT));
     }
     void set_all_text_color(COLORREF c) const noexcept; // post message
     void force_set_all_text_color(COLORREF c) const noexcept; // send message

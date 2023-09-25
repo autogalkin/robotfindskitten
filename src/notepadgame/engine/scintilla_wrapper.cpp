@@ -26,6 +26,7 @@ HWND scintilla::create_native_window(
     dcall1(SCI_SETHSCROLLBAR, 0);
     dcall1(SCI_SETVSCROLLBAR, 0);
 
+    // TODO
     if(notepad::opts::hide_selection & start_options){
         dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK, RGB(255, 255, 255));
     }
@@ -77,10 +78,11 @@ void scintilla::force_set_background_color(const COLORREF c) const noexcept {
     // TODO if(notepad::opts::hide_selection & start_options){
     dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK, c);
 
+    //dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
+    //dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
+    //dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
+   // dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
     dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
-    dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
-    dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
-    dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
     dcall2(SCI_STYLESETBACK, 0, c);
 }
 
