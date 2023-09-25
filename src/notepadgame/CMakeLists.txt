@@ -1,69 +1,56 @@
 project(
     notepadgame
-    DESCRIPTION ""
-    VERSION 0.0.1)
+    )
 
-# patch scintilla source code
-set(NPGAME_SCI_PATCH_FILE
-    "${CMAKE_SOURCE_DIR}/extern/patch/scintilla/src/Editor.cxx")
-set(NPGAME_SCI_ORIG_FILE "${NPGAME_SCINTILLA_DIR}/src/Editor.cxx")
-set(NPGAME_SCI_TEMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/Editor_temp.cxx")
-set(NPGAME_SCI_OUT_FILE "${NPGAME_SCINTILLA_DIR}/bin/Scintilla.dll")
-set(patch_command ${CMAKE_COMMAND} -E copy_if_different ${NPGAME_SCI_PATCH_FILE} "./src/Editor.cxx")
-include(ExternalProject)
-ExternalProject_Add(scintilla
-    PREFIX ${CMAKE_SOURCE_DIR}/extern/scintilla
+include(FetchContent)
+FetchContent_Declare(
+    scintilla
     URL "https://sourceforge.net/projects/scintilla/files/scintilla/5.3.7/scintilla537.zip/download"
     URL_HASH "SHA1=7a72a85442706acbcb4075816a5cc4e58a6bc21c"
-    #PATCH_COMMAND ${patch_command}
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND cd win32 && nmake -f scintilla.mak
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    INSTALL_COMMAND ""
-    BUILD_IN_SOURCE TRUE
-        )
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_MakeAvailable(Scintilla)
 
 # patch scintilla source code
-set(NPGAME_SCI_PATCH_FILE
+set(SCI_PATCH_FILE
     "${CMAKE_SOURCE_DIR}/extern/patch/scintilla/src/Editor.cxx")
-set(NPGAME_SCI_ORIG_FILE "${NPGAME_SCINTILLA_DIR}/src/Editor.cxx")
-set(NPGAME_SCI_TEMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/Editor_temp.cxx")
-set(NPGAME_SCI_OUT_FILE "${NPGAME_SCINTILLA_DIR}/bin/Scintilla.dll")
-
+set(SCI_ORIG_FILE "${scintilla_SOURCE_DIR}/src/Editor.cxx")
+set(SCI_TEMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/Editor_temp.cxx")
+set(SCI_OUT_FILE "${scintilla_SOURCE_DIR}/bin/Scintilla.dll")
 set(SCI_PACHED_STAMP
     "${CMAKE_CURRENT_BINARY_DIR}/scintilla_already_patched.stamp")
+
 add_custom_command(
     OUTPUT ${SCI_PACHED_STAMP}
-    COMMAND ${CMAKE_COMMAND} -E copy "${NPGAME_SCI_ORIG_FILE}"
-            "${NPGAME_SCI_TEMP_FILE}"
-    COMMAND ${CMAKE_COMMAND} -E copy "${NPGAME_SCI_PATCH_FILE}"
-            "${NPGAME_SCI_ORIG_FILE}"
+    COMMAND ${CMAKE_COMMAND} -E copy "${SCI_ORIG_FILE}"
+            "${SCI_TEMP_FILE}"
+    COMMAND ${CMAKE_COMMAND} -E copy "${SCI_PATCH_FILE}"
+            "${SCI_ORIG_FILE}"
     COMMAND ${CMAKE_COMMAND} -E touch "${SCI_PACHED_STAMP}"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    DEPENDS "${NPGAME_SCI_PATCH_FILE}"
+    DEPENDS "${SCI_PATCH_FILE}"
     COMMENT "Replace Scintilla source code files with patched own")
 
 # find make
-find_program(NPGAME_NMAKE_EXISTS nmake)
-if(NPGAME_NMAKE_EXISTS)
-    set(NPGAME_SCIBUILD_COMMAND nmake -f scintilla.mak)
+find_program(IS_NMAKE_EXISTS nmake)
+if(IS_NMAKE_EXISTS)
+    set(SCI_BUILD_COMMAND nmake -f scintilla.mak)
 else()
     message("Nmake not found, try to find Make and GCC")
     find_program(
-        NPGAME_MAKE_EXISTS
+        IS_MAKE_EXISTS
         make
         mingw32-make)
     find_program(
-        NPGAME_GCC_EXISTS
+        IS_GCC_EXISTS
         gcc
         g++)
-    if(NPGAME_MAKE_EXISTS AND NPGAME_GCC_EXISTS)
-        set(NPGAME_SCIBUILD_COMMAND make)
+    if(IS_MAKE_EXISTS AND IS_GCC_EXISTS)
+        set(SCI_BUILD_COMMAND make)
     else()
-        if(NOT NPGAME_MAKE_EXISTS)
+        if(NOT IS_MAKE_EXISTS)
             message(SEND_ERROR "Make not found")
         endif()
-        if(NOT NPGAME_GCC_EXISTS)
+        if(NOT IS_GCC_EXISTS)
             message(SEND_ERROR "GCC not found")
         endif()
         message(FATAL_ERROR "Unable to compile Scintilla..")
@@ -74,9 +61,9 @@ endif()
 # run scintilla makefile
 add_custom_target(
     scintilla ALL
-    COMMAND ${NPGAME_SCIBUILD_COMMAND}
-    BYPRODUCTS ${NPGAME_SCI_OUT_FILE}
-    WORKING_DIRECTORY "${NPGAME_SCINTILLA_DIR}/win32"
+    COMMAND ${SCI_BUILD_COMMAND}
+    BYPRODUCTS ${SCI_OUT_FILE}
+    WORKING_DIRECTORY "${scintilla_SOURCE_DIR}/win32"
     DEPENDS ${SCI_PACHED_STAMP}
     COMMENT "Build Scintilla with original Makefile")
 
@@ -84,10 +71,11 @@ add_custom_target(
 add_custom_target(
     revert_scintilla_patch
     COMMAND ${CMAKE_COMMAND} -E copy "${NPGAME_SCI_TEMP_FILE}"
-            "${NPGAME_SCI_ORIG_FILE}"
+            "${SCI_ORIG_FILE}"
     COMMAND ${CMAKE_COMMAND} -E remove "${NPGAME_SCI_TEMP_FILE}"
     COMMENT "Revert Scintilla patches")
 add_dependencies(revert_scintilla_patch scintilla)
+
 
 # build notepadgame.dll
 
@@ -144,7 +132,7 @@ foreach(_target IN LISTS NOTEPADGAME_ALL_TARGETS)
                 ${Boost_INCLUDE_DIRS}
                 "${CMAKE_CURRENT_SOURCE_DIR}/libs"
                 "${CMAKE_SOURCE_DIR}/extern/thirdparty/dirtyflag/include/"
-                "${NPGAME_SCINTILLA_DIR}/include/")
+                "${scintilla_SOURCE_DIR}/include")
 endforeach()
 
 target_link_libraries(engine PRIVATE ${THIRD_PARTY_LIBRARIES})
@@ -171,11 +159,12 @@ install(
     RUNTIME DESTINATION .)
 
 install(
-    FILES "${NPGAME_SCI_OUT_FILE}"
+    FILES "${SCI_OUT_FILE}"
     CONFIGURATIONS Debug
     DESTINATION .)
 
 install(
-    FILES "${NPGAME_SCI_OUT_FILE}"
+    FILES "${SCI_OUT_FILE}"
     CONFIGURATIONS Release
     DESTINATION .)
+
