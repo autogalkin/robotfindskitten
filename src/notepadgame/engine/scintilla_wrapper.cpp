@@ -25,6 +25,13 @@ HWND scintilla::create_native_window(
     // dcall2(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT,1);
     dcall1(SCI_SETHSCROLLBAR, 0);
     dcall1(SCI_SETVSCROLLBAR, 0);
+
+    if(notepad::opts::hide_selection & start_options){
+        dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK, RGB(255, 255, 255));
+    }
+
+    dcall1(SCI_SETSELEOLFILLED, 0);
+    
     ShowScrollBar(edit_window_, SB_BOTH, FALSE);
     // hide control symbol mnemonics
     dcall1(SCI_SETCONTROLCHARSYMBOL, ' ');
@@ -67,6 +74,9 @@ void scintilla::set_background_color(const COLORREF c) const noexcept {
 }
 
 void scintilla::force_set_background_color(const COLORREF c) const noexcept {
+    // TODO if(notepad::opts::hide_selection & start_options){
+    dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK, c);
+
     dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
     dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
     dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
