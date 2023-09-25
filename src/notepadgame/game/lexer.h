@@ -1,9 +1,12 @@
+#include "Windows.h"
+#include <iostream>
+// should inludes alls in this order
+// clang-format off
+#include <string>
+#include "ILexer.h"
 #include "Scintilla.h"
 #include "SciLexer.h"
 // Lexilla.h should not be included here as it declares statically linked functions without the __declspec( dllexport )
-
-// should inludes alls
-// clang-format off
 #include "WordList.h"
 #include "PropSetSimple.h"
 #include "LexAccessor.h"
@@ -12,95 +15,75 @@
 #include "CharacterSet.h"
 #include "LexerModule.h"
 #include "LexerBase.h"
+#include "DefaultLexer.h"
 // clang-format on
+//
+//
+static const char* const character_meshes = {"#- #-- # -# --#"};
+static const char* const VaraqKeywords = {
+    "woD latlh tam chImmoH qaw qawHa  ’ Hotlh pong cher HIja  ’ chugh ghobe  ’ "
+    "chugh wIv"};
+#define MAX_STR_LEN 100
 
+// clang-format on
+class lexer : public Lexilla::DefaultLexer {
+    enum state : int {
+        whitespace = 1,
+        character = 228,
+        identifier = 2,
+    };
+    Lexilla::WordList is_character_;
 
-class lexer : public Scintilla::ILexer5 {
+  public:
+    lexer() : DefaultLexer("robotfindskitten", 228) {
+        is_character_.Set(character_meshes);
+    }
+    void SCI_METHOD Lex(Sci_PositionU startPos, Sci_Position length,
+                        int initStyle, Scintilla::IDocument* pAccess) override {
+        try {
+            Lexilla::LexAccessor styler(pAccess);
+            Lexilla::StyleContext ctx(startPos, length, initStyle, styler);
+            Lexilla::CharacterSet setKeywordChars(
+                Lexilla::CharacterSet::setAlpha, "#-");
 
-    virtual int SCI_METHOD Version() const override { return 100; };
-    virtual void SCI_METHOD Release() override{};
-    virtual const char* SCI_METHOD PropertyNames() override { return ""; };
-    virtual int SCI_METHOD PropertyType(const char* name) override {
-        return SC_TYPE_BOOLEAN;
-    };
-    virtual const char* SCI_METHOD DescribeProperty(const char* name) override {
-        return "";
-    };
-    virtual Sci_Position SCI_METHOD PropertySet(const char* key,
-                                                const char* val) override {
-        // if(props.Set(key, val)) { return 0; } else { return -1;
-        return 0;
-    };
-    virtual const char* SCI_METHOD DescribeWordListSets() override {
-        return "";
-    };
-    virtual Sci_Position SCI_METHOD WordListSet(int n,
-                                                const char* wl) override {
-        // if (n <numWordLists) { if (keyWordLists[n]->Set(wl)) { return 0;
-        return 0;
-    };
-    virtual void SCI_METHOD Lex(Sci_PositionU startPos, Sci_Position lengthDoc,
-                                int initStyle,
-                                Scintilla::IDocument* pAccess) override {
-      
-                    return;
-    };
-    virtual void SCI_METHOD Fold(Sci_PositionU startPos, Sci_Position lengthDoc,
-                                 int initStyle,
-                                 Scintilla::IDocument* pAccess) override {
-                    // not supported
+            for (; ctx.More(); ctx.Forward()) {
+                switch (ctx.state) {
+                case state::identifier:
+                    if (!setKeywordChars.Contains(ctx.ch)) {
+                        auto tmpStr = new char[MAX_STR_LEN];
+                        memset(tmpStr, 0, sizeof(char) * MAX_STR_LEN);
+                        ctx.GetCurrent(tmpStr, MAX_STR_LEN);
+                        if (is_character_.InList(tmpStr)) {
+                            ctx.ChangeState(state::character);
+                        };
+                        ctx.SetState(state::whitespace);
+                        delete[] tmpStr;
+                    };
+                    break;
+                    break;
+                case state::whitespace:
+                default:
+                    if (setKeywordChars.Contains(ctx.ch)) {
+                        ctx.SetState(state::identifier);
+                        break;
+                    };
+                    break;
+                };
+            }
+            ctx.Complete();
+        } catch (...) {
+            std::cout << "error";
+            // Should not throw into caller as may be compiled with different
+            // compiler or options
+            pAccess->SetErrorStatus(SC_STATUS_FAILURE);
+        }
     }
-    virtual void* SCI_METHOD PrivateCall(int operation,
-                                         void* pointer) override {
-                    return NULL;
-    }
-    virtual int SCI_METHOD LineEndTypesSupported() override {
-                    return SC_LINE_END_TYPE_DEFAULT;
-    }
-    virtual int SCI_METHOD AllocateSubStyles(int styleBase,
-                                             int numberStyles) override {
-                    return -1;
-    }
-    virtual int SCI_METHOD SubStylesStart(int styleBase) override {
-                    return -1; }
-    virtual int SCI_METHOD SubStylesLength(int styleBase) override {
-                    return 0; }
-    virtual int SCI_METHOD StyleFromSubStyle(int subStyle) override {
-                    return subStyle;
-    }
-    virtual int SCI_METHOD PrimaryStyleFromStyle(int style) override {
-                    return style;
-    }
-    virtual void SCI_METHOD FreeSubStyles() override {}
-    virtual void SCI_METHOD SetIdentifiers(int style,
-                                           const char* identifiers) override {
-                    return;
-    }
-    virtual int SCI_METHOD DistanceToSecondaryStyles() override {
-                    return 0; }
-    virtual const char* SCI_METHOD GetSubStyleBases() override {
-                    return ""; }
-    virtual int SCI_METHOD NamedStyles() override {
-                    return 0; }
-    virtual const char* SCI_METHOD NameOfStyle(int style) override {
-                    return "";
-    }
-    virtual const char* SCI_METHOD TagsOfStyle(int style) override {
-                    return "";
-    }
-    virtual const char* SCI_METHOD DescriptionOfStyle(int style) override {
-                    return "";
-    }
-
-    // ILexer5 methods
-
-    virtual const char* SCI_METHOD GetName() override {
-                    return "robotfindskitten";
-    }
-    virtual int SCI_METHOD GetIdentifier() override {
-                    return 21; }
+    void SCI_METHOD Fold(Sci_PositionU startPos, Sci_Position length,
+                         int initStyle,
+                         Scintilla::IDocument* pAccess) override {}
+    virtual int SCI_METHOD GetIdentifier() override { return 21; }
     virtual const char* SCI_METHOD PropertyGet(const char* key) override {
-                    // props.Get(key);
-                    return NULL;
+        // props.Get(key);
+        return "";
     };
-            };
+};

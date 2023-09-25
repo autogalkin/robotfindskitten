@@ -38,6 +38,7 @@ class scintilla final
       public nonmoveable // Deleted so engine objects can not be copied.
 {
     friend bool hook_CreateWindowExW(HMODULE);
+    
     friend class notepad;
 
   public:
@@ -50,7 +51,7 @@ class scintilla final
     }
     
     void set_lexer(Scintilla::ILexer5* lexer){
-        dcall2(SCI_SETILEXER, 0, reinterpret_cast<npi_t>(lexer));
+        dcall2(SCI_SETILEXER, 0, reinterpret_cast<sptr_t>(lexer));
     }
 
     void scroll(const npi_t columns_to_scroll,
@@ -187,7 +188,6 @@ class scintilla final
 
     ~scintilla();
 
-  protected:
     HWND create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
                               DWORD dwStyle, int X, int Y, int nWidth,
                               int nHeight, HWND hWndParent, HMENU hMenu,
@@ -195,7 +195,6 @@ class scintilla final
                               uint8_t start_options);
     void init_direct_access_to_scintilla();
 
-  private:
     using direct_function = npi_t (*)(sptr_t, int, uptr_t, sptr_t);
 
     npi_t dcall0(const int message) const {

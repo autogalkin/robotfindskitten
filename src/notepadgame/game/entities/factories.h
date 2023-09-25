@@ -316,7 +316,7 @@ struct atmosphere final {
                 std::lerp(GetBValue(start), GetBValue(end), -value));
         reg.get<notepad_thread_command>(e) = notepad_thread_command([new_back_color, new_front_color](notepad*, scintilla* sct){
             sct->force_set_background_color(new_back_color);
-            sct->force_set_all_text_color(new_front_color);
+            //sct->force_set_all_text_color(new_front_color);
         });
     }
 

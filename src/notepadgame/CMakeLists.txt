@@ -103,7 +103,6 @@ find_package(
     REQUIRED)
 find_package(Boost COMPONENTS container) # and header-only signals2
 
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # project splits into static libraries !IMPORTANT include needs to make include
 # namespaces for libraries e.g notepad.h -> engine/notepad.h

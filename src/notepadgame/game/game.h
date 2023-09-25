@@ -2,6 +2,7 @@
 #include <array>
 
 #include <Windows.h>
+#include <chrono>
 #include <string>
 
 #include "engine/details/base_types.h"
@@ -19,16 +20,23 @@
 #include "engine/world.h"
 #include "game/lexer.h"
 
-
 namespace game {
 
 static lexer game_lexer{};
-
 inline void start(world& w, input::thread_input& i, thread_commands& cmds,
                   const int game_area[2]) {
 
-    cmds.push([](notepad*, scintilla* sc){
-        sc->set_lexer(&game_lexer);
+
+    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
+        timer::make(reg, entity, [](entt::registry& reg_, auto e){
+        auto n = reg_.create();
+        reg_.emplace<notepad_thread_command>(
+            n,
+            [](notepad*, scintilla* sc) { 
+            printf("set lexer");
+            sc->set_lexer(&game_lexer); 
+            sc->dcall2(SCI_STYLESETFORE, 228, RGB(255, 0, 0));
+        });});
     });
     auto& exec = w.executor;
     exec.push<input_processor>(&w, &i);
@@ -106,7 +114,8 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
             static_cast<uint8_t>(0));
 
         character::make(reg, entity, location{7, 24});
-        auto& [input_callback] = reg.emplace<input_processor::down_signal>(entity);
+        auto& [input_callback] =
+            reg.emplace<input_processor::down_signal>(entity);
         input_callback.connect(&character::process_movement_input<>);
     });
 
