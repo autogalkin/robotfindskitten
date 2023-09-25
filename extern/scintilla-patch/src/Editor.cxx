@@ -1393,11 +1393,13 @@ void Editor::ScrollRange(SelectionRange range) {
 }
 
 void Editor::EnsureCaretVisible(bool useMargin, bool vert, bool horiz) {
+    /*
 	SetXYScroll(XYScrollToMakeVisible(SelectionRange(posDrag.IsValid() ? posDrag : sel.RangeMain().caret),
 		(useMargin?XYScrollOptions::useMargin:XYScrollOptions::none)|
 		(vert?XYScrollOptions::vertical:XYScrollOptions::none)|
 		(horiz?XYScrollOptions::horizontal:XYScrollOptions::none),
 		caretPolicies));
+    */
 }
 
 void Editor::ShowCaretAtCurrentPosition() {
@@ -1952,7 +1954,6 @@ void Editor::SetScrollBars() {
     return;
     /*
 	// Overridden on GTK to defer to idle
-	ChangeScrollBars();
     */
 }
 
