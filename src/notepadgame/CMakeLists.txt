@@ -12,7 +12,7 @@ FetchContent_MakeAvailable(Scintilla)
 
 # patch scintilla source code
 set(SCI_PATCH_FILE
-    "${CMAKE_SOURCE_DIR}/extern/patch/scintilla/src/Editor.cxx")
+    "${CMAKE_SOURCE_DIR}/extern/scintilla-patch/src/Editor.cxx")
 set(SCI_ORIG_FILE "${scintilla_SOURCE_DIR}/src/Editor.cxx")
 set(SCI_TEMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/Editor_temp.cxx")
 set(SCI_OUT_FILE "${scintilla_SOURCE_DIR}/bin/Scintilla.dll")
@@ -131,7 +131,7 @@ foreach(_target IN LISTS NOTEPADGAME_ALL_TARGETS)
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                 ${Boost_INCLUDE_DIRS}
                 "${CMAKE_CURRENT_SOURCE_DIR}/libs"
-                "${CMAKE_SOURCE_DIR}/extern/thirdparty/dirtyflag/include/"
+                "${CMAKE_SOURCE_DIR}/extern/dirtyflag/include/"
                 "${scintilla_SOURCE_DIR}/include")
 endforeach()
 
