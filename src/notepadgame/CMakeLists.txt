@@ -7,8 +7,17 @@ FetchContent_Declare(
     scintilla
     URL "https://sourceforge.net/projects/scintilla/files/scintilla/5.3.7/scintilla537.zip/download"
     URL_HASH "SHA1=7a72a85442706acbcb4075816a5cc4e58a6bc21c"
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
-FetchContent_MakeAvailable(Scintilla)
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/scintilla
+    )
+FetchContent_Declare(
+    lexilla
+    URL "https://sourceforge.net/projects/scintilla/files/lexilla/5.2.7/lexilla527.zip/download"
+    URL_HASH "SHA1=f46943e10cad2677d503970b671710341e2db42f"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/lexilla
+    )
+FetchContent_MakeAvailable(lexilla scintilla)
 
 # patch scintilla source code
 set(SCI_PATCH_FILE
@@ -16,6 +25,7 @@ set(SCI_PATCH_FILE
 set(SCI_ORIG_FILE "${scintilla_SOURCE_DIR}/src/Editor.cxx")
 set(SCI_TEMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/Editor_temp.cxx")
 set(SCI_OUT_FILE "${scintilla_SOURCE_DIR}/bin/Scintilla.dll")
+set(LEX_OUT_FILE "${lexilla_SOURCE_DIR}/bin/Lexilla.dll")
 set(SCI_PACHED_STAMP
     "${CMAKE_CURRENT_BINARY_DIR}/scintilla_already_patched.stamp")
 
@@ -104,11 +114,30 @@ add_library(engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 add_library(game STATIC ${GAME_SOURCES} ${GAME_HEADERS})
 add_library(${PROJECT_NAME} SHARED ./dllmain.cpp)
 
+file(GLOB LEX_SOURCES CONFIGURE_DEPENDS ${lexilla_SOURCE_DIR}/lexlib/*.cxx)
+file(GLOB LEX_HEADERS CONFIGURE_DEPENDS ${lexilla_SOURCE_DIR}/lexlib/*.h)
+add_library(lexlib STATIC ${LEX_SOURCES} ${LEX_HEADERS})
+
+    set_target_properties(
+        lexlib
+        PROPERTIES CXX_STANDARD 20
+                   CXX_STANDARD_REQUIRED ON
+                   LINKER_LANGUAGE CXX)
+    target_compile_definitions(lexlib PUBLIC # windows.h
+                                                 NOMINMAX WIN32_LEAN_AND_MEAN)
+target_include_directories(lexlib PRIVATE
+"${scintilla_SOURCE_DIR}/include"
+"${lexilla_SOURCE_DIR}/lexlib"
+"${lexilla_SOURCE_DIR}/include"
+)
+
+
 set(THIRD_PARTY_LIBRARIES
     ${Boost_LIBRARIES}
     range-v3::range-v3
     Eigen3::Eigen
-    EnTT::EnTT)
+    EnTT::EnTT
+    )
 
 add_subdirectory(libs/easing)
 
@@ -132,15 +161,19 @@ foreach(_target IN LISTS NOTEPADGAME_ALL_TARGETS)
                 ${Boost_INCLUDE_DIRS}
                 "${CMAKE_CURRENT_SOURCE_DIR}/libs"
                 "${CMAKE_SOURCE_DIR}/extern/dirtyflag/include/"
-                "${scintilla_SOURCE_DIR}/include")
+                "${scintilla_SOURCE_DIR}/include"
+                "${lexilla_SOURCE_DIR}/lexlib"
+                "${lexilla_SOURCE_DIR}/include"
+                )
 endforeach()
 
 target_link_libraries(engine PRIVATE ${THIRD_PARTY_LIBRARIES})
-target_link_libraries(game PRIVATE engine ${THIRD_PARTY_LIBRARIES})
+target_link_libraries(game PRIVATE engine ${THIRD_PARTY_LIBRARIES} lexlib)
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE engine
             game
+            lexlib
             ${THIRD_PARTY_LIBRARIES})
 
 install(
