@@ -36,9 +36,8 @@ class scintilla final
     : public noncopyable,
       public nonmoveable // Deleted so engine objects can not be copied.
 {
-
     friend bool hook_CreateWindowExW(HMODULE);
-    friend class notepader;
+    friend class notepad;
 
   public:
     // Only the hook_CreateWindowExW can create the engine

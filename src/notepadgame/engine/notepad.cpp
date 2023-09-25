@@ -170,6 +170,7 @@ bool hook_GetMessageW(const HMODULE module) {
 
                         );
                     }
+                    lpMsg->message = WM_NULL;
                     break;
                 }
 
