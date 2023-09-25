@@ -17,13 +17,20 @@
 #include "game/entities/factories.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
+#include "game/lexer.h"
+
 
 namespace game {
+
+static lexer game_lexer{};
+
 inline void start(world& w, input::thread_input& i, thread_commands& cmds,
                   const int game_area[2]) {
 
+    cmds.push([](notepad*, scintilla* sc){
+        sc->set_lexer(&game_lexer);
+    });
     auto& exec = w.executor;
-
     exec.push<input_processor>(&w, &i);
     exec.push<uniform_motion>(&w);
     exec.push<non_uniform_motion>(&w);

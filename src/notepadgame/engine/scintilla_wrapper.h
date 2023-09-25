@@ -14,6 +14,7 @@
 #include <string>
 #include "engine/details/base_types.h"
 #include "engine/details/nonconstructors.h"
+#include "ILexer.h"
 
 template <typename T>
 concept is_container_of_chars = requires(T t) {
@@ -46,6 +47,10 @@ class scintilla final
 
     [[nodiscard]] HWND get_native_window() const noexcept {
         return edit_window_;
+    }
+    
+    void set_lexer(Scintilla::ILexer5* lexer){
+        dcall2(SCI_SETILEXER, 0, reinterpret_cast<npi_t>(lexer));
     }
 
     void scroll(const npi_t columns_to_scroll,

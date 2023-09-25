@@ -9,4 +9,6 @@ set(GAME_HEADERS
     game/ecs_processors/render_commands.h
     game/ecs_processors/timers.h
     game/entities/factories.h
-    game/game.h)
+    game/game.h
+    game/lexer.h
+)
