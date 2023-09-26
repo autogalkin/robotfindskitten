@@ -1,7 +1,6 @@
 set(ENGINE_SOURCES
     engine/buffer.cpp
     engine/scintilla_wrapper.cpp
-    engine/input.cpp
     engine/notepad.cpp
     engine/world.cpp)
 set(ENGINE_HEADERS
@@ -11,7 +10,6 @@ set(ENGINE_HEADERS
     engine/details/nonconstructors.h
     engine/ecs_processor_base.h
     engine/scintilla_wrapper.h
-    engine/input.h
     engine/notepad.h
     engine/time.h
     engine/world.h)

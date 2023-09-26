@@ -6,6 +6,7 @@
 #include "engine/world.h"
 #include "engine/time.h"
 
+/*
 class render_commands final : public ecs_processor {
   thread_commands* commands_;
   thread_commands::queue_t local_queue_;
@@ -20,5 +21,6 @@ class render_commands final : public ecs_processor {
         local_queue_.clear();
     }
 };
+*/
 
 

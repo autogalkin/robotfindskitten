@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <chrono>
 #include <string>
+#include <string_view>
 
 #include "engine/details/base_types.h"
 
@@ -23,7 +24,12 @@
 
 namespace game {
 
-std::array messages = std::to_array({ALL_GAME_MESSAGES});
+static std::array messages =
+    std::to_array<std::string_view>({ALL_GAME_MESSAGES});
+typedef std::mt19937 rng_type;
+static std::uniform_int_distribution<rng_type::result_type>
+    dist(0, messages.size() - 1);
+static rng_type rng{};
 
 inline void define_all_styles(scintilla* sc) {
     static_assert(int(' ') + 100 == 132);
@@ -36,32 +42,27 @@ inline void define_all_styles(scintilla* sc) {
         style++;
     }
 }
+struct is_message_area {};
 static lexer game_lexer{};
-inline void start(world& w, input::thread_input& i, thread_commands& cmds,
+inline void start(world& w, notepad::commands_queue_t& cmds,
                   const int game_area[2]) {
 
-    // TODO bug here when scintilla not execute this
-    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-        timer::make(reg, entity, [](entt::registry& reg_, auto e) {
-            auto n = reg_.create();
-            reg_.emplace<notepad_thread_command>(
-                n, [](notepad*, scintilla* sc) {
-                    printf("set lexer");
-                    sc->set_lexer(&game_lexer);
-                    define_all_styles(sc);
-                    sc->dcall2(SCI_STYLESETFORE, 228, RGB(255, 0, 0));
-                });
-        });
+    cmds.push([](notepad*, scintilla* sc) {
+        printf("Set a lexer\n");
+        sc->set_lexer(&game_lexer);
+        define_all_styles(sc);
+        sc->dcall2(SCI_STYLESETFORE, 228, RGB(255, 0, 0));
     });
+
     auto& exec = w.executor;
-    exec.push<input_processor>(&w, &i);
+    exec.push<input::processor>(&w);
     exec.push<uniform_motion>(&w);
     exec.push<non_uniform_motion>(&w);
     exec.push<timeline_executor>(&w);
     exec.push<rotate_animator>(&w);
     exec.push<collision::query>(&w, game_area);
     exec.push<redrawer>(&w);
-    exec.push<render_commands>(&w, &cmds);
+    // exec.push<render_commands>(&w, &cmds);
     exec.push<death_last_will_executor>(&w);
     exec.push<killer>(&w);
     exec.push<lifetime_ticker>(&w);
@@ -71,26 +72,25 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
                                   entt::registry& reg, const entt::entity e,
                                   const direction) mutable {
                 fps_count.fps([&reg, e](auto fps) {
-                    reg.get<notepad_thread_command>(e) =
-                        notepad_thread_command([fps](notepad* np, scintilla*) {
-                            np->window_title.game_thread_fps = fps;
-                        });
+                    notepad::push_command([fps](notepad* np, scintilla*) {
+                        np->window_title.game_thread_fps = fps;
+                    });
                 });
             }));
         reg.emplace<timeline::eval_direction>(entity, direction::forward);
-        reg.emplace<notepad_thread_command>(entity);
+        // reg.emplace<notepad_thread_command>(entity);
     });
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });
     // Message Area
-    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-        actor::make_base_renderable(
-            reg, entity, {1, 0}, 3,
-            {shape::sprite::from_data{"It's a banana! Oh, joy!", 1, 23}});
-        reg.emplace<timeline::eval_direction>(entity, direction::forward);
-        reg.emplace<notepad_thread_command>(entity);
-
+    //
+    entt::entity message_area;
+    w.spawn_actor([&message_area](entt::registry& reg, const entt::entity entity) {
+        actor::make_base_renderable(reg, entity, {1, 0}, 3, {});
+        reg.emplace<is_message_area>(entity);
+        reg.get<shape::sprite_animation>(entity).sprts.push_back({});
+        message_area = entity;
     });
     {
         constexpr int ITEMS_COUNT = 150;
@@ -116,10 +116,37 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
                 } while (ch[0] == '#' || ch[0] == '-');
                 ch[1] = '\0';
                 actor::make_base_renderable(
-                    reg, entity, {static_cast<double>(i.line()+3), static_cast<double>(i.index_in_line())}, 3,
-                    {shape::sprite::from_data{ch, 1, 1}});
+                    reg, entity,
+                    {static_cast<double>(i.line() + 3),
+                     static_cast<double>(i.index_in_line())},
+                    3, {shape::sprite::from_data{ch, 1, 1}});
                 reg.emplace<collision::agent>(entity);
-                reg.emplace<collision::on_collide>(entity);
+                reg.emplace<collision::on_collide>(
+                    entity, [message_area](entt::registry& reg, const entt::entity self,
+                               const entt::entity collider) {
+                        // TODO signals? Why all_of?
+                        if(reg.all_of<character>(collider)){
+                             char ascii_mesh =
+                                reg.get<shape::sprite_animation>(self)
+                                    .current_sprite()
+                                    .data(0);
+                            auto loc = reg.get<location_buffer>(self).current;
+                            rng.seed(int(ascii_mesh)+loc.line()+loc.index_in_line());
+                            size_t rand_msg = dist(rng);
+                            auto& anim = reg.get<shape::sprite_animation>(message_area);
+                            anim.rendering_i = 1 - anim.rendering_i;
+                            anim.sprts[anim.rendering_i] =
+                                shape::sprite(shape::sprite::from_data{
+                                    messages[rand_msg].data(), 1,
+                                    static_cast<npi_t>(
+                                        messages[rand_msg].size())});
+                            
+                            reg.get<location_buffer>(
+                                message_area).translation.mark();
+                        }
+                        return collision::on_collide::block_always(reg, self,
+                                                                   collider);
+                    });
             });
         }
     }
@@ -168,7 +195,7 @@ inline void start(world& w, input::thread_input& i, thread_commands& cmds,
 
         character::make(reg, entity, location{7, 24});
         auto& [input_callback] =
-            reg.emplace<input_processor::down_signal>(entity);
+            reg.emplace<input::processor::down_signal>(entity);
         input_callback.connect(&character::process_movement_input<>);
     });
 

@@ -2,6 +2,7 @@
 #include <optional>
 
 #include "boost/signals2.hpp"
+#include <boost/lockfree/spsc_queue.hpp>
 #include <Windows.h>
 #include <memory>
 #include <stdint.h>
@@ -9,7 +10,7 @@
 #include <thread>
 #include "engine/scintilla_wrapper.h"
 #include "engine/world.h"
-#include "engine/input.h"
+
 #include "engine/time.h"
 
 // custom WindowProc
@@ -24,38 +25,36 @@ bool hook_CreateWindowExW(HMODULE module);
 // Block window title updates
 bool hook_SetWindowTextW(HMODULE module);
 
-class thread_commands {
-public:
-    using command_t = std::function<void(notepad*, scintilla*)>;
-    using queue_t = std::vector<command_t>;
-    friend void swap(queue_t& other, thread_commands& commands) {
-        std::lock_guard<std::mutex> lock(commands.mutex_);
-        std::swap(other, commands.queue_);
-    }
-    friend void swap(thread_commands& commands, queue_t& other ) {
-        std::lock_guard<std::mutex> lock(commands.mutex_);
-        std::swap(commands.queue_,  other);
-    }
-    void push(command_t key) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        queue_.push_back(key);
-    };
-    thread_commands() : queue_(32) {}
+class title_line {
+    static constexpr auto buf_ =
+        L"robotfindskitten, fps: game_thread {:02} | render_thread {:02}";
 
-private:
-    queue_t queue_;
-    mutable std::mutex mutex_;
-};
-
-class title_line{
-    static constexpr auto buf_ = L"robotfindskitten, fps: game_thread {:02} | render_thread {:02}";
-public:
-   uint64_t game_thread_fps;
-   uint64_t render_thread_fps;
-    std::wstring make(){
+  public:
+    uint64_t game_thread_fps;
+    uint64_t render_thread_fps;
+    std::wstring make() {
         return std::format(buf_, game_thread_fps, render_thread_fps);
     };
 };
+
+namespace input {
+
+using key_size = WPARAM;
+// https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+enum class key_t : key_size {
+    w = 0x57,
+    a = 0x41,
+    s = 0x53,
+    d = 0x44,
+    l = 0x49,
+    space = VK_SPACE,
+    up = VK_UP,
+    right = VK_RIGHT,
+    left = VK_LEFT,
+    down = VK_DOWN,
+};
+
+}
 
 // A static Singelton for notepad.exe wrapper
 class notepad {
@@ -86,17 +85,19 @@ class notepad {
         constexpr opts(int v) : all(static_cast<uint8_t>(v)) {}
     };
 
-    // TODO channel
-    using open_signal_t =
-        boost::signals2::signal<void(world&, input::thread_input&,  thread_commands&)>;
+    using command_t = std::function<void(notepad*, scintilla*)>;
+    static constexpr size_t input_buffer_size = 8;
+    using commands_queue_t =
+        boost::lockfree::spsc_queue<command_t, boost::lockfree::capacity<32>>;
+    using open_signal_t = boost::signals2::signal<void(
+        world&,notepad::commands_queue_t&)>;
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
     on_open() {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
                         : std::nullopt;
     }
     title_line window_title{};
-    input::thread_input input_state;
-    // input get_input_state()
+
     void connect_to_notepad(const HMODULE module /* notepad.exe module*/,
                             const opts start_options = notepad::opts::empty) {
         options_ = start_options;
@@ -110,15 +111,25 @@ class notepad {
     void set_window_title(const std::wstring_view title) const {
         SetWindowTextW(main_window_, title.data());
     }
+    // TODO maybe a ecs processor which will push all commands together?
+    static bool push_command(command_t cmd) {
+        return notepad::get().commands_.push(std::move(cmd));
+    };
+    template <typename Functor> static size_t consume_input(Functor&& f) {
+        return notepad::get().input_.consume_all(f);
+    }
 
   private:
     static notepad& get() {
         static notepad notepad{};
         return notepad;
     }
-    // TODO rewrite commads
-    thread_commands commands_;
-    thread_commands::queue_t local_commands_;
+
+    commands_queue_t commands_;
+    boost::lockfree::spsc_queue<input::key_t,
+                                boost::lockfree::capacity<input_buffer_size>>
+        input_;
+
     void start_game();
     void tick_render();
     explicit notepad();
@@ -132,6 +143,3 @@ class notepad {
     LONG_PTR original_proc_; // notepad.exe window proc
     std::optional<scintilla> scintilla_;
 };
-
-
-

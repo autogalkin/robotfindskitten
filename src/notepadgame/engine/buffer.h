@@ -63,7 +63,7 @@ void back_buffer::traverse_sprite_positions(const position_t& sprite_pivot,
              const auto part_of_sprite :
              row | ranges::views::filter([&byte_i](const char_size c) {
                  ++byte_i;
-                 return c != shape::whitespace;
+                 return true; //c != shape::whitespace;
              })) {
             if (position_t p =
                     sprite_pivot + position_t{static_cast<npi_t>(line), byte_i};

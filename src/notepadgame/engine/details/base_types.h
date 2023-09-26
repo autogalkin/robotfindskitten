@@ -169,11 +169,13 @@ struct boundbox {
 };
 
 // TODO references
+/*
 class scintilla;
 class notepad;
 struct notepad_thread_command {
     std::function<void(notepad*, scintilla*)> command{};
 };
+*/
 
 namespace shape {
 inline static constexpr char whitespace = ' ';

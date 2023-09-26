@@ -1,4 +1,5 @@
 ﻿
+#include <boost/lockfree/spsc_queue.hpp>
 #include <boost/utility/in_place_factory.hpp>
 #include <memory>
 #include <optional>
@@ -20,7 +21,7 @@
 #include "engine/details/nonconstructors.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/details/iat_hook.h"
-#include "engine/input.h"
+
 #include "engine/notepad.h"
 #include "engine/world.h"
 #include "engine/time.h"
@@ -43,10 +44,10 @@ class thread_guard : public noncopyable {
 };
 
 notepad::notepad()
-    : scintilla_(std::nullopt), input_state(), main_window_(),
+    : scintilla_(std::nullopt), input_(), main_window_(),
       original_proc_(0), on_open_(std::make_unique<open_signal_t>()),
       fixed_time_step_(), fps_count_(), buf_(GAME_AREA[0], GAME_AREA[1]),
-      local_commands_(32), commands_() {}
+      commands_() {}
 
 void notepad::tick_render() {
     fps_count_.fps([](auto fps) {
@@ -54,15 +55,11 @@ void notepad::tick_render() {
         auto sub = std::wstring(L"| render_thread ");
         np.window_title.render_thread_fps = fps;
     });
-    swap(commands_, local_commands_);
-    scintilla* p = &*scintilla_;
-    // TODO any other queue implementation?
-    for (auto& c : local_commands_) {
-        if (c)
-            c(this, p);
-    }
+    commands_.consume_all([this](auto f) {
+        if (f)
+            f(this, &*scintilla_);
+    });
     notepad::get().set_window_title(notepad::get().window_title.make());
-    local_commands_.clear();
     const auto pos = scintilla_->get_caret_index();
     buf_.view([this](const std::basic_string<char_size>& buf) {
         scintilla_->set_new_all_text(buf);
@@ -75,10 +72,10 @@ void notepad::start_game() {
         [buf = &buf_,
          on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
-         &input = input_state, &cmds = commands_]() {
+         &cmds = commands_]() {
             timings::fixed_time_step fixed_time_step;
             world w{buf};
-            (*on_open)(w, input, cmds);
+            (*on_open)(w, cmds);
             while (!done.load()) {
                 fixed_time_step.sleep();
                 w.tick(timings::dt);
@@ -163,7 +160,7 @@ bool hook_GetMessageW(const HMODULE module) {
                         np.scintilla_->scroll(
                             0, scroll_delta > 0
                                    ? -3
-                                   : (np.scintilla_->get_lines_on_screen()-1 <
+                                   : (np.scintilla_->get_lines_on_screen() - 1 <
                                               GAME_AREA[0]
                                           ? 3
                                           : 0)
@@ -177,7 +174,7 @@ bool hook_GetMessageW(const HMODULE module) {
                     // Handle keyboard messages
                 case WM_KEYDOWN:
                 case WM_SYSKEYDOWN: {
-                    np.input_state.push(
+                    np.input_.push(
                         static_cast<input::key_t>(lpMsg->wParam));
                     lpMsg->message = WM_NULL;
                     break;

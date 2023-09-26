@@ -196,7 +196,7 @@ class scintilla final
     void init_direct_access_to_scintilla();
 
     using direct_function = npi_t (*)(sptr_t, int, uptr_t, sptr_t);
-
+    // TODO private
     npi_t dcall0(const int message) const {
         return direct_function_(direct_wnd_ptr_, message, 0, 0);
     } // NOLINT(modernize-use-nodiscard)

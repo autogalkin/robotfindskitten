@@ -65,7 +65,10 @@ class lexer : public Lexilla::DefaultLexer {
             // TODO
 
             for (; ctx.More(); ctx.Forward()) {
-                if(ctx.ch == '#' || ctx.Match('#', '-') || ctx.Match('-', '#')){
+                if(ctx.ch == '#'){
+                    ctx.SetState(STYLE_DEFAULT);
+                }
+                if(ctx.Match('#', '-') || ctx.Match('-', '#')){
                     ctx.SetState(STYLE_DEFAULT);
                     ctx.Forward();
                     ctx.SetState(STYLE_DEFAULT);

@@ -6,7 +6,7 @@
 #include "libs/easing/easing.h"
 #include "game/ecs_processors/collision.h"
 #include "game/ecs_processors/input.h"
-#include "engine/input.h"
+
 #include "engine/notepad.h"
 #include "game/lexer.h"
 
@@ -25,6 +25,7 @@ struct actor {
         reg.emplace<visible_in_game>(e);
         reg.emplace<location_buffer>(
             e, std::move(start), df::dirtyflag<location>{{}, df::state::dirty});
+        // TODO not optimal
         reg.emplace<shape::sprite_animation>(
             e, std::vector<shape::sprite>{{std::move(sprite)}},
             static_cast<uint8_t>(0));
@@ -213,7 +214,7 @@ struct character final {
                      {shape::sprite::from_data{"-#", 1, 2}}}},
                 animation.rendering_i);
 
-            auto& [signal] = reg.get<input_processor::down_signal>(self);
+            auto& [signal] = reg.get<input::processor::down_signal>(self);
             signal.connect([](entt::registry& reg_, const entt::entity chrcter,
                               const input::state_t& state) {
                 if (input::has_key(state, input::key_t::space)) {
@@ -283,7 +284,7 @@ struct atmosphere final {
                        reg.get<timeline::eval_direction>(timer).value);
 
         reg.emplace<color_range>(cycle_timeline);
-        reg.emplace<notepad_thread_command>(cycle_timeline);
+        //reg.emplace<notepad_thread_command>(cycle_timeline);
         reg.emplace<life::death_last_will>(
             cycle_timeline,
             [](entt::registry& reg_, const entt::entity cycle_timeline_) {
@@ -315,11 +316,11 @@ struct atmosphere final {
             RGB(std::lerp(GetRValue(start), GetRValue(end), -value),
                 std::lerp(GetGValue(start), GetGValue(end), -value),
                 std::lerp(GetBValue(start), GetBValue(end), -value));
-        reg.get<notepad_thread_command>(e) = notepad_thread_command([new_back_color, new_front_color](notepad*, scintilla* sct){
 
+        notepad::push_command([new_back_color, new_front_color](notepad*, scintilla* sct){
             static_assert(int(' ')+100 == 132);
             int style = 132;
-            // TODO
+            // TODO to scintilla wrapper
             sct->dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, new_back_color);
             sct->dcall2(SCI_STYLESETBACK, 0, new_back_color);
             sct->dcall2(SCI_STYLESETFORE,STYLE_DEFAULT, new_front_color);
