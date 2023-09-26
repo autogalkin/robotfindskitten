@@ -110,7 +110,22 @@ include(engine/CMakeLists.txt)
 include(game/CMakeLists.txt)
 
 add_library(engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
+
+
+
 add_library(game STATIC ${GAME_SOURCES} ${GAME_HEADERS})
+file(READ "${CMAKE_CURRENT_LIST_DIR}/game/assets/messages.txt" MESSAGES_FILE_CONTENT)
+string(REPLACE "\n" ";" MESSAGES_LIST ${MESSAGES_FILE_CONTENT})
+list(FILTER MESSAGES_LIST EXCLUDE REGEX "^$" )
+list(TRANSFORM MESSAGES_LIST STRIP )
+list(TRANSFORM MESSAGES_LIST REPLACE "\"" "" )
+list(TRANSFORM MESSAGES_LIST APPEND "\"")
+list(TRANSFORM MESSAGES_LIST PREPEND "\"")
+string(REPLACE ";" "," ALL_GAME_MESSAGES "${MESSAGES_LIST}")
+configure_file(${CMAKE_CURRENT_LIST_DIR}/game/messages.h.in "${CMAKE_CURRENT_BINARY_DIR}/messages.h" @ONLY)
+target_include_directories(game PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
+
+
 add_library(${PROJECT_NAME} SHARED ./dllmain.cpp)
 
 file(GLOB LEX_SOURCES CONFIGURE_DEPENDS ${lexilla_SOURCE_DIR}/lexlib/*.cxx)

@@ -1,0 +1,4 @@
+#pragma once
+
+// include from CMake
+#define ALL_GAME_MESSAGES @ALL_GAME_MESSAGES@

@@ -19,8 +19,11 @@
 #include "engine/notepad.h"
 #include "engine/world.h"
 #include "game/lexer.h"
+#include "messages.h"
 
 namespace game {
+
+std::array messages = std::to_array({ALL_GAME_MESSAGES});
 
 inline void define_all_styles(scintilla* sc) {
     static_assert(int(' ') + 100 == 132);
