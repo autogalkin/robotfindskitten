@@ -27,7 +27,7 @@ class fixed_time_step {
         if(frame_time > 250ms)
             frame_time = 250ms;
         lag_accum_ += frame_time;
-        if (lag_accum_ > 0ms) {
+        while(lag_accum_ > 0ms) {
             const auto sleep_start = clock::now();
             std::this_thread::sleep_for(lag_accum_);
             const auto sleep_end = clock::now();
