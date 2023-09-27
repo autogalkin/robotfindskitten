@@ -78,9 +78,9 @@ struct vec_t : public Eigen::Vector2<SizeType> {
     }
 };
 
+// TODO not trivially copyable
 // notepad's col-row position
 using position_t = vec_t<npi_t>;
-
 inline void foo() { position_t b = Eigen::Vector2<npi_t>(); }
 
 // an actor location, used for smooth move

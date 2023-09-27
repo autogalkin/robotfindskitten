@@ -5,6 +5,7 @@
 #include <chrono>
 #include <string>
 #include <string_view>
+#include <winuser.h>
 
 #include "engine/details/base_types.h"
 
@@ -62,7 +63,6 @@ inline void start(world& w, notepad::commands_queue_t& cmds,
     exec.push<rotate_animator>(&w);
     exec.push<collision::query>(&w, game_area);
     exec.push<redrawer>(&w);
-    // exec.push<render_commands>(&w, &cmds);
     exec.push<death_last_will_executor>(&w);
     exec.push<killer>(&w);
     exec.push<lifetime_ticker>(&w);
@@ -86,12 +86,13 @@ inline void start(world& w, notepad::commands_queue_t& cmds,
     // Message Area
     //
     entt::entity message_area;
-    w.spawn_actor([&message_area](entt::registry& reg, const entt::entity entity) {
-        actor::make_base_renderable(reg, entity, {1, 0}, 3, {});
-        reg.emplace<is_message_area>(entity);
-        reg.get<shape::sprite_animation>(entity).sprts.push_back({});
-        message_area = entity;
-    });
+    w.spawn_actor(
+        [&message_area](entt::registry& reg, const entt::entity entity) {
+            actor::make_base_renderable(reg, entity, {1, 0}, 3, {});
+            reg.emplace<is_message_area>(entity);
+            message_area = entity;
+        });
+    // All actors
     {
         constexpr int ITEMS_COUNT = 150;
         std::array<position_t, ITEMS_COUNT> all{};
@@ -122,27 +123,23 @@ inline void start(world& w, notepad::commands_queue_t& cmds,
                     3, {shape::sprite::from_data{ch, 1, 1}});
                 reg.emplace<collision::agent>(entity);
                 reg.emplace<collision::on_collide>(
-                    entity, [message_area](entt::registry& reg, const entt::entity self,
-                               const entt::entity collider) {
+                    entity,
+                    [message_area](entt::registry& reg, const entt::entity self,
+                                   const entt::entity collider) {
                         // TODO signals? Why all_of?
-                        if(reg.all_of<character>(collider)){
-                             char ascii_mesh =
+                        if (reg.all_of<character>(collider)) {
+                            char ascii_mesh =
                                 reg.get<shape::sprite_animation>(self)
                                     .current_sprite()
                                     .data(0);
                             auto loc = reg.get<location_buffer>(self).current;
-                            rng.seed(int(ascii_mesh)+loc.line()+loc.index_in_line());
+                            rng.seed(int(ascii_mesh) + loc.line() +
+                                     loc.index_in_line());
                             size_t rand_msg = dist(rng);
-                            auto& anim = reg.get<shape::sprite_animation>(message_area);
-                            anim.rendering_i = 1 - anim.rendering_i;
-                            anim.sprts[anim.rendering_i] =
-                                shape::sprite(shape::sprite::from_data{
-                                    messages[rand_msg].data(), 1,
-                                    static_cast<npi_t>(
-                                        messages[rand_msg].size())});
-                            
-                            reg.get<location_buffer>(
-                                message_area).translation.mark();
+
+                            notepad::push_command([rand_msg](notepad* np, scintilla*) {
+                                SetWindowText(np->popup, messages[rand_msg].data());
+                            });
                         }
                         return collision::on_collide::block_always(reg, self,
                                                                    collider);
