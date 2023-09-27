@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(
     notepadgame
-    DESCRIPTION "A game inside notepad.exe"
-    VERSION 0.1.0
-    HOMEPAGE_URL "https://github.com/autogalkin/notepadgame"
     LANGUAGES CXX)
 
 if(NOT
