@@ -317,7 +317,10 @@ struct atmosphere final {
                 std::lerp(GetGValue(start), GetGValue(end), -value),
                 std::lerp(GetBValue(start), GetBValue(end), -value));
 
-        notepad::push_command([new_back_color, new_front_color](notepad*, scintilla* sct){
+        notepad::push_command([new_back_color, new_front_color](notepad* np, scintilla* sct){
+            np->popup_window.fore_color = new_front_color;
+            np->popup_window.back_color = new_back_color;
+            SetWindowText(np->popup_window.window, np->popup_window.text.data());
             static_assert(int(' ')+100 == 132);
             int style = 132;
             // TODO to scintilla wrapper

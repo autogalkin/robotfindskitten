@@ -137,8 +137,9 @@ inline void start(world& w, notepad::commands_queue_t& cmds,
                                      loc.index_in_line());
                             size_t rand_msg = dist(rng);
 
-                            notepad::push_command([rand_msg](notepad* np, scintilla*) {
-                                SetWindowText(np->popup, messages[rand_msg].data());
+                            notepad::push_command([msg = messages[rand_msg]](notepad* np, scintilla*) {
+                                SetWindowText(np->popup_window.window, msg.data());
+                                np->popup_window.text = msg;
                             });
                         }
                         return collision::on_collide::block_always(reg, self,

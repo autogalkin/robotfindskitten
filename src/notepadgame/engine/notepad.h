@@ -56,6 +56,13 @@ enum class key_t : key_size {
 
 }
 
+struct popup{
+    std::string_view text = "";
+    HWND window;
+    COLORREF fore_color = RGB(0, 0, 0);
+    COLORREF back_color = RGB(255, 255, 255);
+};
+
 // A static Singelton for notepad.exe wrapper
 class notepad {
     friend LRESULT CALLBACK hook_wnd_proc(HWND, UINT, WPARAM, LPARAM);
@@ -107,6 +114,8 @@ class notepad {
         hook_SetWindowTextW(module);
     }
     [[nodiscard]] HWND get_window() const { return main_window_; }
+
+    popup popup_window;
 
     void set_window_title(const std::wstring_view title) const {
         SetWindowTextW(main_window_, title.data());

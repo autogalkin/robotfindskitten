@@ -65,20 +65,13 @@ class lexer : public Lexilla::DefaultLexer {
             // TODO
 
             for (; ctx.More(); ctx.Forward()) {
-                if(ctx.ch == '#'){
-                    ctx.SetState(STYLE_DEFAULT);
-                }
+               
                 if(ctx.Match('#', '-') || ctx.Match('-', '#')){
                     ctx.SetState(STYLE_DEFAULT);
                     ctx.Forward();
                     ctx.SetState(STYLE_DEFAULT);
-                } else if (ctx.currentLine < 3) {
-                    if (ctx.ch == ' '){
-                        ctx.SetState(int(ctx.ch) + 100);
-                    } else {
-                        ctx.SetState(STYLE_DEFAULT);
-                    }
-                    continue;
+                } else if(ctx.ch == '#'){
+                    ctx.SetState(STYLE_DEFAULT);
                 } else {
                     ctx.SetState(int(ctx.ch) + 100);
                 }

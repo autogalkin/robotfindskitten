@@ -6,6 +6,7 @@
 
 // clang-format off
 #include "Richedit.h"
+#include <type_traits>
 #include <wingdi.h>
 #include <winuser.h>
 #include <Windows.h>
@@ -68,44 +69,6 @@ void notepad::tick_render() {
     scintilla_->set_caret_index(pos);
 }
 
-WNDPROC StaticWndProc;
-HFONT hFont;
-LRESULT CALLBACK MyStaticWndProc(HWND hwnd, UINT Message, WPARAM wparam,
-                                 LPARAM lparam) {
-    switch (Message) {
-    case WM_SIZE: {
-        //UINT width = LOWORD(lparam);
-        //UINT height = HIWORD(lparam);
-        std::cout << "size";
-        //GetWindowRect(notepad::get().main_window_, &rc);
-        //SetWindowPos(hwnd, NULL, rect.left+20, rect.top,
-        //     width, 200, TRUE);
-        break;
-    }
-
-    case WM_USER + 100:
-        break;
-    }
-
-    if (Message == WM_PAINT) {
-        RECT rc;
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        GetClientRect(hwnd, &rc);
-        SetBkColor(hdc, RGB(255, 255, 255));
-        static TCHAR* allText = new TCHAR[255];
-        auto len = GetWindowTextLength(hwnd);
-        GetWindowText(hwnd, allText, len);
-        HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
-        DrawTextW(hdc, (LPCWSTR)allText, len, &rc, DT_VCENTER);
-        SetTextColor(hdc, RGB(255, 0, 0));
-        SelectObject(hdc, hOldFont);
-        EndPaint(hwnd, &ps);
-
-        return 0;
-    }
-    return StaticWndProc(hwnd, Message, wparam, lparam);
-}
 // game in another thread
 void notepad::start_game() {
 
@@ -122,41 +85,30 @@ void notepad::start_game() {
                 w.tick(timings::dt);
             }
         }));
-    // TODO temp walkaround. force redraw all window, because Scintilla not
-    // updating her state and return invalid values while not be resized
+
     RECT rect = {NULL};
     GetWindowRect(main_window_, &rect);
-    SetWindowPos(main_window_, NULL, rect.left + 1, rect.top,
-                 rect.right - rect.left, rect.bottom - rect.top, TRUE);
-    SetWindowPos(main_window_, NULL, rect.left, rect.top,
-                 rect.right - rect.left, rect.bottom - rect.top, TRUE);
-    //::SetWindowPos(main_window_, w, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE
-    //:|SWP_NOACTIVATE);
-
-    DWORD dwStyle = WS_POPUP;
+    ::SetWindowPos(main_window_, NULL, 0, 0, 0, 0,
+                   SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    DWORD dwStyle =
+        WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
     GetWindowRect(scintilla_->edit_window_, &rect);
-    if (auto w = CreateWindowExW(0, L"STATIC", L"", dwStyle, rect.left + 20,
-                                 rect.top, rect.right - rect.left, 200,
-                                 main_window_, 0, 0, 0)) {
-        StaticWndProc = (WNDPROC)GetWindowLongPtrW(w, GWLP_WNDPROC);
-        SetWindowLongPtrW(w, GWLP_WNDPROC, (LPARAM)MyStaticWndProc);
-        hFont =
-            CreateFontW(40, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE,
-                        ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                        DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Arial");
-        SendMessage(w, WM_SETFONT, WPARAM(hFont), TRUE);
-        SetWindowLong(w, GWL_STYLE, 0);
-        SetWindowLongPtr(w, GWL_EXSTYLE,
-                         GetWindowLongPtr(w, GWL_EXSTYLE) | WS_EX_LAYERED);
-        SetLayeredWindowAttributes(w, RGB(255, 255, 255), 0, LWA_COLORKEY);
-        ShowWindow(w, SW_SHOW);
-        popup = w;
-        PostMessage(w, WM_USER + 100, 0, 0);
-        std::cout << "Ok!";
-    } else {
-        std::cout << GetLastError();
-    };
+    auto w = CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+                            "STATIC", "", dwStyle, 0, 0, rect.right - rect.left,
+                            200, main_window_, 0, GetModuleHandle(NULL), 0);
+    SetLayeredWindowAttributes(w, popup_window.back_color, 0, LWA_COLORKEY);
+    SetWindowPos(w, HWND_TOP, 20, 0, rect.right - rect.left, 200, 0);
+    auto deleter = [](HFONT font) { DeleteObject(font); };
+    static std::unique_ptr<std::remove_pointer_t<HFONT>, decltype(deleter)>
+        hFont{CreateFontW(32, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
+                          ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Arial"),
+              std::move(deleter)};
+    SendMessage(w, WM_SETFONT, WPARAM(hFont.get()), TRUE);
+    ShowWindow(w, SW_SHOW);
+    UpdateWindow(w);
+    popup_window.window = w;
 }
 
 LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
@@ -190,19 +142,30 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     case WM_NOTIFY: {
         break;
     }
-    case WM_MOVE:
-    case WM_SIZE: {
-        RECT rc = {NULL};
-        //SendMessage(np.popup, WM_SIZE, 0,
-         //           MAKELPARAM(rc.right - rc.left, rc.bottom - rc.top));
-         if(np.popup){
-
-        GetWindowRect(np.scintilla_->edit_window_, &rc);
-         SetWindowPos(np.popup, NULL, rc.left+20, rc.top,
-             rc.right - rc.left-20, 200, TRUE);
-        }
+    case WM_DRAWITEM: {
+        std::cout << "draw\n";
+        break;
     }
-
+    case WM_CTLCOLORSTATIC: {
+        auto& np = notepad::get();
+        if (np.popup_window.window == (HWND)lp) {
+            auto deleter = [](HBRUSH br) { DeleteObject(br); };
+            static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
+                                   decltype(deleter)>
+                hBrushLabel{CreateSolidBrush(np.popup_window.back_color),
+                            std::move(deleter)};
+            hBrushLabel.reset(CreateSolidBrush(np.popup_window.back_color));
+            HDC popup = (HDC)wp;
+            auto& np = notepad::get();
+            SetTextColor(popup, np.popup_window.fore_color);
+            SetLayeredWindowAttributes(np.popup_window.window,
+                                       np.popup_window.back_color, 0,
+                                       LWA_COLORKEY);
+            SetBkColor(popup, np.popup_window.back_color);
+            return reinterpret_cast<LRESULT>(hBrushLabel.get());
+        }
+        break;
+    }
     default:
         break;
     }
@@ -228,6 +191,11 @@ bool hook_GetMessageW(const HMODULE module) {
                 case WM_QUIT:
                     return 0;
                 case WM_MOUSEWHEEL: {
+                    auto dc = GetDC(np.popup_window.window);
+                    SetBkColor(dc, RGB(255, 255, 0));
+                    ReleaseDC(np.popup_window.window, dc);
+
+                    // SendMessage(np.popup_window.window, WM_PAINT, 0, 0);
                     auto scroll_delta = GET_WHEEL_DELTA_WPARAM(lpMsg->wParam);
                     // horizontal scroll
                     auto v_scroll = 0;
@@ -336,13 +304,16 @@ bool hook_CreateWindowExW(HMODULE module) {
                 np.scintilla_.emplace(construct_key<scintilla>{});
 
                 out_hwnd = np.scintilla_->create_native_window(
-                    dwExStyle, lpWindowName, dwStyle, X, Y, nWidth, nHeight,
-                    hWndParent, hMenu, hInstance, lpParam, np.options_.all);
+                    dwExStyle, lpWindowName,
+                    dwStyle | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, X, Y, nWidth,
+                    nHeight, hWndParent, hMenu, hInstance, lpParam,
+                    np.options_.all);
 
             } else {
                 out_hwnd = original(dwExStyle, lpClassName, lpWindowName,
-                                    dwStyle, X, Y, nWidth, nHeight, hWndParent,
-                                    hMenu, hInstance, lpParam);
+                                    dwStyle | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+                                    X, Y, nWidth, nHeight, hWndParent, hMenu,
+                                    hInstance, lpParam);
             }
             // catch notepad.exe window
             if (!lstrcmpW(lpClassName, L"Notepad")) {
