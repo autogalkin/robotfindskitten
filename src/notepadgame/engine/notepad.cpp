@@ -202,30 +202,27 @@ bool hook_GetMessageW(const HMODULE module) {
                     auto h_scroll = 0;
                     if (LOWORD(lpMsg->wParam) & MK_SHIFT) {
                         auto char_width = np.scintilla_->get_char_width();
-                        h_scroll =
+                        np.scintilla_->scroll(
                             scroll_delta > 0
                                 ? -3
                                 : (np.scintilla_->get_horizontal_scroll_offset() /
                                                    char_width +
                                                (np.scintilla_
                                                         ->get_window_width() /
-                                                    char_width +
-                                                3) <
+                                                    char_width
+                                                ) <
                                            GAME_AREA[1]
                                        ? 3
-                                       : 0);
+                                       : 0), 0);
+                        lpMsg->message = WM_NULL;
                         // vertical scroll
                     } else if (!(LOWORD(lpMsg->wParam))) {
-                        v_scroll =
-                            scroll_delta > 0
+                             np.scintilla_->scroll(0, scroll_delta > 0
                                 ? -3
                                 : ((np.scintilla_->get_lines_on_screen() - 1) <
                                            GAME_AREA[0]
                                        ? 3
-                                       : 0);
-                    }
-                    if (h_scroll || v_scroll) {
-                        np.scintilla_->scroll(h_scroll, v_scroll);
+                                       : 0));
                         lpMsg->message = WM_NULL;
                     }
                     break;
