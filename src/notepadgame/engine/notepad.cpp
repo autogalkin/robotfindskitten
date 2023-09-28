@@ -51,9 +51,8 @@ notepad::notepad()
       fps_count_(), buf_(GAME_AREA[0], GAME_AREA[1]), commands_() {}
 
 void notepad::tick_render() {
-    fps_count_.fps([](auto fps) {
-        notepad::get().window_title.render_thread_fps = fps;
-    });
+    fps_count_.fps(
+        [](auto fps) { notepad::get().window_title.render_thread_fps = fps; });
     // execute all commands from the Game thread
     commands_.consume_all([this](auto f) {
         if (f)
@@ -75,7 +74,7 @@ void notepad::start_game() {
         [&buf = buf_,
          on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
-         &cmds = commands_]() mutable{
+         &cmds = commands_]() mutable {
             timings::fixed_time_step fixed_time_step;
             timings::fps_count fps_count;
             world w;
@@ -97,6 +96,7 @@ void notepad::start_game() {
     GetWindowRect(main_window_, &rect);
     ::SetWindowPos(main_window_, NULL, 0, 0, 0, 0,
                    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
@@ -110,9 +110,10 @@ void notepad::start_game() {
     static std::unique_ptr<std::remove_pointer_t<HFONT>, decltype(deleter)>
         hFont{CreateFontW(38, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
                           ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Consolas"),
+                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+                          L"Consolas"),
               std::move(deleter)};
-    SendMessage(w, WM_SETFONT, WPARAM(hFont.get()), TRUE);
+    SendMessageW(w, WM_SETFONT, WPARAM(hFont.get()), TRUE);
     ShowWindow(w, SW_SHOW);
     UpdateWindow(w);
     popup_window.window = w;
@@ -147,6 +148,13 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         return 0;
     }
     case WM_NOTIFY: {
+        break;
+    }
+    case WM_SIZE: {
+        ::SetWindowPos(np.scintilla_->edit_window_, NULL, 0, 0, 0, 0,
+                       SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE); 
+        ::SetWindowPos(np.popup_window.window, NULL, 0, 0, 0, 0,
+                       SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
         break;
     }
     case WM_CTLCOLORSTATIC: {
@@ -211,21 +219,22 @@ bool hook_GetMessageW(const HMODULE module) {
                                 : (np.scintilla_->get_horizontal_scroll_offset() /
                                                    char_width +
                                                (np.scintilla_
-                                                        ->get_window_width() /
-                                                    char_width
-                                                ) <
+                                                    ->get_window_width() /
+                                                char_width) <
                                            GAME_AREA[1]
                                        ? 3
-                                       : 0), 0);
+                                       : 0),
+                            0);
                         lpMsg->message = WM_NULL;
                         // vertical scroll
                     } else if (!(LOWORD(lpMsg->wParam))) {
-                             np.scintilla_->scroll(0, scroll_delta > 0
-                                ? -3
-                                : ((np.scintilla_->get_lines_on_screen() - 1) <
-                                           GAME_AREA[0]
-                                       ? 3
-                                       : 0));
+                        np.scintilla_->scroll(
+                            0, scroll_delta > 0
+                                   ? -3
+                                   : ((np.scintilla_->get_lines_on_screen() -
+                                       1) < GAME_AREA[0]
+                                          ? 3
+                                          : 0));
                         lpMsg->message = WM_NULL;
                     }
                     break;
