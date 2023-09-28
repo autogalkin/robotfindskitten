@@ -92,7 +92,7 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
                 ch[1] = '\0';
                 actor::make_base_renderable(
                     reg, entity,
-                    {static_cast<double>(i.line() + 3),
+                    {static_cast<double>(i.line()),
                      static_cast<double>(i.index_in_line())},
                     3, {shape::sprite::from_data{ch, 1, 1}});
                 reg.emplace<collision::agent>(entity);
