@@ -9,6 +9,32 @@
 
 #include "engine/details/base_types.h"
 
+struct box {
+    position_t pivot{};
+    position_t size{};
+
+    box operator+(const position_t& loc) const {
+        return {pivot + loc, size};
+    }
+    [[nodiscard]] position_t center() const {
+        return {pivot.line() + size.line() / 2,
+                pivot.index_in_line() + size.index_in_line() / 2};
+    }
+    [[nodiscard]] position_t end() const { return {pivot + size}; }
+    [[nodiscard]] bool contains(const box& b) const {
+        return pivot.line() <= b.pivot.line() &&
+               end().line() <= b.end().line() &&
+               pivot.index_in_line() <= b.pivot.index_in_line() &&
+               end().index_in_line() <= b.end().index_in_line();
+    }
+    [[nodiscard]] bool intersects(const box& b) const {
+        return !(pivot.line() >= b.end().line() ||
+                 end().line() <= b.pivot.line() ||
+                 pivot.index_in_line() >= b.end().index_in_line() ||
+                 end().index_in_line() <= b.pivot.index_in_line());
+    }
+};
+
 
 namespace collision {
 class query;
@@ -66,7 +92,7 @@ class quad_tree {
     // An element is only inserted once to the quadtree no matter how many cells
     // it occupies.
     struct quad_entity {
-        boundbox bbox;
+        box bbox;
         id_type id{};
     };
 
@@ -97,7 +123,7 @@ class quad_tree {
     };
     // Stores temporary data about a node during a search.
     struct quad_node_data {
-        boundbox rect{};
+        box rect{};
         index i = 0;
         int depth = 0;
     };
@@ -107,7 +133,7 @@ class quad_tree {
     // always the root. boost::container::small_vector<quadnode, 128>
     std::vector<quadnode> nodes_;
     // Stores the quadtree extents.
-    boundbox root_rect_;
+    box root_rect_;
     // Stores the first free node in the quadtree to be reclaimed as 4
     // contiguous nodes at once. A value of -1(end_of_list) indicates that the
     // free list is empty, at which point we simply insert 4 nodes to the back
@@ -117,7 +143,7 @@ class quad_tree {
     uint8_t max_depth;
 
   public:
-    explicit quad_tree(boundbox rootrect, const uint8_t max_depth = 8)
+    explicit quad_tree(box rootrect, const uint8_t max_depth = 8)
         : root_rect_(std::move(rootrect)), free_node_(end_of_list),
           max_depth(max_depth) {
         constexpr quadnode root_node = {.first_child = end_of_list,
@@ -126,20 +152,20 @@ class quad_tree {
         nodes_.push_back(root_node);
     }
 
-    [[nodiscard]] const boundbox& get_root_rect() const { return root_rect_; }
+    [[nodiscard]] const box& get_root_rect() const { return root_rect_; }
     quad_entity& get_entity(const size_t element) { return entities_[element]; }
 
-    index insert(const id_type id, const boundbox& bbox);
+    index insert(const id_type id, const box& bbox);
 
     void remove(const size_t indx);
 
-    void query(const boundbox& rect, std::vector<size_t>& intersect_result);
+    void query(const box& rect, std::vector<size_t>& intersect_result);
 
     // delete empty leaves
     void cleanup();
 
     void
-    traverse(const quad_node_data& start, const boundbox& start_rect,
+    traverse(const quad_node_data& start, const box& start_rect,
              const std::function<void(quad_node_data&)>& branch_visitor,
              const std::function<void(quad_node_data&)>& leaf_visitor) const;
 
@@ -155,15 +181,15 @@ class quad_tree {
     void split(quadnode& node, const quad_node_data& leaf);
 
     // the quadrant in which a value is
-    static quadrant get_quadrant(const boundbox& node_box,
-                                 const boundbox& value_box);
+    static quadrant get_quadrant(const box& node_box,
+                                 const box& value_box);
 
     // compute from the box of parent node and index of its quadrant
-    static boundbox compute_child_box(const boundbox& parent,
+    static box compute_child_box(const box& parent,
                                       const quadrant child);
 
     [[nodiscard]] std::vector<quad_node_data>
-    find_leaves(const quad_node_data& start, const boundbox& start_rect) const;
+    find_leaves(const quad_node_data& start, const box& start_rect) const;
 
     void merge(quadnode& node);
 };

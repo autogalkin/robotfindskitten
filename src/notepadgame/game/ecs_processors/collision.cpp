@@ -2,9 +2,10 @@
 #include "df/dirtyflag.h"
 #include "engine/notepad.h"
 #include <queue>
+#include "game/ecs_processors/life.h"
 
 collision::index collision::quad_tree::insert(const id_type id,
-                                              const boundbox& bbox) {
+                                              const box& bbox) {
     const quad_entity new_entity = {bbox, id};
     const index element = entities_.insert(new_entity);
     node_insert(root_data(), element);
@@ -38,7 +39,7 @@ void collision::quad_tree::remove(const size_t indx) {
     entities_.erase(indx);
 }
 
-void collision::quad_tree::query(const boundbox& rect,
+void collision::quad_tree::query(const box& rect,
                                  std::vector<size_t>& intersect_result) {
     // TODO ab и ba?
     /*
@@ -78,7 +79,7 @@ void collision::quad_tree::query(const boundbox& rect,
 }
 // если рут подается то рекурсивно проходится по всем нодам
 void collision::quad_tree::traverse(
-    const quad_node_data& start, const boundbox& start_rect,
+    const quad_node_data& start, const box& start_rect,
     const std::function<void(quad_node_data&)>& branch_visitor,
     const std::function<void(quad_node_data&)>& leaf_visitor) const {
     std::queue<quad_node_data> to_process;
@@ -203,8 +204,8 @@ void collision::quad_tree::split(quadnode& node, const quad_node_data& leaf) {
 }
 
 collision::quad_tree::quadrant
-collision::quad_tree::get_quadrant(const boundbox& node_box,
-                                   const boundbox& value_box) {
+collision::quad_tree::get_quadrant(const box& node_box,
+                                   const box& value_box) {
     if (auto center = node_box.center();
         value_box.end().index_in_line() <= center.index_in_line()) {
         if (value_box.pivot.line() <= center.line())
@@ -224,7 +225,7 @@ collision::quad_tree::get_quadrant(const boundbox& node_box,
         return quadrant::invalid_quadrant;
 }
 
-boundbox collision::quad_tree::compute_child_box(const boundbox& parent,
+box collision::quad_tree::compute_child_box(const box& parent,
                                                  const quadrant child) {
     position_t child_size = parent.size / 2;
     switch (child) {
@@ -249,7 +250,7 @@ boundbox collision::quad_tree::compute_child_box(const boundbox& parent,
 
 std::vector<collision::quad_tree::quad_node_data>
 collision::quad_tree::find_leaves(const quad_node_data& start,
-                                  const boundbox& start_rect) const {
+                                  const box& start_rect) const {
     std::vector<quad_node_data> leaves;
     traverse(
         start, start_rect, [](quad_node_data&) {},
@@ -258,7 +259,7 @@ collision::quad_tree::find_leaves(const quad_node_data& start,
 }
 
 collision::query::query(world& w, const int game_area[2]):
-    tree_(std::make_unique<quad_tree>(boundbox{{0, 0}, {game_area[0], game_area[1]}}, 4)) {
+    tree_(std::make_unique<quad_tree>(box{{0, 0}, {game_area[0], game_area[1]}}, 4)) {
     w.reg_.on_construct<collision::agent>()
         .connect<&entt::registry::emplace_or_replace<need_update_entity>>();
 }
@@ -274,7 +275,7 @@ void collision::query::execute(entt::registry& reg, timings::duration delta) {
         const auto& [current_location, translation] =
             view.get<location_buffer>(entity);
         view.get<collision::agent>(entity).index_in_quad_tree = tree_->insert(
-            entity, sh.current_sprite().bound_box() +
+            entity, box({}, sh.current_sprite().bounds()) +
                         position_converter::from_location(current_location));
         reg.remove<need_update_entity>(entity);
     }
@@ -294,9 +295,9 @@ void collision::query::execute(entt::registry& reg, timings::duration delta) {
                 continue; // check only dynamic
 
             std::vector<size_t> collides;
-            tree_->query(view.get<shape::sprite_animation>(entity)
+            tree_->query(box{{}, view.get<shape::sprite_animation>(entity)
                                .current_sprite()
-                               .bound_box() +
+                               .bounds()} +
                            (position_converter::from_location(
                                current_location + translation.get())),
                        collides);

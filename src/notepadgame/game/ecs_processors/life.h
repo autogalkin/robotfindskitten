@@ -4,6 +4,29 @@
 #include "engine/world.h"
 #include "engine/time.h"
 
+namespace timeline {
+// calls a given function every tick to the end lifetime
+struct what_do {
+    std::function<void(entt::registry&, entt::entity, direction)> work;
+};
+struct eval_direction {
+    direction value;
+};
+
+} // namespace timeline
+
+namespace life {
+struct begin_die {};
+
+struct lifetime {
+    timings::duration duration;
+};
+
+struct death_last_will {
+    std::function<void(entt::registry&, entt::entity)> wish;
+};
+} // namespace life
+
 struct lifetime_ticker{
     void execute(entt::registry& reg, const timings::duration delta){
         using namespace std::chrono_literals;
@@ -38,6 +61,16 @@ struct timeline_executor{
              const auto entity : view) {
             auto& [work] = view.get<const timeline::what_do>(entity);
             work(reg, entity, view.get<timeline::eval_direction>(entity).value);
+        }
+    }
+};
+
+struct killer {
+    void execute(entt::registry& reg, timings::duration delta) {
+
+        for (const auto view = reg.view<const life::begin_die>();
+             const auto entity : view) {
+            reg.destroy(entity);
         }
     }
 };

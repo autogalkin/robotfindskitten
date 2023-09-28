@@ -3,9 +3,12 @@
 #include "df/dirtyflag.h"
 
 #include "engine/details/base_types.h"
+#include "game/ecs_processors/drawers.h"
+#include "game/ecs_processors/motion.h"
 #include "libs/easing/easing.h"
 #include "game/ecs_processors/collision.h"
 #include "game/ecs_processors/input.h"
+#include "game/ecs_processors/life.h"
 
 #include "engine/notepad.h"
 #include "game/lexer.h"
@@ -167,8 +170,8 @@ struct gun {
         const location spawn_translation =
             dir == direction::forward
                 ? location{0, static_cast<double>(sh.current_sprite()
-                                                      .bound_box()
-                                                      .size.index_in_line())}
+                                                      .bounds()
+                                                      .index_in_line())}
                 : location{0, -1};
         projectile::make(reg, proj, loc + spawn_translation,
                          velocity{0, 15 * static_cast<float>(dir)},
@@ -229,7 +232,7 @@ struct character final {
     static void make(entt::registry& reg, const entt::entity e, location l) {
         reg.emplace<character>(e);
         reg.emplace<z_depth>(e, 2);
-        reg.emplace<shape::on_change_direction>(e,
+        reg.emplace<on_change_direction>(e,
                                                 &actor::invert_shape_direction);
         reg.emplace<shape::render_direction>(e, direction::forward);
         reg.emplace<visible_in_game>(e);
@@ -271,6 +274,10 @@ struct character final {
 };
 
 struct atmosphere final {
+    struct color_range {
+        COLORREF start{RGB(0, 0, 0)};
+        COLORREF end{RGB(255, 255, 255)};
+    };
     static void make(entt::registry& reg, const entt::entity e) {
         timer::make(reg, e, &atmosphere::run_cycle, time_between_cycle);
         reg.emplace<timeline::eval_direction>(e, direction::reverse);
@@ -284,7 +291,6 @@ struct atmosphere final {
                        reg.get<timeline::eval_direction>(timer).value);
 
         reg.emplace<color_range>(cycle_timeline);
-        //reg.emplace<notepad_thread_command>(cycle_timeline);
         reg.emplace<life::death_last_will>(
             cycle_timeline,
             [](entt::registry& reg_, const entt::entity cycle_timeline_) {

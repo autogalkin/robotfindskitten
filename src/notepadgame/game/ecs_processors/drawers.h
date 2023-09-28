@@ -4,13 +4,17 @@
 #include "engine/buffer.h"
 #include "engine/details/base_types.h"
 #include "engine/world.h"
+#include "game/ecs_processors/life.h"
 
+struct on_change_direction {
+    std::function<void(direction, shape::sprite_animation&)> call;
+};
 struct rotate_animator{
     void execute(entt::registry& reg, timings::duration delta){
 
         for (const auto view =
                  reg.view<location_buffer, shape::sprite_animation,
-                          shape::on_change_direction,
+                          on_change_direction,
                           shape::render_direction>();
              const auto entity : view) {
             auto& [current, translation] = view.get<location_buffer>(entity);
@@ -21,13 +25,17 @@ struct rotate_animator{
                     std::copysign(1, translation.get().index_in_line())) !=
                     static_cast<int>(dir)) {
                 dir = direction_converter::invert(dir);
-                view.get<shape::on_change_direction>(entity).call(
+                view.get<on_change_direction>(entity).call(
                     dir, view.get<shape::sprite_animation>(entity));
 
                 translation.pin().index_in_line() = 0.;
             }
         }
     }
+};
+
+struct z_depth {
+    int32_t value;
 };
 
 class redrawer{

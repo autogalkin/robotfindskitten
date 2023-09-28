@@ -81,13 +81,9 @@ struct vec_t : public Eigen::Vector2<SizeType> {
 // TODO not trivially copyable
 // notepad's col-row position
 using position_t = vec_t<npi_t>;
-inline void foo() { position_t b = Eigen::Vector2<npi_t>(); }
 
 // an actor location, used for smooth move
 using location = vec_t<double>;
-
-struct uniform_movement_tag {};
-struct non_uniform_movement_tag {};
 
 enum class direction : int8_t { forward = 1, reverse = -1 };
 
@@ -99,16 +95,7 @@ static T invert(const T d) {
 }
 } // namespace direction_converter
 
-namespace timeline {
-// calls a given function every tick to the end lifetime
-struct what_do {
-    std::function<void(entt::registry&, entt::entity, direction)> work;
-};
-struct eval_direction {
-    direction value;
-};
 
-} // namespace timeline
 
 struct visible_in_game {};
 
@@ -119,63 +106,7 @@ inline position_t from_location(const location& location) {
 }
 } // namespace position_converter
 
-struct velocity : vec_t<float> {
-    velocity() = default;
-    velocity(const vec_t<float>& l) : vec_t<float>(l) {}
-    template <typename T>
-    velocity(const Eigen::EigenBase<T>& other) : vec_t<float>{other} {}
-    template <typename T>
-    velocity(const Eigen::EigenBase<T>&& other) : vec_t<float>{other} {}
-    velocity(const float line, const float index_in_line)
-        : vec_t<float>{line, index_in_line} {}
-};
 
-namespace life {
-struct begin_die {};
-
-struct lifetime {
-    timings::duration duration;
-};
-
-struct death_last_will {
-    std::function<void(entt::registry&, entt::entity)> wish;
-};
-} // namespace life
-
-struct boundbox {
-    position_t pivot{};
-    position_t size{};
-
-    boundbox operator+(const position_t& loc) const {
-        return {pivot + loc, size};
-    }
-    [[nodiscard]] position_t center() const {
-        return {pivot.line() + size.line() / 2,
-                pivot.index_in_line() + size.index_in_line() / 2};
-    }
-    [[nodiscard]] position_t end() const { return {pivot + size}; }
-    [[nodiscard]] bool contains(const boundbox& b) const {
-        return pivot.line() <= b.pivot.line() &&
-               end().line() <= b.end().line() &&
-               pivot.index_in_line() <= b.pivot.index_in_line() &&
-               end().index_in_line() <= b.end().index_in_line();
-    }
-    [[nodiscard]] bool intersects(const boundbox& b) const {
-        return !(pivot.line() >= b.end().line() ||
-                 end().line() <= b.pivot.line() ||
-                 pivot.index_in_line() >= b.end().index_in_line() ||
-                 end().index_in_line() <= b.pivot.index_in_line());
-    }
-};
-
-// TODO references
-/*
-class scintilla;
-class notepad;
-struct notepad_thread_command {
-    std::function<void(notepad*, scintilla*)> command{};
-};
-*/
 
 namespace shape {
 inline static constexpr char whitespace = ' ';
@@ -190,9 +121,9 @@ struct sprite {
                                     Eigen::RowMajor>;
     using from_data = Eigen::Map<const data_type, Eigen::RowMajor>;
     data_type data{};
-    [[nodiscard]] boundbox bound_box() const {
+    [[nodiscard]] position_t bounds() const {
 
-        return {{}, {data.rows(), data.cols()}};
+        return {data.rows(), data.cols()};
     }
 };
 
@@ -205,28 +136,14 @@ struct sprite_animation {
     uint8_t rendering_i = 0;
 };
 
-struct on_change_direction {
-    std::function<void(direction, sprite_animation&)> call;
-};
+
 } // namespace shape
 
-struct color_range {
-    COLORREF start{RGB(0, 0, 0)};
-    COLORREF end{RGB(255, 255, 255)};
-};
+
 
 struct location_buffer {
     location current{};
     df::dirtyflag<location> translation{{}, df::state::dirty};
 };
 
-struct z_depth {
-    int32_t value;
-};
 
-struct screen_resize {
-    std::function<void(const uint32_t width, const uint32_t height)> call;
-};
-struct screen_scroll {
-    std::function<void(const position_t& new_scroll)> call;
-};

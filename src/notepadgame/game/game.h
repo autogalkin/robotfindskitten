@@ -13,9 +13,8 @@
 #include "engine/time.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input.h"
-#include "game/ecs_processors/killer.h"
 #include "game/ecs_processors/motion.h"
-#include "game/ecs_processors/timers.h"
+#include "game/ecs_processors/life.h"
 #include "engine/scintilla_wrapper.h"
 #include "game/entities/factories.h"
 #include "engine/notepad.h"
@@ -72,7 +71,7 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
         constexpr int ITEMS_COUNT = 200;
         std::array<position_t, ITEMS_COUNT> all{};
         std::mt19937 gen(std::random_device{}());
-        std::uniform_int_distribution<> dist_x(0, game_area[0] - 3 - 1);
+        std::uniform_int_distribution<> dist_x(0, game_area[0]- 1);
         std::uniform_int_distribution<> dist_y(0, game_area[1] - 1 - 1);
         for (auto i = 0; i < ITEMS_COUNT; i++) {
             position_t p;
