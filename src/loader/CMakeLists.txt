@@ -1,7 +1,5 @@
 project(
-    loader
-    DESCRIPTION ""
-    VERSION 0.0.1)
+    loader LANGUAGES CXX)
 
 add_executable(${PROJECT_NAME} main.cpp)
 target_compile_definitions(

@@ -5,9 +5,8 @@
 #include "engine/world.h"
 #include "engine/time.h"
 
-class lifetime_ticker final : public ecs_processor {
+class lifetime_ticker{
   public:
-    explicit lifetime_ticker(world* w) : ecs_processor(w) {}
 
     void execute(entt::registry& reg, const timings::duration delta) override {
         using namespace std::chrono_literals;
@@ -24,9 +23,8 @@ class lifetime_ticker final : public ecs_processor {
     }
 };
 
-class death_last_will_executor final : public ecs_processor {
+class death_last_will_executor{
   public:
-    explicit death_last_will_executor(world* w) : ecs_processor(w) {}
 
     void execute(entt::registry& reg, timings::duration delta) override {
         for (const auto view =
@@ -37,9 +35,8 @@ class death_last_will_executor final : public ecs_processor {
     }
 };
 
-class timeline_executor final : public ecs_processor {
+class timeline_executor{
   public:
-    explicit timeline_executor(world* w) : ecs_processor(w) {}
 
     void execute(entt::registry& reg, timings::duration delta) override {
 

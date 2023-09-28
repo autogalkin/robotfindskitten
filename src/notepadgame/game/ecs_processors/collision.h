@@ -191,9 +191,9 @@ struct on_collide {
         call{&collision::on_collide::block_always};
 };
 
-class query final : public ecs_processor {
+class query{
   public:
-    explicit query(world* w, const int game_area[2]);
+    explicit query(world& w, const int game_area[2]);
 
     virtual void execute(entt::registry& reg,
                          timings::duration delta) override;

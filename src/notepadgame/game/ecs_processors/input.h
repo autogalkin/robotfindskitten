@@ -17,10 +17,8 @@ using state_t =
     return std::ranges::any_of(state,
                                [key](input::key_t k) { return k == key; });
 }
-class processor final : public ecs_processor {
+class processor{
   public:
-    explicit processor(world* w) : ecs_processor(w) {}
-
     struct down_signal {
         // for chain input in runtime
         boost::signals2::signal<void(entt::registry&, entt::entity,

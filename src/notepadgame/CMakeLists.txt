@@ -1,5 +1,5 @@
 project(
-    notepadgame
+    notepadgame LANGUAGES CXX
     )
 
 include(FetchContent)
@@ -36,6 +36,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy "${SCI_PATCH_FILE}"
             "${SCI_ORIG_FILE}"
     COMMAND ${CMAKE_COMMAND} -E touch "${SCI_PACHED_STAMP}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${SCI_OUT_FILE}"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     DEPENDS "${SCI_PATCH_FILE}"
     COMMENT "Replace Scintilla source code files with patched own")
@@ -70,11 +71,11 @@ endif()
 
 # run scintilla makefile
 add_custom_target(
-    scintilla ALL
+    scintilla
     COMMAND ${SCI_BUILD_COMMAND}
-    BYPRODUCTS ${SCI_OUT_FILE}
     WORKING_DIRECTORY "${scintilla_SOURCE_DIR}/win32"
-    DEPENDS ${SCI_PACHED_STAMP}
+    # Run only bin/Scintilla.dll was touched by scintilla_patch
+    DEPENDS ${SCI_OUT_FILE}
     COMMENT "Build Scintilla with original Makefile")
 
 # revert patch after build Scintilla

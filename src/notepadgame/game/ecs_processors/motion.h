@@ -5,17 +5,14 @@
 #include "engine/world.h"
 #include "engine/time.h"
 
-class non_uniform_motion final : public ecs_processor {
+class non_uniform_motion{
   public:
     inline static const velocity friction_factor{0.7f, 0.7f};
 
-    explicit non_uniform_motion(world* w) : ecs_processor(w) {}
     void execute(entt::registry& reg, timings::duration delta) override;
 };
 
-class uniform_motion final : public ecs_processor {
+class uniform_motion  {
   public:
-    explicit uniform_motion(world* w) : ecs_processor(w) {}
     void execute(entt::registry& reg, timings::duration delta) override;
-    ;
 };

@@ -38,14 +38,13 @@ inline void define_all_styles(scintilla* sc) {
     // TODO
     sc->dcall0(SCI_STYLECLEARALL);
     for (auto i : ALL_COLORS) {
-        sc->dcall2(SCI_STYLESETITALIC, style, 0); // italic
         sc->dcall2(SCI_STYLESETFORE, style, i);
         style++;
     }
 }
 struct is_message_area {};
 static lexer game_lexer{};
-inline void start(world& w, notepad::commands_queue_t& cmds,
+inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
                   const int game_area[2]) {
 
     cmds.push([](notepad*, scintilla* sc) {
@@ -55,31 +54,18 @@ inline void start(world& w, notepad::commands_queue_t& cmds,
         sc->dcall2(SCI_STYLESETFORE, 228, RGB(255, 0, 0));
     });
 
-    auto& exec = w.executor;
-    exec.push<input::processor>(&w);
-    exec.push<uniform_motion>(&w);
-    exec.push<non_uniform_motion>(&w);
-    exec.push<timeline_executor>(&w);
-    exec.push<rotate_animator>(&w);
-    exec.push<collision::query>(&w, game_area);
-    exec.push<redrawer>(&w);
-    exec.push<death_last_will_executor>(&w);
-    exec.push<killer>(&w);
-    exec.push<lifetime_ticker>(&w);
-    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-        reg.emplace<timeline::what_do>(
-            entity, std::move([fps_count = timings::fps_count{}](
-                                  entt::registry& reg, const entt::entity e,
-                                  const direction) mutable {
-                fps_count.fps([&reg, e](auto fps) {
-                    notepad::push_command([fps](notepad* np, scintilla*) {
-                        np->window_title.game_thread_fps = fps;
-                    });
-                });
-            }));
-        reg.emplace<timeline::eval_direction>(entity, direction::forward);
-        // reg.emplace<notepad_thread_command>(entity);
-    });
+    auto& exec = w.processors;
+    exec.emplace<input::processor>();
+    exec.emplace<uniform_motion>();
+    exec.emplace<non_uniform_motion>();
+    exec.emplace<timeline_executor>();
+    exec.emplace<rotate_animator>();
+    exec.emplace<collision::query>(w, game_area);
+    exec.emplace<redrawer>(buf);
+    exec.emplace<death_last_will_executor>();
+    exec.emplace<killer>();
+    exec.emplace<lifetime_ticker>();
+
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });

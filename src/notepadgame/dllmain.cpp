@@ -51,21 +51,18 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
 
         [[maybe_unused]] constexpr notepad::opts start_options =
             notepad::opts::empty
-#ifdef NDEBUG
-            //| notepad::opts::kill_focus 
-            //| notepad::opts::disable_mouse
-#else 
+#ifndef NDEBUG
             | notepad::opts::show_eol 
 #endif // NDEBUG
             | notepad::opts::hide_selection 
             | notepad::opts::show_spaces;
 
-        np.on_open()->get().connect([](world& world, notepad::commands_queue_t& cmds) {
+        np.on_open()->get().connect([](world& world, back_buffer& b, notepad::commands_queue_t& cmds) {
 #ifndef NDEBUG
             static auto log_console = console::allocate();
 #endif // NDEBUG
             printf("Notepad is loaded and initialized. Start a game\n");
-            game::start(world, cmds, GAME_AREA);
+            game::start(world, b, cmds, GAME_AREA);
         });
 
         np.connect_to_notepad(
