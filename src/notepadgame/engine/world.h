@@ -2,6 +2,8 @@
 #include "details/nonconstructors.h"
 #include <stdint.h>
 #include <type_traits>
+#include <boost/poly_collection/any_collection.hpp>
+#include <boost/type_erasure/operators.hpp>
 
 #include "df/dirtyflag.h"
 #include <memory>
@@ -12,41 +14,35 @@
 #include "engine/time.h"
 #include "engine/buffer.h"
 
-class ecs_processors_executor {
-  public:
-    enum class insert_order : int8_t { before = 0, after = 1 };
-    bool insert_processor_at(
-        std::unique_ptr<ecs_processor> who,
-        const std::type_info& near_with, /* usage: typeid(ecs_processor) */
-        const insert_order where = insert_order::before);
-    void execute(entt::registry& reg, const timings::duration delta) const {
-        for (const auto& i : data_) {
-            i->execute(reg, delta);
-        }
-    }
 
-    template <typename T, typename... Args>
-        requires std::derived_from<T, ecs_processor> &&
-                 std::is_constructible_v<T, Args...>
-    void push(Args&&... args) {
-        data_.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
-    }
-
-  private:
-    std::vector<std::unique_ptr<ecs_processor>> data_;
+template <class T=boost::type_erasure::_self>  struct is_ecs_processor {
+  static void apply(T &cont, entt::registry& reg, const timings::duration delta) { cont.execute(reg, delta); }
 };
+namespace boost {
+namespace type_erasure {
+template <class C, class T, class Base>
+struct concept_interface<is_ecs_processor<C>, Base, T> : Base {
+  void execute(entt::registry& reg, const timings::duration delta) { call(is_ecs_processor<C>(), *this, reg, delta); }
+};
+} // namespace type_erasure
+} // namespace boost
 
-class world {
+
+
+
+class world: public noncopyable, public nonmoveable {
   public:
-    world(back_buffer* buf) noexcept;
+    world(back_buffer& buf) noexcept;
     ~world();
 
-    ecs_processors_executor executor;
+    boost::any_collection<is_processor<>> processors{};
     // TODO
-    back_buffer* backbuffer;
+    back_buffer& backbuffer;
     entt::registry reg_;
     void tick(timings::duration delta) {
-        executor.execute(reg_, delta);
+        for (const auto& i : all) {
+            i->execute(reg_, delta);
+        }
     }
 
     template <typename F>
@@ -56,6 +52,4 @@ class world {
         for_add_components(reg_, entity);
     }
 
-  private:
-    void redraw_all_actors();
 };

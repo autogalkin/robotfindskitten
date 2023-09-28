@@ -90,7 +90,7 @@ class notepad {
     using commands_queue_t =
         boost::lockfree::spsc_queue<command_t, boost::lockfree::capacity<32>>;
     using open_signal_t = boost::signals2::signal<void(
-        world&,notepad::commands_queue_t&)>;
+        world&, back_buffer&,notepad::commands_queue_t&)>;
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
     on_open() {
         return on_open_ ? std::make_optional(std::ref(*on_open_))

@@ -1,6 +1,5 @@
 ﻿
 #include <boost/lockfree/spsc_queue.hpp>
-#include <boost/utility/in_place_factory.hpp>
 #include <memory>
 #include <optional>
 
@@ -51,15 +50,15 @@ notepad::notepad()
 
 void notepad::tick_render() {
     fps_count_.fps([](auto fps) {
-        auto& np = notepad::get();
-        auto sub = std::wstring(L"| render_thread ");
-        np.window_title.render_thread_fps = fps;
+        notepad::get().window_title.render_thread_fps = fps;
     });
+    // execute all commands from the Game thread
     commands_.consume_all([this](auto f) {
         if (f)
             f(this, &*scintilla_);
     });
     notepad::get().set_window_title(notepad::get().window_title.make());
+    // swap buffers in Scintilla
     const auto pos = scintilla_->get_caret_index();
     buf_.view([this](const std::basic_string<char_size>& buf) {
         scintilla_->set_new_all_text(buf);
@@ -74,10 +73,18 @@ void notepad::start_game() {
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
          &cmds = commands_]() {
             timings::fixed_time_step fixed_time_step;
-            world w{buf};
-            (*on_open)(w, cmds);
+            timings::fps_count fps_count;
+            world w;
+            (*on_open)(w, buf_, cmds);
+            on_open = std::exchange(on_open, std::unique_ptr<notepad::open_signal_t>{nullptr}
             while (!done.load()) {
                 fixed_time_step.sleep();
+                fps_count.fps([&reg, e](auto fps) {
+                    notepad::push_command([fps](notepad* np, scintilla*) {
+                        np->window_title.game_thread_fps = fps;
+                    });
+                });
+                // TODO alpha
                 w.tick(timings::dt);
             }
         }));
