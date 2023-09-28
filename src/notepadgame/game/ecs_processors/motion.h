@@ -1,18 +1,15 @@
 ﻿#pragma once
 #include "engine/details/base_types.h"
-#include "engine/ecs_processor_base.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
 #include "engine/time.h"
 
-class non_uniform_motion{
-  public:
+struct non_uniform_motion{
     inline static const velocity friction_factor{0.7f, 0.7f};
 
-    void execute(entt::registry& reg, timings::duration delta) override;
+    void execute(entt::registry& reg, timings::duration delta);
 };
 
-class uniform_motion  {
-  public:
-    void execute(entt::registry& reg, timings::duration delta) override;
+struct uniform_motion  {
+    void execute(entt::registry& reg, timings::duration delta);
 };

@@ -8,8 +8,10 @@
 #include <stdint.h>
 #include <string>
 #include <thread>
+#include "engine/buffer.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/world.h"
+#include <memory>
 
 #include "engine/time.h"
 

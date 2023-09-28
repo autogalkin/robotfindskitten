@@ -9,7 +9,6 @@
 
 #include "engine/details/base_types.h"
 
-#include "engine/ecs_processor_base.h"
 
 namespace collision {
 class query;
@@ -196,12 +195,14 @@ class query{
     explicit query(world& w, const int game_area[2]);
 
     virtual void execute(entt::registry& reg,
-                         timings::duration delta) override;
+                         timings::duration delta);
 
   private:
     // mark entity to remove from tree and insert again
     struct need_update_entity {};
-    quad_tree tree_;
+    // place outside of a class for store the processor in boost::any_container
+    // and not resize a padding
+    std::unique_ptr<quad_tree> tree_;
 };
 
 } // namespace collision

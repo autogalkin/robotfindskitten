@@ -8,7 +8,6 @@
 #include <memory>
 #include <vector>
 
-#include "engine/ecs_processor_base.h"
 
 #include "engine/details/base_types.h"
 

@@ -7,7 +7,6 @@
 #include <entt/entt.hpp>
 
 #include "engine/details/base_types.h"
-#include "engine/ecs_processor_base.h"
 #include "engine/notepad.h"
 
 namespace input {
@@ -17,8 +16,7 @@ using state_t =
     return std::ranges::any_of(state,
                                [key](input::key_t k) { return k == key; });
 }
-class processor{
-  public:
+struct processor{
     struct down_signal {
         // for chain input in runtime
         boost::signals2::signal<void(entt::registry&, entt::entity,
@@ -26,7 +24,7 @@ class processor{
             call;
     };
 
-    void execute(entt::registry& reg, timings::duration) override {
+    void execute(entt::registry& reg, timings::duration){
         // swap data from other thread
         boost::container::static_vector<input::key_t,
                                         notepad::input_buffer_size>
@@ -40,6 +38,5 @@ class processor{
             view.get<processor::down_signal>(entity).call(reg, entity, state);
         }
     }
-    // input::state_t state_;
 };
 } // namespace input

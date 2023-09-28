@@ -1,14 +1,11 @@
 ﻿#pragma once
 
 #include "engine/details/base_types.h"
-#include "engine/ecs_processor_base.h"
 #include "engine/world.h"
 #include "engine/time.h"
 
-class lifetime_ticker{
-  public:
-
-    void execute(entt::registry& reg, const timings::duration delta) override {
+struct lifetime_ticker{
+    void execute(entt::registry& reg, const timings::duration delta){
         using namespace std::chrono_literals;
         for (const auto view = reg.view<life::lifetime>();
              const auto entity : view) {
@@ -23,10 +20,8 @@ class lifetime_ticker{
     }
 };
 
-class death_last_will_executor{
-  public:
-
-    void execute(entt::registry& reg, timings::duration delta) override {
+struct death_last_will_executor{
+    void execute(entt::registry& reg, timings::duration delta){
         for (const auto view =
                  reg.view<life::begin_die, life::death_last_will>();
              const auto entity : view) {
@@ -35,10 +30,8 @@ class death_last_will_executor{
     }
 };
 
-class timeline_executor{
-  public:
-
-    void execute(entt::registry& reg, timings::duration delta) override {
+struct timeline_executor{
+    void execute(entt::registry& reg, timings::duration delta){
 
         for (const auto view = reg.view<const timeline::what_do,
                                         const timeline::eval_direction>();

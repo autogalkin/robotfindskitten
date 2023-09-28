@@ -72,18 +72,18 @@ void notepad::tick_render() {
 void notepad::start_game() {
 
     static thread_guard game_thread = thread_guard(std::thread(
-        [buf = &buf_,
+        [&buf = buf_,
          on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
-         &cmds = commands_]() {
+         &cmds = commands_]() mutable{
             timings::fixed_time_step fixed_time_step;
             timings::fps_count fps_count;
             world w;
-            (*on_open)(w, buf_, cmds);
-            on_open = std::exchange(on_open, std::unique_ptr<notepad::open_signal_t>{nullptr}
+            (*on_open)(w, buf, cmds);
+            on_open.reset();
             while (!done.load()) {
                 fixed_time_step.sleep();
-                fps_count.fps([&reg, e](auto fps) {
+                fps_count.fps([](auto fps) {
                     notepad::push_command([fps](notepad* np, scintilla*) {
                         np->window_title.game_thread_fps = fps;
                     });
@@ -108,9 +108,9 @@ void notepad::start_game() {
     SetWindowPos(w, HWND_TOP, 20, 0, rect.right - rect.left, 200, 0);
     auto deleter = [](HFONT font) { DeleteObject(font); };
     static std::unique_ptr<std::remove_pointer_t<HFONT>, decltype(deleter)>
-        hFont{CreateFontW(32, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
+        hFont{CreateFontW(38, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
                           ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Arial"),
+                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Consolas"),
               std::move(deleter)};
     SendMessage(w, WM_SETFONT, WPARAM(hFont.get()), TRUE);
     ShowWindow(w, SW_SHOW);
@@ -147,10 +147,6 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         return 0;
     }
     case WM_NOTIFY: {
-        break;
-    }
-    case WM_DRAWITEM: {
-        std::cout << "draw\n";
         break;
     }
     case WM_CTLCOLORSTATIC: {

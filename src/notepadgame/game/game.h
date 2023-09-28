@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <winuser.h>
+#include <random>
 
 #include "engine/details/base_types.h"
 
@@ -15,7 +16,6 @@
 #include "game/ecs_processors/killer.h"
 #include "game/ecs_processors/motion.h"
 #include "game/ecs_processors/timers.h"
-#include "game/ecs_processors/render_commands.h"
 #include "engine/scintilla_wrapper.h"
 #include "game/entities/factories.h"
 #include "engine/notepad.h"
@@ -35,7 +35,6 @@ static rng_type rng{};
 inline void define_all_styles(scintilla* sc) {
     static_assert(int(' ') + 100 == 132);
     int style = 132;
-    // TODO
     sc->dcall0(SCI_STYLECLEARALL);
     for (auto i : ALL_COLORS) {
         sc->dcall2(SCI_STYLESETFORE, style, i);
@@ -51,36 +50,26 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
         printf("Set a lexer\n");
         sc->set_lexer(&game_lexer);
         define_all_styles(sc);
-        sc->dcall2(SCI_STYLESETFORE, 228, RGB(255, 0, 0));
     });
 
     auto& exec = w.processors;
-    exec.emplace<input::processor>();
-    exec.emplace<uniform_motion>();
-    exec.emplace<non_uniform_motion>();
-    exec.emplace<timeline_executor>();
-    exec.emplace<rotate_animator>();
-    exec.emplace<collision::query>(w, game_area);
-    exec.emplace<redrawer>(buf);
-    exec.emplace<death_last_will_executor>();
-    exec.emplace<killer>();
-    exec.emplace<lifetime_ticker>();
+    exec.push_back(input::processor{});
+    exec.push_back(uniform_motion{});
+    exec.push_back(non_uniform_motion{});
+    exec.push_back(timeline_executor{});
+    exec.push_back(rotate_animator{});
+    exec.push_back(collision::query(w, game_area));
+    exec.push_back(redrawer(buf, w));
+    exec.push_back(death_last_will_executor{});
+    exec.push_back(killer{});
+    exec.push_back(lifetime_ticker{});
 
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         atmosphere::make(reg, entity);
     });
-    // Message Area
-    //
-    entt::entity message_area;
-    w.spawn_actor(
-        [&message_area](entt::registry& reg, const entt::entity entity) {
-            actor::make_base_renderable(reg, entity, {1, 0}, 3, {});
-            reg.emplace<is_message_area>(entity);
-            message_area = entity;
-        });
     // All actors
     {
-        constexpr int ITEMS_COUNT = 150;
+        constexpr int ITEMS_COUNT = 200;
         std::array<position_t, ITEMS_COUNT> all{};
         std::mt19937 gen(std::random_device{}());
         std::uniform_int_distribution<> dist_x(0, game_area[0] - 3 - 1);
@@ -100,7 +89,7 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
                 char ch[2];
                 do {
                     ch[0] = dist_ch(gen);
-                } while (ch[0] == '#' || ch[0] == '-');
+                } while (ch[0] == '#' || ch[0] == '-' || ch[0] == '_');
                 ch[1] = '\0';
                 actor::make_base_renderable(
                     reg, entity,
@@ -110,7 +99,7 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
                 reg.emplace<collision::agent>(entity);
                 reg.emplace<collision::on_collide>(
                     entity,
-                    [message_area](entt::registry& reg, const entt::entity self,
+                    [](entt::registry& reg, const entt::entity self,
                                    const entt::entity collider) {
                         // TODO signals? Why all_of?
                         if (reg.all_of<character>(collider)) {
@@ -134,38 +123,6 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
             });
         }
     }
-
-    /*
-    {
-        const auto frame = std::vector<char_size>(game_area[1], '_');
-        w.spawn_actor([&frame, game_area](entt::registry& reg,
-                                          const entt::entity entity) {
-            actor::make_base_renderable(
-                reg, entity, {3, 0}, 4,
-                {shape::sprite::from_data{frame.data(), 1, game_area[1]}});
-        });
-    }
-
-    {
-        int i = 0;
-        int j = 0;
-        auto spawn_block = [&i, &j](entt::registry& reg,
-                                    const entt::entity entity) {
-            actor::make_base_renderable(
-                reg, entity,
-                {6 + static_cast<double>(i), 4 + static_cast<double>(j)}, 3,
-                {shape::sprite::from_data{"]", 1, 1}});
-            reg.emplace<collision::agent>(entity);
-            reg.emplace<collision::on_collide>(entity);
-        };
-
-        for (i = 0; i < 4; ++i) {
-            ++j;
-            w.spawn_actor(spawn_block);
-        }
-    }
-    */
-
     w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
         gun::make(reg, entity, {14, 20});
     });

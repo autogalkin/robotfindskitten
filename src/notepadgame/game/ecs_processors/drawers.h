@@ -1,15 +1,13 @@
 ﻿#pragma once
 #include "df/dirtyflag.h"
 
+#include "engine/buffer.h"
 #include "engine/details/base_types.h"
-#include "engine/ecs_processor_base.h"
 #include "engine/world.h"
 
-class rotate_animator final : public ecs_processor {
-  public:
-    explicit rotate_animator(world* w) : ecs_processor(w) {}
+struct rotate_animator{
+    void execute(entt::registry& reg, timings::duration delta){
 
-    void execute(entt::registry& reg, timings::duration delta) override {
         for (const auto view =
                  reg.view<location_buffer, shape::sprite_animation,
                           shape::on_change_direction,
@@ -32,20 +30,18 @@ class rotate_animator final : public ecs_processor {
     }
 };
 
-class redrawer final : public ecs_processor {
-  private:
+class redrawer{
     struct previous_sprite {
         int8_t index = -1;
     };
-
+    back_buffer& buf_;
   public:
-    explicit redrawer(world* w) : ecs_processor(w) {
-
-        w->reg_.on_construct<visible_in_game>()
+    explicit redrawer(back_buffer& b, world& w) : buf_(b){
+        w.reg_.on_construct<visible_in_game>()
             .connect<&redrawer::upd_visible>();
     }
 
-    void execute(entt::registry& reg, timings::duration delta) override {
+    void execute(entt::registry& reg, timings::duration delta){
 
         for (const auto view =
                  reg.view<const location_buffer, const shape::sprite_animation,
@@ -59,7 +55,7 @@ class redrawer final : public ecs_processor {
                 const auto& [sprts, rendering_i] =
                     view.get<shape::sprite_animation>(entity);
                 auto& [depth] = view.get<z_depth>(entity);
-                get_world()->backbuffer->erase(
+                buf_.erase(
                     position_converter::from_location(
                         view.get<location_buffer>(entity).current),
                     sprts[view.get<previous_sprite>(entity).index], depth);
@@ -67,7 +63,6 @@ class redrawer final : public ecs_processor {
                     reg.remove<visible_in_game>(entity);
             }
         }
-        std::vector<int32_t> z_buffer(50 * 20);
 
         for (const auto view =
                  reg.view<location_buffer, const shape::sprite_animation,
@@ -82,7 +77,7 @@ class redrawer final : public ecs_processor {
                 auto& sp = view.get<shape::sprite_animation>(entity);
 
                 current += translation.get();
-                get_world()->backbuffer->draw(
+                buf_.draw(
                     position_converter::from_location(current),
                     sp.current_sprite(), depth);
 

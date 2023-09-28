@@ -45,15 +45,6 @@ inline decltype(RGB(0, 0, 0)) get_color(char c) { return ALL_COLORS[c - 31]; };
 
 // clang-format on
 class lexer : public Lexilla::DefaultLexer {
-    enum state : int {
-        empty = int(' '),
-        character = int('#'),
-        identifier = -1,
-    };
-    static_assert(int(' ') == 32);
-
-    Lexilla::WordList is_character_;
-
   public:
     lexer() : DefaultLexer("robotfindskitten", int('#')) {
     }
@@ -62,7 +53,6 @@ class lexer : public Lexilla::DefaultLexer {
         try {
             Lexilla::LexAccessor styler(pAccess);
             Lexilla::StyleContext ctx(startPos, length, initStyle, styler);
-            // TODO
 
             for (; ctx.More(); ctx.Forward()) {
                
