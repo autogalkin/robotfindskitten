@@ -1,42 +1,19 @@
 ﻿#pragma once
 
 #include "boost/container/small_vector.hpp"
+#include "engine/world.h"
 #include "range/v3/view/iota.hpp"
 #include <chrono>
 #include <entt/entt.hpp>
 #include <variant>
-
+#include <glm/mat2x2.hpp>
 
 #include "engine/details/base_types.h"
 
-struct box {
-    position_t pivot{};
-    position_t size{};
-
-    box operator+(const position_t& loc) const {
-        return {pivot + loc, size};
-    }
-    [[nodiscard]] position_t center() const {
-        return {pivot.line() + size.line() / 2,
-                pivot.index_in_line() + size.index_in_line() / 2};
-    }
-    [[nodiscard]] position_t end() const { return {pivot + size}; }
-    [[nodiscard]] bool contains(const box& b) const {
-        return pivot.line() <= b.pivot.line() &&
-               end().line() <= b.end().line() &&
-               pivot.index_in_line() <= b.pivot.index_in_line() &&
-               end().index_in_line() <= b.end().index_in_line();
-    }
-    [[nodiscard]] bool intersects(const box& b) const {
-        return !(pivot.line() >= b.end().line() ||
-                 end().line() <= b.pivot.line() ||
-                 pivot.index_in_line() >= b.end().index_in_line() ||
-                 end().index_in_line() <= b.pivot.index_in_line());
-    }
-};
-
-
 namespace collision {
+
+
+using box = glm::mat<2, 2, npi_t>;
 class query;
 using index = int64_t;
 inline static constexpr int end_of_list = -1;
@@ -46,9 +23,9 @@ inline static constexpr int invalid_index = -1;
 template <typename T> class object_pool {
   public:
     using next_free_index = index;
-    // using data_type = boost::container::small_vector<std::variant<T,
-    // next_free_index>, 128 >;
-    using data_type = std::vector<std::variant<T, next_free_index>>;
+     using data_type = boost::container::small_vector<std::variant<T,
+     next_free_index>, 128 >;
+    //using data_type = std::vector<std::variant<T, next_free_index>>;
     index insert(const T& elt) {
         if (first_free_ != end_of_list) {
             const index ind = first_free_;

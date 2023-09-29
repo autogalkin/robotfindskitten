@@ -5,13 +5,18 @@
 #include "engine/time.h"
 
 namespace timeline {
+enum class direction : int8_t { forward = 1, reverse = -1 };
 // calls a given function every tick to the end lifetime
 struct what_do {
     std::function<void(entt::registry&, entt::entity, direction)> work;
 };
+
 struct eval_direction {
     direction value;
 };
+inline direction invert(direction v){
+    return static_cast<direction>( -1 * static_cast<int>(v));
+}
 
 } // namespace timeline
 

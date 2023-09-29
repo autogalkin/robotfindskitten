@@ -14,6 +14,7 @@
 #include "range/v3/view/filter.hpp"
 #include <ranges>
 #include "shared_mutex"
+#include <glm/glm.hpp>
 
 // the array of chars on the screen
 class back_buffer {
@@ -25,15 +26,16 @@ class back_buffer {
 
   public:
     explicit back_buffer(size_t height, size_t width)
-        : width_(width), buf_(std::basic_string<char_size>(width * height, ' ')),
+        : width_(width),
+          buf_(std::basic_string<char_size>(width * height, ' ')),
           z_buf_(width * height), rw_lock_() {
         for (npi_t i = 1; i < height; i++) {
             static constexpr int ENDL_SIZE = 1;
             buf_[i * width - ENDL_SIZE] = '\n';
         }
     }
-    void draw(const position_t& pivot, const shape::sprite& sh, int32_t depth);
-    void erase(const position_t& pivot, const shape::sprite& sh, int32_t depth);
+    void draw(const pos& pivot, const sprite_view sh, int32_t depth);
+    void erase(const pos& pivot, const sprite_view sh, int32_t depth);
 
     template <typename Visitor>
         requires std::is_invocable_v<Visitor,
@@ -46,31 +48,21 @@ class back_buffer {
   private:
     // visitor traverse all sprite matrix
     template <typename Visitor>
-        requires std::is_invocable_v<Visitor, const position_t&, char_size>
-    void traverse_sprite_positions(const position_t& pivot,
-                                   const shape::sprite& sh,
+        requires std::is_invocable_v<Visitor, const pos, char_size>
+    void traverse_sprite_positions(const pos pivot, const sprite_view sh,
                                    Visitor&& visitor) const;
 };
 
 template <typename Visitor>
-    requires std::is_invocable_v<Visitor, const position_t&, char_size>
-void back_buffer::traverse_sprite_positions(const position_t& sprite_pivot,
-                                            const shape::sprite& sh,
+    requires std::is_invocable_v<Visitor, const pos, char_size>
+void back_buffer::traverse_sprite_positions(const pos sprite_pivot,
+                                            const sprite_view sp,
                                             Visitor&& visitor) const {
-    for (auto rows = sh.data.rowwise();
-         auto [line, row] : rows | ranges::views::enumerate) {
-        for (int byte_i{-1};
-             const auto part_of_sprite :
-             row | ranges::views::filter([&byte_i](const char_size c) {
-                 ++byte_i;
-                 return true; //c != shape::whitespace;
-             })) {
-            if (position_t p =
-                    sprite_pivot + position_t{static_cast<npi_t>(line), byte_i};
-                p.index_in_line() >= 0 && p.index_in_line() < width_ - 1 &&
-                p.line() >= 0 && p.line() < buf_.size() / (width_ - 1)) {
-                visitor(p, part_of_sprite);
-            }
+    for (size_t i = 0; i < sp.data.size(); i++) {
+        if (pos p = sprite_pivot + pos(i % sp.width, i / sp.width);
+            p.x >= 0 && p.x < width_ - 1 && p.y >= 0 &&
+            p.y < buf_.size() / (width_ - 1)) {
+            visitor(p, sp.data[i]);
         }
     }
 }

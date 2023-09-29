@@ -151,10 +151,12 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         break;
     }
     case WM_SIZE: {
-        ::SetWindowPos(np.scintilla_->edit_window_, NULL, 0, 0, 0, 0,
+        if(np.scintilla_){
+            ::SetWindowPos(np.scintilla_->edit_window_, NULL, 0, 0, 0, 0,
                        SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE); 
-        ::SetWindowPos(np.popup_window.window, NULL, 0, 0, 0, 0,
+            ::SetWindowPos(np.popup_window.window, NULL, 0, 0, 0, 0,
                        SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+        }
         break;
     }
     case WM_CTLCOLORSTATIC: {

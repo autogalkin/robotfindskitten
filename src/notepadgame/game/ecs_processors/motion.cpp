@@ -1,36 +1,36 @@
 ﻿#include "game/ecs_processors/motion.h"
 #include "engine/world.h"
 
-void non_uniform_motion::execute(entt::registry& reg,
-                                 timings::duration delta) {
+void non_uniform_motion::execute(entt::registry& reg, timings::duration delta) {
 
     for (const auto view =
-             reg.view<location_buffer, velocity, non_uniform_movement_tag>();
+             reg.view<velocity, translation, non_uniform_movement_tag>();
          const auto entity : view) {
 
         auto& vel = view.get<velocity>(entity);
-        auto& [current, translation] = view.get<location_buffer>(entity);
+        auto& trans = view.get<translation>(entity);
 
         constexpr float alpha = 1.f / 60.f;
 
-        velocity friction = -(vel * friction_factor);
-        vel += friction * alpha;
+        loc friction = -(vel * friction_factor);
+        vel += friction * loc(alpha);
 
-        translation.pin() = vel * static_cast<double>(alpha);
+        trans.pin() = vel * static_cast<double>(alpha);
     }
 }
 
 void uniform_motion::execute(entt::registry& reg, timings::duration delta) {
 
     for (const auto view =
-             reg.view<location_buffer, velocity, const uniform_movement_tag>();
+             reg.view<translation, velocity, const uniform_movement_tag>();
          const auto entity : view) {
         auto& vel = view.get<velocity>(entity);
-        auto& [current, translation] = view.get<location_buffer>(entity);
+        auto& trans = view.get<translation>(entity);
 
-        if (vel != velocity::make_null())
-            translation.pin() = vel;
+        if (vel != loc(0)) {
+            trans.pin() = vel;
+        }
 
-        vel = velocity::make_null();
+        vel = {0, 0};
     }
 }

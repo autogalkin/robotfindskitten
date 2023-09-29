@@ -93,7 +93,7 @@ find_package(
     CONFIG
     REQUIRED)
 find_package(
-    Eigen3
+    glm
     CONFIG
     REQUIRED)
 find_package(
@@ -148,7 +148,7 @@ target_include_directories(lexlib PRIVATE
 set(THIRD_PARTY_LIBRARIES
     ${Boost_LIBRARIES}
     range-v3::range-v3
-    Eigen3::Eigen
+    glm::glm
     EnTT::EnTT
     )
 

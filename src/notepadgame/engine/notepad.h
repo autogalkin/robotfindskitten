@@ -76,7 +76,6 @@ class notepad {
     };
 
     using command_t = std::function<void(notepad*, scintilla*)>;
-    static constexpr size_t input_buffer_size = 8;
     using commands_queue_t =
         boost::lockfree::spsc_queue<command_t, boost::lockfree::capacity<32>>;
     using open_signal_t = boost::signals2::signal<void(

@@ -6,7 +6,8 @@ set(GAME_HEADERS
     game/ecs_processors/input.h
     game/ecs_processors/motion.h
     game/ecs_processors/life.h
-    game/entities/factories.h
+    game/comps.h
+    game/factories.h
     game/game.h
     game/lexer.h
 )

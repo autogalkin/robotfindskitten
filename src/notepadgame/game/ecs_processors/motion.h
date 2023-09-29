@@ -7,21 +7,16 @@
 
 struct uniform_movement_tag {};
 struct non_uniform_movement_tag {};
-struct velocity : vec_t<float> {
-    velocity() = default;
-    velocity(const vec_t<float>& l) : vec_t<float>(l) {}
-    template <typename T>
-    velocity(const Eigen::EigenBase<T>& other) : vec_t<float>{other} {}
-    template <typename T>
-    velocity(const Eigen::EigenBase<T>&& other) : vec_t<float>{other} {}
-    velocity(const float line, const float index_in_line)
-        : vec_t<float>{line, index_in_line} {}
-};
 
+struct velocity    : loc{
+    velocity(double x, double y): loc(x, y){}
+    velocity(): loc(0){}
+};
+using translation  =dirty_flag<loc>;
 
 
 struct non_uniform_motion{
-    inline static const velocity friction_factor{0.7f, 0.7f};
+    inline static const velocity friction_factor{0.7, 0.7};
 
     void execute(entt::registry& reg, timings::duration delta);
 };

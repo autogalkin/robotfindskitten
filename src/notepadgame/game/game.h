@@ -5,18 +5,18 @@
 #include <chrono>
 #include <string>
 #include <string_view>
-#include <winuser.h>
 #include <random>
 
 #include "engine/details/base_types.h"
 
 #include "engine/time.h"
+#include "game/ecs_processors/collision.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input.h"
 #include "game/ecs_processors/motion.h"
 #include "game/ecs_processors/life.h"
 #include "engine/scintilla_wrapper.h"
-#include "game/entities/factories.h"
+#include "game/factories.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
 #include "game/lexer.h"
@@ -31,6 +31,8 @@ static std::uniform_int_distribution<rng_type::result_type>
     dist(0, messages.size() - 1);
 static rng_type rng{};
 
+static lexer game_lexer{};
+
 inline void define_all_styles(scintilla* sc) {
     static_assert(int(' ') + 100 == 132);
     int style = 132;
@@ -40,13 +42,11 @@ inline void define_all_styles(scintilla* sc) {
         style++;
     }
 }
-struct is_message_area {};
-static lexer game_lexer{};
+
 inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
                   const int game_area[2]) {
 
     cmds.push([](notepad*, scintilla* sc) {
-        printf("Set a lexer\n");
         sc->set_lexer(&game_lexer);
         define_all_styles(sc);
     });
@@ -63,20 +63,20 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
     exec.push_back(killer{});
     exec.push_back(lifetime_ticker{});
 
-    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-        atmosphere::make(reg, entity);
+    w.spawn_actor([](entt::registry& reg, const entt::entity e) {
+        atmosphere::make(reg, e);
     });
-    // All actors
+
     {
-        constexpr int ITEMS_COUNT = 200;
-        std::array<position_t, ITEMS_COUNT> all{};
+        constexpr int ITEMS_COUNT = 150;
+        std::array<pos, ITEMS_COUNT> all{};
         std::mt19937 gen(std::random_device{}());
-        std::uniform_int_distribution<> dist_x(0, game_area[0]- 1);
+        std::uniform_int_distribution<> dist_x(0, game_area[0] - 3 - 1);
         std::uniform_int_distribution<> dist_y(0, game_area[1] - 1 - 1);
         for (auto i = 0; i < ITEMS_COUNT; i++) {
-            position_t p;
+            pos p;
             do {
-                p = position_t{dist_x(gen), dist_y(gen)};
+                p = pos{dist_x(gen), dist_y(gen)};
             } while (
                 std::ranges::any_of(all.begin(), all.begin() + i,
                                     [p](auto other) { return p == other; }));
@@ -84,63 +84,66 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
         }
         std::uniform_int_distribution<> dist_ch(32, 127);
         for (auto i : all) {
-            w.spawn_actor([&](entt::registry& reg, const entt::entity entity) {
+            w.spawn_actor([&](entt::registry& reg, const entt::entity ent) {
                 char ch[2];
                 do {
                     ch[0] = dist_ch(gen);
                 } while (ch[0] == '#' || ch[0] == '-' || ch[0] == '_');
                 ch[1] = '\0';
-                actor::make_base_renderable(
-                    reg, entity,
-                    {static_cast<double>(i.line()),
-                     static_cast<double>(i.index_in_line())},
-                    3, {shape::sprite::from_data{ch, 1, 1}});
-                reg.emplace<collision::agent>(entity);
-                reg.emplace<collision::on_collide>(
-                    entity,
-                    [](entt::registry& reg, const entt::entity self,
-                                   const entt::entity collider) {
-                        // TODO signals? Why all_of?
-                        if (reg.all_of<character>(collider)) {
-                            char ascii_mesh =
-                                reg.get<shape::sprite_animation>(self)
-                                    .current_sprite()
-                                    .data(0);
-                            auto loc = reg.get<location_buffer>(self).current;
-                            rng.seed(int(ascii_mesh) + loc.line() +
-                                     loc.index_in_line());
-                            size_t rand_msg = dist(rng);
 
-                            notepad::push_command([msg = messages[rand_msg]](notepad* np, scintilla*) {
-                                SetWindowText(np->popup_window.window, msg.data());
+                actor::make_base_renderable(reg, ent, i, 3, sprite(ch));
+                reg.emplace<collision::agent>(ent);
+                reg.emplace<collision::on_collide>(
+                    ent, [](entt::registry& reg, const entt::entity self,
+                            const entt::entity collider) {
+                        if (reg.all_of<character>(collider)) {
+                            char ascii_mesh = reg.get<sprite>(self).data[0];
+                            const auto l = reg.get<const loc>(self);
+                            using namespace pos_declaration;
+                            rng.seed(int(ascii_mesh) + l[Y] + l[X]);
+                            size_t rand_msg = dist(rng);
+                            notepad::push_command([msg = messages[rand_msg]](
+                                                      notepad* np, scintilla*) {
+                                SetWindowText(np->popup_window.window,
+                                              msg.data());
                                 np->popup_window.text = msg;
                             });
                         }
-                        return collision::on_collide::block_always(reg, self,
-                                                                   collider);
+                        if (reg.all_of<projectile>(collider)) {
+                            reg.emplace_or_replace<life::begin_die>(self);
+                        }
+                        return collision::responce::block;
+                    });
+                reg.emplace<life::death_last_will>(
+                    ent, [](entt::registry& reg_, const entt::entity self) {
+                        const auto dead = reg_.create();
+                        auto old_loc = reg_.get<loc>(self);
+
+                        actor::make_base_renderable(
+                            reg_, dead, old_loc - loc(1, 0), 1, sprite("___"));
+                        reg_.emplace<life::lifetime>(dead,
+                                                     std::chrono::seconds{3});
+                        reg_.emplace<timeline::eval_direction>(dead);
+                        reg_.emplace<timeline::what_do>(
+                            dead, [](entt::registry& r_, const entt::entity e_,
+                                     timeline::direction d) {
+                                r_.get<translation>(e_).mark();
+                            });
                     });
             });
         }
     }
-    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-        gun::make(reg, entity, {14, 20});
+    w.spawn_actor([](entt::registry& reg, const entt::entity e) {
+        gun::make(reg, e, {14, 20});
     });
 
-    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-        reg.emplace<shape::sprite_animation>(
-            entity,
-            std::vector<shape::sprite>{{{shape::sprite::from_data{"#", 1, 1}},
-                                        {shape::sprite::from_data{"#", 1, 1}}}},
-            static_cast<uint8_t>(0));
+    w.spawn_actor([](entt::registry& reg, const entt::entity ent) {
+        reg.emplace<sprite>(ent, sprite("#"));
 
-        character::make(reg, entity, location{7, 24});
+        character::make(reg, ent, loc(24, 7));
         auto& [input_callback] =
-            reg.emplace<input::processor::down_signal>(entity);
+            reg.emplace<input::processor::down_signal>(ent);
         input_callback.connect(&character::process_movement_input<>);
-    });
-
-    w.spawn_actor([](entt::registry& reg, const entt::entity entity) {
-        monster::make(reg, entity, {10, 3});
     });
 };
 } // namespace game

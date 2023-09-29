@@ -1,149 +1,141 @@
 ﻿#pragma once
-#include "df/dirtyflag.h"
-#include <Eigen/Dense>
 #include <chrono>
 #include <cstdint>
 #include <entt/entt.hpp>
+#include <glm/ext/vector_float2.hpp>
+#include <glm/fwd.hpp>
 #include <type_traits>
 #include <utility>
 #include "engine/time.h"
 #include "Windows.h"
 
-using npi_t = int64_t; // notepad's index size
+#include <boost/geometry.hpp>
+#include <glm/vec2.hpp>
+
+using npi_t = int32_t; // notepad's index size
 
 using char_size = char;
 
-class world;
+template <typename T> using vec = glm::vec<2, T>;
 
-template <typename SizeType>
-    requires std::is_arithmetic_v<SizeType>
-struct vec_t : public Eigen::Vector2<SizeType> {
-    using size_type = SizeType;
-    /* implicit*/ vec_t() { *this << 0, 0; }
-    vec_t(const SizeType& line, const SizeType& index_in_line) noexcept
-        : Eigen::Vector2<SizeType>{line, index_in_line} {}
-    // implicit from eigens
-    template <typename OtherDerived>
-    vec_t(const Eigen::EigenBase<OtherDerived>& other) noexcept
-        : Eigen::Vector2<SizeType>{other} {}
-    template <typename OtherDerived>
-    vec_t(const Eigen::EigenBase<OtherDerived>&& other) noexcept
-        : Eigen::Vector2<SizeType>{other} {}
+// an actor location, used for smooth move
+using loc = vec<double>;
+// notepad's col-row position
+using pos = vec<npi_t>;
 
-    template <typename T>
-        requires std::is_convertible_v<T, SizeType>
-    vec_t<SizeType>& operator=(const vec_t<T>& rhs) noexcept {
-        line() = rhs.line();
-        index_in_line() = rhs.index_in_line();
+namespace pos_declaration{
+/*
+   s         X(index in line)
+   +------+-->
+   |      |
+   |      |
+   |      |
+   +------+
+   |      e
+   v
+   Y (line)
+*/
+static constexpr size_t S = 0;
+static constexpr size_t E = 1;
+static constexpr size_t X = 0;
+static constexpr size_t Y = 1;
+}
+
+struct sprite {
+    inline static constexpr char whitespace = ' ';
+    size_t width;
+    std::basic_string<char_size> data;
+    sprite(std::basic_string<char_size> str): width(str.size()), data(str){
+    }
+    pos bounds() const noexcept {
+        return {width, data.size()/width};
+    }
+};
+static sprite make_sprite(std::string s) {
+    // trim right and left
+    auto start = std::find_if(
+        s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); });
+    auto end = std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+                   return !std::isspace(ch);
+               }).base();
+
+    auto for_each_line = [](auto start, auto end, auto pred) {
+        for (auto it = std::find(start, end, '\n'); it != end;
+             it = std::find(++it, end, '\n')) {
+            pred(it);
+        }
+        // last line to end
+        pred(end);
+    };
+    size_t max_len = 0;
+    size_t lines = 1;
+    for_each_line(start, end, [start, &lines, &max_len](auto it) mutable {
+        ++lines;
+        size_t new_len = std::distance(start, it);
+        if (new_len > max_len) {
+            max_len = new_len;
+        }
+        start = ++it;
+    });
+    std::string out{};
+    out.reserve(max_len * lines);
+    for_each_line(start, end, [start, &out, max_len](auto it) mutable {
+        std::fill_n(std::copy(start, it, std::back_inserter(out)),
+                    max_len - std::distance(start, it), ' ');
+        start = ++it;
+    });
+    auto sp = sprite{out};
+    sp.width = max_len;
+    return sp;
+};
+
+
+struct sprite_view {
+    size_t width;
+    std::string_view data;
+    sprite_view(const sprite& s)
+        : data(s.data.begin(), s.data.end()), width(s.width) {}
+};
+
+template <typename T> class dirty_flag {
+    bool changed_ = true;
+    T v_;
+
+  public:
+    explicit constexpr dirty_flag() = default;
+    constexpr dirty_flag(T&& v) noexcept : v_(std::forward<T>(v)) {}
+    template <typename... Args>
+        requires std::is_constructible_v<T, Args...>
+    explicit constexpr dirty_flag(Args&&... args) noexcept
+        : v_(std::forward<Args>(args)...) {}
+
+    constexpr dirty_flag(const dirty_flag& rhs) noexcept : v_(rhs) {}
+    constexpr dirty_flag(dirty_flag&& rhs) noexcept : v_(std::move(rhs.v_)) {}
+
+    dirty_flag& operator=(dirty_flag&& v) noexcept {
+        using std::swap;
+        swap(v_, v.v_);
+        changed_ = v.changed_;
+        return *this;
+    }
+    dirty_flag& operator=(const dirty_flag& other) noexcept {
+        *this = dirty_flag(other);
+        return *this;
+    }
+    ~dirty_flag() = default;
+    dirty_flag& operator=(T&& v) noexcept {
+        v_ = v;
         return *this;
     }
 
-    [[nodiscard]] SizeType& line() noexcept { return this->operator()(0); }
-    [[nodiscard]] SizeType& index_in_line() noexcept {
-        return this->operator()(1);
+    [[nodiscard]] T& pin() noexcept {
+        changed_ = true;
+        return v_;
     }
-    [[nodiscard]] const SizeType& line() const noexcept {
-        return this->operator()(0);
-    }
-    [[nodiscard]] const SizeType& index_in_line() const noexcept {
-        return this->operator()(1);
-    }
-
-    template <typename T>
-    vec_t<std::common_type_t<SizeType, T>>
-    operator+(const vec_t<T>& rhs) const noexcept {
-        return vec_t<std::common_type_t<SizeType, T>>{
-            line() + rhs.line(), index_in_line() + rhs.index_in_line()};
-    }
-    template <typename T>
-    vec_t<std::common_type_t<SizeType, T>>
-    operator*(const vec_t<T>& rhs) const noexcept {
-        return vec_t<std::common_type_t<SizeType, T>>{
-            line() * rhs.line(), index_in_line() * rhs.index_in_line()};
-    }
-    template <typename T>
-        requires std::is_arithmetic_v<T>
-    vec_t<std::common_type_t<SizeType, T>>
-    operator*(const T& rhs) const noexcept {
-        return vec_t<std::common_type_t<SizeType, T>>{line() * rhs,
-                                                      index_in_line() * rhs};
-    }
-    [[nodiscard]] bool is_null() const noexcept {
-        return line() == static_cast<SizeType>(0) &&
-               index_in_line() == static_cast<SizeType>(0);
-    }
-    static vec_t<SizeType> make_null() noexcept {
-        return vec_t<SizeType>{static_cast<SizeType>(0),
-                               static_cast<SizeType>(0)};
-    }
+    operator bool() const noexcept { return changed_; }
+    [[nodiscard]] const T& get() const noexcept { return v_; }
+    operator T() const { return v_; }
+    [[nodiscard]] bool is_changed() const noexcept { return changed_; }
+    void clear() noexcept { changed_ = false; }
+    void mark() noexcept { changed_ = true; }
 };
-
-// TODO not trivially copyable
-// notepad's col-row position
-using position_t = vec_t<npi_t>;
-
-// an actor location, used for smooth move
-using location = vec_t<double>;
-
-enum class direction : int8_t { forward = 1, reverse = -1 };
-
-namespace direction_converter {
-template <typename T>
-    requires std::is_enum_v<T>
-static T invert(const T d) {
-    return static_cast<T>(static_cast<int>(d) * -1);
-}
-} // namespace direction_converter
-
-
-
-struct visible_in_game {};
-
-namespace position_converter {
-inline position_t from_location(const location& location) {
-    return {std::lround(location.line()),
-            std::lround(location.index_in_line())};
-}
-} // namespace position_converter
-
-
-
-namespace shape {
-inline static constexpr char whitespace = ' ';
-
-struct render_direction {
-    direction value = direction::forward;
-};
-
-struct sprite {
-
-    using data_type = Eigen::Matrix<char_size, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>;
-    using from_data = Eigen::Map<const data_type, Eigen::RowMajor>;
-    data_type data{};
-    [[nodiscard]] position_t bounds() const {
-
-        return {data.rows(), data.cols()};
-    }
-};
-
-struct sprite_animation {
-    [[nodiscard]] sprite& current_sprite() { return sprts[rendering_i]; }
-    [[nodiscard]] const sprite& current_sprite() const {
-        return sprts[rendering_i];
-    }
-    std::vector<sprite> sprts;
-    uint8_t rendering_i = 0;
-};
-
-
-} // namespace shape
-
-
-
-struct location_buffer {
-    location current{};
-    df::dirtyflag<location> translation{{}, df::state::dirty};
-};
-
-
