@@ -219,7 +219,7 @@ struct character final {
 
             auto& [signal] = reg.get<input::processor::down_signal>(self);
             signal.connect([](entt::registry& reg_, const entt::entity chrcter,
-                              const input::state_t& state) {
+                              const input::state_t& state, const timings::duration dt) {
                 if (input::has_key(state, input::key_t::space)) {
                     gun::fire(reg_, chrcter);
                 }
@@ -250,7 +250,7 @@ struct character final {
               input::key_t RIGHT = input::key_t::d>
     static void process_movement_input(entt::registry& reg,
                                        const entt::entity e,
-                                       const input::state_t& state) {
+                                       const input::state_t& state, const timings::duration dt) {
         auto& vel = reg.get<velocity>(e);
         for (auto k : state) {
             switch (k) {
@@ -258,13 +258,13 @@ struct character final {
                 vel.line() -= 1;
                 break;
             case DOWN:
-                vel.line() += 1;
+                vel.line() +=  1;
                 break;
             case LEFT:
-                vel.index_in_line() -= 1;
+                vel.index_in_line() -=  1;
                 break;
             case RIGHT:
-                vel.index_in_line() += 1;
+                vel.index_in_line() +=  1;
                 break;
             default:
                 break;

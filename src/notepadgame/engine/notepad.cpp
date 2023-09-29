@@ -46,7 +46,7 @@ class thread_guard : public noncopyable {
 };
 
 notepad::notepad()
-    : scintilla_(std::nullopt), input_(), main_window_(), original_proc_(0),
+    : scintilla_(std::nullopt),  main_window_(), original_proc_(0),
       on_open_(std::make_unique<open_signal_t>()), fixed_time_step_(),
       fps_count_(), buf_(GAME_AREA[0], GAME_AREA[1]), commands_() {}
 
@@ -243,7 +243,6 @@ bool hook_GetMessageW(const HMODULE module) {
                     // Handle keyboard messages
                 case WM_KEYDOWN:
                 case WM_SYSKEYDOWN: {
-                    np.input_.push(static_cast<input::key_t>(lpMsg->wParam));
                     lpMsg->message = WM_NULL;
                     break;
                 }

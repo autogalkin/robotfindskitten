@@ -39,25 +39,6 @@ class title_line {
     };
 };
 
-namespace input {
-
-using key_size = WPARAM;
-// https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-enum class key_t : key_size {
-    w = 0x57,
-    a = 0x41,
-    s = 0x53,
-    d = 0x44,
-    l = 0x49,
-    space = VK_SPACE,
-    up = VK_UP,
-    right = VK_RIGHT,
-    left = VK_LEFT,
-    down = VK_DOWN,
-};
-
-}
-
 struct popup{
     std::string_view text = "";
     HWND window;
@@ -126,9 +107,7 @@ class notepad {
     static bool push_command(command_t cmd) {
         return notepad::get().commands_.push(std::move(cmd));
     };
-    template <typename Functor> static size_t consume_input(Functor&& f) {
-        return notepad::get().input_.consume_all(f);
-    }
+
 
   private:
     static notepad& get() {
@@ -137,9 +116,6 @@ class notepad {
     }
 
     commands_queue_t commands_;
-    boost::lockfree::spsc_queue<input::key_t,
-                                boost::lockfree::capacity<input_buffer_size>>
-        input_;
 
     void start_game();
     void tick_render();
