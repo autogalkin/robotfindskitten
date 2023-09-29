@@ -103,7 +103,7 @@ void notepad::start_game() {
     GetWindowRect(scintilla_->edit_window_, &rect);
     auto w = CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
                             "STATIC", "", dwStyle, 0, 0, rect.right - rect.left,
-                            200, main_window_, 0, GetModuleHandle(NULL), 0);
+                            100, main_window_, 0, GetModuleHandle(NULL), 0);
     SetLayeredWindowAttributes(w, popup_window.back_color, 0, LWA_COLORKEY);
     SetWindowPos(w, HWND_TOP, 20, 0, rect.right - rect.left, 200, 0);
     auto deleter = [](HFONT font) { DeleteObject(font); };
@@ -154,8 +154,10 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         if(np.scintilla_){
             ::SetWindowPos(np.scintilla_->edit_window_, NULL, 0, 0, 0, 0,
                        SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE); 
-            ::SetWindowPos(np.popup_window.window, NULL, 0, 0, 0, 0,
-                       SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            RECT rect = {NULL};
+            GetWindowRect(np.scintilla_->edit_window_, &rect);
+            ::SetWindowPos(np.popup_window.window, NULL, 20, 0, rect.right - rect.left,100,
+                        SWP_NOACTIVATE);
         }
         break;
     }
