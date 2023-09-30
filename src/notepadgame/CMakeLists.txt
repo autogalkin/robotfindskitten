@@ -173,7 +173,6 @@ foreach(_target IN LISTS NOTEPADGAME_ALL_TARGETS)
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                 ${Boost_INCLUDE_DIRS}
                 "${CMAKE_CURRENT_SOURCE_DIR}/libs"
-                "${CMAKE_SOURCE_DIR}/extern/dirtyflag/include/"
                 "${scintilla_SOURCE_DIR}/include"
                 "${lexilla_SOURCE_DIR}/lexlib"
                 "${lexilla_SOURCE_DIR}/include"

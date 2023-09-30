@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "df/dirtyflag.h"
 
 #include "engine/details/base_types.h"
 #include "engine/world.h"

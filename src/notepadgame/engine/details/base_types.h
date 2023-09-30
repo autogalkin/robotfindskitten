@@ -23,7 +23,7 @@ using loc = vec<double>;
 // notepad's col-row position
 using pos = vec<npi_t>;
 
-namespace pos_declaration{
+namespace pos_declaration {
 /*
    s         X(index in line)
    +------+-->
@@ -39,17 +39,14 @@ static constexpr size_t S = 0;
 static constexpr size_t E = 1;
 static constexpr size_t X = 0;
 static constexpr size_t Y = 1;
-}
+} // namespace pos_declaration
 
 struct sprite {
     inline static constexpr char whitespace = ' ';
     size_t width;
     std::basic_string<char_size> data;
-    sprite(std::basic_string<char_size> str): width(str.size()), data(str){
-    }
-    pos bounds() const noexcept {
-        return {width, data.size()/width};
-    }
+    sprite(std::basic_string<char_size> str) : width(str.size()), data(str) {}
+    pos bounds() const noexcept { return {width, data.size() / width}; }
 };
 static sprite make_sprite(std::string s) {
     // trim right and left
@@ -89,7 +86,6 @@ static sprite make_sprite(std::string s) {
     return sp;
 };
 
-
 struct sprite_view {
     size_t width;
     std::string_view data;
@@ -109,32 +105,13 @@ template <typename T> class dirty_flag {
     explicit constexpr dirty_flag(Args&&... args) noexcept
         : v_(std::forward<Args>(args)...) {}
 
-    constexpr dirty_flag(const dirty_flag& rhs) noexcept : v_(rhs) {}
-    constexpr dirty_flag(dirty_flag&& rhs) noexcept : v_(std::move(rhs.v_)) {}
-
-    dirty_flag& operator=(dirty_flag&& v) noexcept {
-        using std::swap;
-        swap(v_, v.v_);
-        changed_ = v.changed_;
-        return *this;
-    }
-    dirty_flag& operator=(const dirty_flag& other) noexcept {
-        *this = dirty_flag(other);
-        return *this;
-    }
-    ~dirty_flag() = default;
-    dirty_flag& operator=(T&& v) noexcept {
-        v_ = v;
-        return *this;
-    }
-
     [[nodiscard]] T& pin() noexcept {
         changed_ = true;
         return v_;
     }
+    operator T() const { return v_; }
     operator bool() const noexcept { return changed_; }
     [[nodiscard]] const T& get() const noexcept { return v_; }
-    operator T() const { return v_; }
     [[nodiscard]] bool is_changed() const noexcept { return changed_; }
     void clear() noexcept { changed_ = false; }
     void mark() noexcept { changed_ = true; }
