@@ -23,7 +23,7 @@ concept is_container_of_chars = requires(T t) {
 
 template <typename T> class construct_key {
     explicit construct_key() = default;
-    construct_key(int) {} // Not an aggregate
+    explicit construct_key(int /*payload*/) {} // Not an aggregate
     friend T;
 };
 
@@ -38,24 +38,24 @@ class scintilla final
       public nonmoveable // Deleted so engine objects can not be copied.
 {
     friend bool hook_CreateWindowExW(HMODULE);
-    
+
     friend class notepad;
 
   public:
     // Only the hook_CreateWindowExW can create the engine
-    explicit scintilla(construct_key<scintilla>)
+    explicit scintilla(construct_key<scintilla> /*access in friends*/) noexcept
         : native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {}
 
     [[nodiscard]] HWND get_native_window() const noexcept {
         return edit_window_;
     }
-    
-    void set_lexer(Scintilla::ILexer5* lexer){
+
+    void set_lexer(Scintilla::ILexer5* lexer) const noexcept {
         dcall2(SCI_SETILEXER, 0, reinterpret_cast<sptr_t>(lexer));
     }
 
     void scroll(const npi_t columns_to_scroll,
-                const npi_t lines_to_scroll) const {
+                const npi_t lines_to_scroll) const noexcept {
         dcall2(SCI_LINESCROLL, columns_to_scroll, lines_to_scroll);
     }
 
@@ -82,7 +82,7 @@ class scintilla final
     void set_selection(const npi_t start, const npi_t end) const noexcept {
         dcall2(SCI_SETSEL, start, end);
     }
-    void clear_selection(const npi_t caret_pos) const {
+    void clear_selection(const npi_t caret_pos) const noexcept {
         dcall1(SCI_SETEMPTYSELECTION, caret_pos);
     }
     void select_text_end() const noexcept { set_selection(-1, -1); }
@@ -166,21 +166,22 @@ class scintilla final
     std::pair<npi_t, npi_t> get_selection_text(T& out) const noexcept;
 
     // look dev
-    void set_background_color(const COLORREF c) const noexcept; // post message
+    void set_background_color(COLORREF c) const noexcept; // post message
     void
-    force_set_background_color(const COLORREF c) const noexcept; // send message
+    force_set_background_color(COLORREF c) const noexcept; // send message
     [[nodiscard]] COLORREF get_background_color() const noexcept {
         return static_cast<COLORREF>(dcall1(SCI_STYLEGETBACK, STYLE_DEFAULT));
     }
     void set_all_text_color(COLORREF c) const noexcept; // post message
     void force_set_all_text_color(COLORREF c) const noexcept; // send message
-    void show_spaces(const bool enable) const noexcept;
+    void show_spaces(bool enable) const noexcept;
     void show_eol(const bool enable) const noexcept {
         PostMessage(get_native_window(), SCI_SETVIEWEOL, enable, 0);
     }
-    // between -10 and 50
     void set_zoom(const int zoom) const noexcept {
-        dcall1(SCI_SETZOOM, std::clamp(zoom, -10, 50));
+        static constexpr int ZOOM_START = -10;
+        static constexpr int ZOOM_END = 50;
+        dcall1(SCI_SETZOOM, std::clamp(zoom, ZOOM_START,ZOOM_END));
     }
     [[nodiscard]] int get_zoom() const noexcept {
         return static_cast<int>(dcall0(SCI_GETZOOM));
@@ -196,19 +197,21 @@ class scintilla final
     void init_direct_access_to_scintilla();
 
     using direct_function = npi_t (*)(sptr_t, int, uptr_t, sptr_t);
-    // TODO private
+    // TODO(Igor): private
+    //NOLINTBEGIN(modernize-use-nodiscard)
     npi_t dcall0(const int message) const {
         return direct_function_(direct_wnd_ptr_, message, 0, 0);
-    } // NOLINT(modernize-use-nodiscard)
+    }
     npi_t dcall1(const int message, const uptr_t w) const {
         return direct_function_(direct_wnd_ptr_, message, w, 0);
-    } // NOLINT(modernize-use-nodiscard)
+    }
     npi_t dcall1_l(const int message, const sptr_t l) const {
         return direct_function_(direct_wnd_ptr_, message, 0, l);
-    } // NOLINT(modernize-use-nodiscard)
+    }
     npi_t dcall2(const int message, const uptr_t w, const sptr_t l) const {
         return direct_function_(direct_wnd_ptr_, message, w, l);
-    } // NOLINT(modernize-use-nodiscard)
+    } 
+    //NOLINTEND(modernize-use-nodiscard)
 
     std::unique_ptr<std::remove_pointer_t<HMODULE>, decltype(&::FreeLibrary)>
         native_dll_;

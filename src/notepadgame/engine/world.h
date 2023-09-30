@@ -12,15 +12,13 @@ template <class T = bte::_self> struct is_ecs_processor {
         cont.execute(reg, delta);
     }
 };
-namespace boost {
-namespace type_erasure {
+namespace boost::type_erasure {
 template <class C, class T, class Base>
 struct concept_interface<is_ecs_processor<C>, Base, T> : Base {
     void execute(entt::registry& reg, const timings::duration delta) {
         call(is_ecs_processor<C>(), *this, reg, delta);
     }
 };
-} // namespace type_erasure
 } // namespace boost
   //
 using ecs_processor_base = bte::any< boost::mpl::vector<
@@ -35,7 +33,7 @@ class world : public noncopyable, public nonmoveable {
     // insertion order is important!
     // boost::any_collection<ecs_processor_base> processors;
     std::vector<ecs_processor_base> processors;
-
+    // TODO(Igor): private?
     entt::registry reg_;
     void tick(timings::duration delta) {
         for (auto& i : processors) {

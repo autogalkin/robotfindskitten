@@ -15,7 +15,7 @@
 #include <locale>
 #include <shared_mutex>
 #include <mutex>
-#include <stdint.h>
+#include <cstdint>
 #include <thread>
 
 #include "engine/buffer.h"
@@ -28,9 +28,9 @@
 #include "engine/world.h"
 #include "engine/time.h"
 
-extern const int GAME_AREA[2];
+extern const pos GAME_AREA;
 
-static volatile std::atomic_bool done(false);
+volatile std::atomic_bool done(false);
 
 class thread_guard : public noncopyable {
     std::thread t;
@@ -46,26 +46,32 @@ class thread_guard : public noncopyable {
 };
 
 notepad::notepad()
-    : scintilla_(std::nullopt),  main_window_(), original_proc_(0),
+    : scintilla_(std::nullopt), main_window_(), original_proc_(0),
       on_open_(std::make_unique<open_signal_t>()), fixed_time_step_(),
-      fps_count_(), buf_(GAME_AREA[0], GAME_AREA[1]), commands_() {}
+      fps_count_(), buf_(GAME_AREA[0], GAME_AREA[1]) {}
 
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 void notepad::tick_render() {
     fps_count_.fps(
         [](auto fps) { notepad::get().window_title.render_thread_fps = fps; });
     // execute all commands from the Game thread
     commands_.consume_all([this](auto f) {
-        if (f)
+        if (f) {
             f(this, &*scintilla_);
+        }
     });
     notepad::get().set_window_title(notepad::get().window_title.make());
     // swap buffers in Scintilla
+    // always valid optional
     const auto pos = scintilla_->get_caret_index();
     buf_.view([this](const std::basic_string<char_size>& buf) {
         scintilla_->set_new_all_text(buf);
     });
     scintilla_->set_caret_index(pos);
 }
+
+static constexpr int POPUP_WINDOW_HEIGHT = 100;
+static constexpr int POPUP_WINDOW_OFFSET = 20;
 
 // game in another thread
 void notepad::start_game() {
@@ -87,52 +93,57 @@ void notepad::start_game() {
                         np->window_title.game_thread_fps = fps;
                     });
                 });
-                // TODO alpha
+                // TODO(Igor): real alpha
                 w.tick(timings::dt);
             }
         }));
 
     RECT rect = {NULL};
     GetWindowRect(main_window_, &rect);
-    ::SetWindowPos(main_window_, NULL, 0, 0, 0, 0,
+    ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0,
                    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
     GetWindowRect(scintilla_->edit_window_, &rect);
-    auto w = CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                            "STATIC", "", dwStyle, 0, 0, rect.right - rect.left,
-                            100, main_window_, 0, GetModuleHandle(NULL), 0);
+    auto* w = CreateWindowEx(
+        WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST, "STATIC", "",
+        dwStyle, 0, 0, rect.right - rect.left, POPUP_WINDOW_HEIGHT,
+        main_window_, nullptr, GetModuleHandle(nullptr), nullptr);
     SetLayeredWindowAttributes(w, popup_window.back_color, 0, LWA_COLORKEY);
-    SetWindowPos(w, HWND_TOP, 20, 0, rect.right - rect.left, 200, 0);
+    SetWindowPos(w, HWND_TOP, POPUP_WINDOW_OFFSET, 0, rect.right - rect.left,
+                 POPUP_WINDOW_HEIGHT, 0);
     auto deleter = [](HFONT font) { DeleteObject(font); };
+    static constexpr int font_size = 38;
     static std::unique_ptr<std::remove_pointer_t<HFONT>, decltype(deleter)>
-        hFont{CreateFontW(38, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
+        hFont{CreateFontW(font_size, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
                           ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
                           L"Consolas"),
               std::move(deleter)};
-    SendMessageW(w, WM_SETFONT, WPARAM(hFont.get()), TRUE);
+    SendMessageW(w, WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()), TRUE);
     ShowWindow(w, SW_SHOW);
     UpdateWindow(w);
     popup_window.window = w;
 }
+// NOLINTEND(bugprone-unchecked-optional-access)
+
+constexpr WPARAM MY_START = WM_USER + 100;
 
 LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
                       const LPARAM lp) {
     auto& np = notepad::get();
     switch (msg) {
-    case WM_USER + 100: // on initialize
-    {
+    case MY_START: {
         {
             // destroy the status bar
-            if (const HWND stbar = FindWindowExW(np.get_window(), nullptr,
-                                                 STATUSCLASSNAMEW, nullptr)) {
+            if (HWND stbar = FindWindowExW(np.get_window(), nullptr,
+                                           STATUSCLASSNAMEW, nullptr)) {
                 DestroyWindow(stbar);
             }
             // destroy the main menu
-            const HMENU hMenu = GetMenu(np.get_window());
+            HMENU hMenu = GetMenu(np.get_window());
             SetMenu(notepad::get().get_window(), nullptr);
             DestroyMenu(hMenu);
             RECT rc{};
@@ -151,26 +162,27 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         break;
     }
     case WM_SIZE: {
-        if(np.scintilla_){
-            ::SetWindowPos(np.scintilla_->edit_window_, NULL, 0, 0, 0, 0,
-                       SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE); 
+        if (np.scintilla_) {
+            ::SetWindowPos(np.scintilla_->edit_window_, nullptr, 0, 0, 0, 0,
+                           SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
             RECT rect = {NULL};
             GetWindowRect(np.scintilla_->edit_window_, &rect);
-            ::SetWindowPos(np.popup_window.window, NULL, 20, 0, rect.right - rect.left,100,
-                        SWP_NOACTIVATE);
+            ::SetWindowPos(np.popup_window.window, nullptr, POPUP_WINDOW_OFFSET,
+                           0, rect.right - rect.left, POPUP_WINDOW_HEIGHT,
+                           SWP_NOACTIVATE);
         }
         break;
     }
     case WM_CTLCOLORSTATIC: {
         auto& np = notepad::get();
-        if (np.popup_window.window == (HWND)lp) {
+        if (np.popup_window.window == reinterpret_cast<HWND>(lp)) {
             auto deleter = [](HBRUSH br) { DeleteObject(br); };
             static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
                                    decltype(deleter)>
                 hBrushLabel{CreateSolidBrush(np.popup_window.back_color),
                             std::move(deleter)};
             hBrushLabel.reset(CreateSolidBrush(np.popup_window.back_color));
-            HDC popup = (HDC)wp;
+            HDC popup = reinterpret_cast<HDC>(wp);
             auto& np = notepad::get();
             SetTextColor(popup, np.popup_window.fore_color);
             SetLayeredWindowAttributes(np.popup_window.window,
@@ -187,26 +199,24 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     return CallWindowProc(reinterpret_cast<WNDPROC>(np.original_proc_), hwnd,
                           msg, wp, lp);
 }
-
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 bool hook_GetMessageW(const HMODULE module) {
     static decltype(&GetMessageW) original = nullptr;
     return iat_hook::hook_import<decltype(original)>(
-        module, "user32.dll", "GetMessageW", original,
-        [](const LPMSG lpMsg, const HWND hWnd, const UINT wMsgFilterMin,
+        module, iat_hook::modulename("user32.dll"),  iat_hook::funcname("GetMessageW"), original,
+        [](LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin,
            const UINT wMsgFilterMax) -> BOOL {
-            if (const HWND stbar =
-                    FindWindowExW(notepad::get().get_window(), nullptr,
-                                  STATUSCLASSNAMEW, nullptr)) {
+            if (HWND stbar = FindWindowExW(notepad::get().get_window(), nullptr,
+                                           STATUSCLASSNAMEW, nullptr)) {
             }
             auto& np = notepad::get();
-            // TODO описание как из getmessage в peek message
             while (PeekMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax,
                                 PM_REMOVE)) {
                 switch (lpMsg->message) {
                 case WM_QUIT:
                     return 0;
                 case WM_MOUSEWHEEL: {
-                    auto dc = GetDC(np.popup_window.window);
+                    auto* dc = GetDC(np.popup_window.window);
                     SetBkColor(dc, RGB(255, 255, 0));
                     ReleaseDC(np.popup_window.window, dc);
 
@@ -258,8 +268,9 @@ bool hook_GetMessageW(const HMODULE module) {
                 case WM_RBUTTONUP:
                 case WM_LBUTTONDBLCLK:
                 case WM_RBUTTONDBLCLK: {
-                    if (notepad::opts::disable_mouse & np.options_.all)
+                    if (notepad::opts::disable_mouse & np.options_.all) {
                         lpMsg->message = WM_NULL;
+                    }
                     break;
                 }
 
@@ -284,12 +295,12 @@ bool hook_GetMessageW(const HMODULE module) {
         });
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 bool hook_SendMessageW(const HMODULE module) {
     static decltype(&SendMessageW) original = nullptr;
 
     return iat_hook::hook_import<decltype(original)>(
-        module, "user32.dll", "SendMessageW", original,
-
+        module, iat_hook::modulename("user32.dll"), iat_hook::funcname("SendMessageW"), original,
         [](HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) -> LRESULT {
             return original(hWnd, Msg, wParam, lParam);
         });
@@ -298,7 +309,7 @@ bool hook_SendMessageW(const HMODULE module) {
 bool hook_CreateWindowExW(HMODULE module) {
     static decltype(&CreateWindowExW) original = nullptr;
     return iat_hook::hook_import<decltype(original)>(
-        module, "user32.dll", "CreateWindowExW", original,
+        module, iat_hook::modulename("user32.dll"), iat_hook::funcname("CreateWindowExW"), original,
 
         [](DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR lpWindowName,
            DWORD dwStyle, int X, int Y, int nWidth, int nHeight,
@@ -336,7 +347,7 @@ bool hook_CreateWindowExW(HMODULE module) {
                     GetWindowLongPtr(np.main_window_, GWLP_WNDPROC);
                 SetWindowLongPtr(np.main_window_, GWLP_WNDPROC,
                                  reinterpret_cast<LONG_PTR>(hook_wnd_proc));
-                PostMessage(np.main_window_, WM_USER + 100, 0, 0);
+                PostMessage(np.main_window_, MY_START, 0, 0);
             }
 
             return out_hwnd;
@@ -346,6 +357,8 @@ bool hook_CreateWindowExW(HMODULE module) {
 bool hook_SetWindowTextW(HMODULE module) {
     static decltype(&SetWindowTextW) original = nullptr;
     return iat_hook::hook_import<decltype(original)>(
-        module, "user32.dll", "SetWindowTextW", original,
-        [](HWND hWnd, LPCWSTR lpString) -> BOOL { return FALSE; });
+        module, iat_hook::modulename("user32.dll"), iat_hook::funcname("SetWindowTextW"), original,
+        [](HWND, LPCWSTR) -> BOOL { return FALSE; });
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
+// NOLINTEND(readability-function-cognitive-complexity)

@@ -6,11 +6,13 @@
 #include "engine/world.h"
 
 scintilla::~scintilla() = default;
-HWND scintilla::create_native_window(
-    const DWORD dwExStyle, const LPCWSTR lpWindowName, const DWORD dwStyle,
-    const int X, const int Y, const int nWidth, const int nHeight,
-    const HWND hWndParent, const HMENU hMenu, const HINSTANCE hInstance,
-    const LPVOID lpParam, uint8_t start_options) {
+HWND scintilla::create_native_window(const DWORD dwExStyle,
+                                     const LPCWSTR lpWindowName,
+                                     const DWORD dwStyle, const int X,
+                                     const int Y, const int nWidth,
+                                     const int nHeight, HWND hWndParent,
+                                     HMENU hMenu, HINSTANCE hInstance,
+                                     LPVOID lpParam, uint8_t start_options) {
     edit_window_ =
         CreateWindowExW(dwExStyle, L"Scintilla", lpWindowName, dwStyle, X, Y,
                         nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
@@ -21,23 +23,25 @@ HWND scintilla::create_native_window(
            reinterpret_cast<sptr_t>("Lucida Console"));
     dcall2(SCI_STYLESETBOLD, STYLE_DEFAULT, 1); // bold
     dcall2(SCI_STYLESETITALIC, STYLE_DEFAULT, 1); // italic
-    dcall2(SCI_STYLESETSIZE, STYLE_DEFAULT, 16); // pt size
+    static constexpr int FONT_SIZE = 16;
+    dcall2(SCI_STYLESETSIZE, STYLE_DEFAULT, FONT_SIZE); // pt size
     // dcall2(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT,1);
     dcall1(SCI_SETHSCROLLBAR, 0);
     dcall1(SCI_SETVSCROLLBAR, 0);
 
-    // TODO
-    if(notepad::opts::hide_selection & start_options){
-        dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK, RGB(255, 255, 255));
+    // TODO(Igor): atmosphere actor cannot change this color
+    if (notepad::opts::hide_selection & start_options) {
+        dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK,
+               RGB(255, 255, 255));
     }
 
     dcall1(SCI_SETSELEOLFILLED, 0);
-    
+
     ShowScrollBar(edit_window_, SB_BOTH, FALSE);
     // hide control symbol mnemonics
     dcall1(SCI_SETCONTROLCHARSYMBOL, ' ');
-    show_spaces(notepad::opts::show_spaces & start_options ? 1 : 0);
-    show_eol(notepad::opts::show_eol & start_options ? 1 : 0);
+    show_spaces((notepad::opts::show_spaces & start_options) != 0);
+    show_eol((notepad::opts::show_eol & start_options) != 0);
 
     return edit_window_;
 }
@@ -75,13 +79,14 @@ void scintilla::set_background_color(const COLORREF c) const noexcept {
 }
 
 void scintilla::force_set_background_color(const COLORREF c) const noexcept {
-    // TODO if(notepad::opts::hide_selection & start_options){
+    // TODO(Igor): selection color if selection enabled
+    // if(notepad::opts::hide_selection & start_options){
     dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK, c);
 
-    //dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
-    //dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
-    //dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
-   // dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
+    // dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
+    // dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
+    // dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
+    // dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
     dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
     dcall2(SCI_STYLESETBACK, 0, c);
 }
@@ -137,7 +142,8 @@ void scintilla::get_all_text(T& buffer) const noexcept {
 
 void scintilla::show_spaces(const bool enable) const noexcept {
     int flag = SCWS_INVISIBLE;
-    if (enable)
+    if (enable) {
         flag = SCWS_VISIBLEALWAYS;
+    }
     PostMessage(get_native_window(), SCI_SETVIEWWS, flag, 0);
 }

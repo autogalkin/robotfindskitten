@@ -45,8 +45,9 @@ struct sprite {
     inline static constexpr char whitespace = ' ';
     size_t width;
     std::basic_string<char_size> data;
-    sprite(std::basic_string<char_size> str) : width(str.size()), data(str) {}
-    pos bounds() const noexcept { return {width, data.size() / width}; }
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    sprite(const std::basic_string<char_size>& str) : width(str.size()), data(str) {}
+    [[nodiscard]] pos bounds() const noexcept { return {width, data.size() / width}; }
 };
 static sprite make_sprite(std::string s) {
     // trim right and left
@@ -89,6 +90,7 @@ static sprite make_sprite(std::string s) {
 struct sprite_view {
     size_t width;
     std::string_view data;
+    // NOLINTNEXTLINE(google-explicit-constructor)
     sprite_view(const sprite& s)
         : data(s.data.begin(), s.data.end()), width(s.width) {}
 };
@@ -99,6 +101,7 @@ template <typename T> class dirty_flag {
 
   public:
     explicit constexpr dirty_flag() = default;
+    // NOLINTNEXTLINE(google-explicit-constructor)
     constexpr dirty_flag(T&& v) noexcept : v_(std::forward<T>(v)) {}
     template <typename... Args>
         requires std::is_constructible_v<T, Args...>
@@ -109,7 +112,9 @@ template <typename T> class dirty_flag {
         changed_ = true;
         return v_;
     }
+    // NOLINTNEXTLINE(google-explicit-constructor)
     operator T() const { return v_; }
+    // NOLINTNEXTLINE(google-explicit-constructor)
     operator bool() const noexcept { return changed_; }
     [[nodiscard]] const T& get() const noexcept { return v_; }
     [[nodiscard]] bool is_changed() const noexcept { return changed_; }

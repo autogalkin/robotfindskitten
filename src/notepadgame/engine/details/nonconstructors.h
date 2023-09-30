@@ -1,6 +1,7 @@
 #pragma once
 
-class noncopyable // NOLINT cppcoreguidelines-special-member-functions
+//NOLINTBEGIN(cppcoreguidelines-special-member-functions)
+class noncopyable
 {
   public:
     noncopyable(const noncopyable&) = delete;
@@ -11,7 +12,7 @@ class noncopyable // NOLINT cppcoreguidelines-special-member-functions
     ~noncopyable() = default;
 };
 
-class nonmoveable // NOLINT cppcoreguidelines-special-member-functions
+class nonmoveable
 {
   public:
     nonmoveable(nonmoveable&&) = delete;
@@ -21,3 +22,4 @@ class nonmoveable // NOLINT cppcoreguidelines-special-member-functions
     nonmoveable() = default;
     ~nonmoveable() = default;
 };
+//NOLINTEND(cppcoreguidelines-special-member-functions)

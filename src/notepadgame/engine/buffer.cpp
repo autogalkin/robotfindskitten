@@ -1,6 +1,6 @@
 #include "engine/buffer.h"
 #include "details/nonconstructors.h"
-#include <stdint.h>
+#include <cstdint>
 #include <string_view>
 #include <type_traits>
 
@@ -16,8 +16,8 @@
 #include <ranges>
 
 template <typename Buf>
-[[nodiscard]] auto& at(Buf& buf_2d, const size_t buf_row_width,
-                       const pos char_on_screen) {
+[[nodiscard]] auto at(Buf& buf_2d, const size_t buf_row_width,
+                       const pos char_on_screen) -> auto& {
     return buf_2d[char_on_screen.y * buf_row_width + char_on_screen.x];
 }
 

@@ -5,19 +5,20 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <Windows.h>
 #include <memory>
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include <thread>
 #include "engine/buffer.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/world.h"
-#include <memory>
 
 #include "engine/time.h"
 
 // custom WindowProc
 static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp,
                                       LPARAM lp);
+
+// NOLINTBEGIN(readability-redundant-declaration)
 // Capture and block keyboard and mouse inputs
 bool hook_GetMessageW(HMODULE module);
 // Capture opened files
@@ -26,21 +27,23 @@ bool hook_SendMessageW(HMODULE module);
 bool hook_CreateWindowExW(HMODULE module);
 // Block window title updates
 bool hook_SetWindowTextW(HMODULE module);
+// NOLINTEND(readability-redundant-declaration)
 
-class title_line {
-    static constexpr auto buf_ =
-        L"robotfindskitten, fps: game_thread {:02} | render_thread {:02}";
+struct title_line {
 
-  public:
-    uint64_t game_thread_fps;
-    uint64_t render_thread_fps;
-    std::wstring make() {
+    uint32_t game_thread_fps;
+    uint32_t render_thread_fps;
+    [[nodiscard]] std::wstring make() {
         return std::format(buf_, game_thread_fps, render_thread_fps);
     };
+
+  private:
+    static constexpr auto buf_ =
+        L"robotfindskitten, fps: game_thread {:02} | render_thread {:02}";
 };
 
-struct popup{
-    std::string_view text = "";
+struct popup {
+    std::string_view text;
     HWND window;
     COLORREF fore_color = RGB(0, 0, 0);
     COLORREF back_color = RGB(255, 255, 255);
@@ -71,15 +74,18 @@ class notepad {
             show_spaces    = 0x1 << 4
             // clang-format on
         };
-        constexpr opts(values v) : all(static_cast<uint8_t>(v)) {}
-        constexpr opts(int v) : all(static_cast<uint8_t>(v)) {}
+        constexpr opts(values v) // NOLINT(google-explicit-constructor)
+            : all(static_cast<uint8_t>(v)) {}
+        constexpr opts(int v) // NOLINT(google-explicit-constructor)
+            : all(static_cast<uint8_t>(v)) {}
     };
 
     using command_t = std::function<void(notepad*, scintilla*)>;
-    using commands_queue_t =
-        boost::lockfree::spsc_queue<command_t, boost::lockfree::capacity<32>>;
+    static constexpr int command_queue_capacity = 32;
+    using commands_queue_t = boost::lockfree::spsc_queue<
+        command_t, boost::lockfree::capacity<command_queue_capacity>>;
     using open_signal_t = boost::signals2::signal<void(
-        world&, back_buffer&,notepad::commands_queue_t&)>;
+        world&, back_buffer&, notepad::commands_queue_t&)>;
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
     on_open() {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
@@ -102,11 +108,10 @@ class notepad {
     void set_window_title(const std::wstring_view title) const {
         SetWindowTextW(main_window_, title.data());
     }
-    // TODO maybe a ecs processor which will push all commands together?
-    static bool push_command(command_t cmd) {
-        return notepad::get().commands_.push(std::move(cmd));
+    // TODO(Igor): maybe a ecs processor which will push all commands together?
+    static bool push_command(const command_t& cmd) {
+        return notepad::get().commands_.push(cmd);
     };
-
 
   private:
     static notepad& get() {

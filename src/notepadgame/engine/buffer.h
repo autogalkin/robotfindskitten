@@ -1,5 +1,5 @@
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 #include <string_view>
 #include <type_traits>
 
@@ -27,7 +27,7 @@ class back_buffer {
     explicit back_buffer(size_t height, size_t width)
         : width_(width),
           buf_(std::basic_string<char_size>(width * height, ' ')),
-          z_buf_(width * height), rw_lock_() {
+          z_buf_(width * height)  {
         for (npi_t i = 1; i < height; i++) {
             static constexpr int ENDL_SIZE = 1;
             buf_[i * width - ENDL_SIZE] = '\n';
@@ -48,7 +48,7 @@ class back_buffer {
     // visitor traverse all sprite matrix
     template <typename Visitor>
         requires std::is_invocable_v<Visitor, const pos, char_size>
-    void traverse_sprite_positions(const pos pivot, const sprite_view sh,
+    void traverse_sprite_positions(const pos pivot, const sprite_view sp,
                                    Visitor&& visitor) const;
 };
 

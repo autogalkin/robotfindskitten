@@ -1,0 +1,18 @@
+WarningsAsErrors: '*'
+Checks: >
+  -*,
+
+  bugprone-*,
+  google-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  clang-analyzer-*,
+
+  -modernize-use-trailing-return-type,
+  -readability-implicit-bool-conversion,
+  -readability-identifier-length,
+  -performance-no-int-to-ptr,
+  -misc-non-private-member-variables-in-classes,
