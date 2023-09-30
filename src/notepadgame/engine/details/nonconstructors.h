@@ -1,25 +1,23 @@
 #pragma once
 
-//NOLINTBEGIN(cppcoreguidelines-special-member-functions)
-class noncopyable
-{
-  public:
+// NOLINTBEGIN(cppcoreguidelines-special-member-functions)
+class noncopyable {
+public:
     noncopyable(const noncopyable&) = delete;
     noncopyable& operator=(const noncopyable&) = delete;
 
-  protected:
+protected:
     noncopyable() = default;
     ~noncopyable() = default;
 };
 
-class nonmoveable
-{
-  public:
+class nonmoveable {
+public:
     nonmoveable(nonmoveable&&) = delete;
     nonmoveable& operator=(nonmoveable&&) = delete;
 
-  protected:
+protected:
     nonmoveable() = default;
     ~nonmoveable() = default;
 };
-//NOLINTEND(cppcoreguidelines-special-member-functions)
+// NOLINTEND(cppcoreguidelines-special-member-functions)

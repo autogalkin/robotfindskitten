@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "engine/details/base_types.h"
+#include "engine/details/base_types.hpp"
 #include "engine/world.h"
 #include "engine/time.h"
 
@@ -14,9 +14,20 @@ struct what_do {
 struct eval_direction {
     direction value;
 };
-inline direction invert(direction v){
-    return static_cast<direction>( -1 * static_cast<int>(v));
+inline direction invert(direction v) {
+    return static_cast<direction>(-1 * static_cast<int>(v));
 }
+
+struct executor: ecs_proc_tag {
+    void execute(entt::registry& reg, timings::duration /*dt*/) {
+        for(const auto view = reg.view<const timeline::what_do,
+                                       const timeline::eval_direction>();
+            const auto entity: view) {
+            const auto& [work] = view.get<const timeline::what_do>(entity);
+            work(reg, entity, view.get<timeline::eval_direction>(entity).value);
+        }
+    }
+};
 
 } // namespace timeline
 
@@ -30,52 +41,34 @@ struct lifetime {
 struct death_last_will {
     std::function<void(entt::registry&, entt::entity)> wish;
 };
-} // namespace life
 
-struct lifetime_ticker{
-    void execute(entt::registry& reg, const timings::duration delta){
+struct life_ticker: ecs_proc_tag {
+    void execute(entt::registry& reg, const timings::duration dt) {
         using namespace std::chrono_literals;
-        for (const auto view = reg.view<life::lifetime>();
-             const auto entity : view) {
-            if (auto& [duration] = view.get<life::lifetime>(entity);
-                duration <= 0ms) {
-
-                reg.emplace<life::begin_die>(entity);
+        for(const auto view = reg.view<lifetime>(); const auto entity: view) {
+            if(auto& [duration] = view.get<lifetime>(entity); duration <= 0ms) {
+                reg.emplace<begin_die>(entity);
             } else {
-                duration -= delta;
+                duration -= dt;
             }
         }
     }
 };
 
-struct death_last_will_executor{
-    void execute(entt::registry& reg, timings::duration delta){
-        for (const auto view =
-                 reg.view<life::begin_die, life::death_last_will>();
-             const auto entity : view) {
+struct death_last_will_executor: ecs_proc_tag {
+    void execute(entt::registry& reg, timings::duration /*dt*/) {
+        for(const auto view = reg.view<begin_die, death_last_will>();
+            const auto entity: view) {
             view.get<life::death_last_will>(entity).wish(reg, entity);
         }
     }
 };
-
-struct timeline_executor{
-    void execute(entt::registry& reg, timings::duration delta){
-
-        for (const auto view = reg.view<const timeline::what_do,
-                                        const timeline::eval_direction>();
-             const auto entity : view) {
-            auto& [work] = view.get<const timeline::what_do>(entity);
-            work(reg, entity, view.get<timeline::eval_direction>(entity).value);
-        }
-    }
-};
-
-struct killer {
-    void execute(entt::registry& reg, timings::duration delta) {
-
-        for (const auto view = reg.view<const life::begin_die>();
-             const auto entity : view) {
+struct killer: ecs_proc_tag {
+    void execute(entt::registry& reg, timings::duration /*dt*/) {
+        for(const auto view = reg.view<const begin_die>();
+            const auto entity: view) {
             reg.destroy(entity);
         }
     }
 };
+} // namespace life

@@ -12,36 +12,39 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include "engine/details/base_types.h"
+#include "engine/details/base_types.hpp"
 #include "engine/details/nonconstructors.h"
 #include "ILexer.h"
 
-template <typename T>
+template<typename T>
 concept is_container_of_chars = requires(T t) {
     { t.data() } -> std::convertible_to<char*>;
 };
 
-template <typename T> class construct_key {
+template<typename T>
+class construct_key {
     explicit construct_key() = default;
     explicit construct_key(int /*payload*/) {} // Not an aggregate
     friend T;
 };
 
 class scintilla;
-template <> class construct_key<scintilla> {
+template<>
+class construct_key<scintilla> {
     friend bool hook_CreateWindowExW(HMODULE);
 };
 
 // this is the EDIT Control window of the notepad
 class scintilla final
     : public noncopyable,
-      public nonmoveable // Deleted so engine objects can not be copied.
+      public nonmoveable // Deleted so scintilla objects can not be copied.
 {
     friend bool hook_CreateWindowExW(HMODULE);
+    friend LRESULT hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 
     friend class notepad;
 
-  public:
+public:
     // Only the hook_CreateWindowExW can create the engine
     explicit scintilla(construct_key<scintilla> /*access in friends*/) noexcept
         : native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {}
@@ -85,7 +88,9 @@ class scintilla final
     void clear_selection(const npi_t caret_pos) const noexcept {
         dcall1(SCI_SETEMPTYSELECTION, caret_pos);
     }
-    void select_text_end() const noexcept { set_selection(-1, -1); }
+    void select_text_end() const noexcept {
+        set_selection(-1, -1);
+    }
     [[nodiscard]] std::pair<npi_t, npi_t> get_selection_range() const noexcept {
         return std::make_pair(dcall0(SCI_GETSELECTIONSTART),
                               dcall0(SCI_GETSELECTIONEND));
@@ -158,17 +163,16 @@ class scintilla final
         return get_line_lenght(get_lines_count() - 1);
     }
 
-    template <is_container_of_chars T>
+    template<is_container_of_chars T>
     void get_line_text(npi_t line_index, T& buffer) const noexcept;
-    template <is_container_of_chars T>
+    template<is_container_of_chars T>
     void get_all_text(T& buffer) const noexcept;
-    template <is_container_of_chars T>
+    template<is_container_of_chars T>
     std::pair<npi_t, npi_t> get_selection_text(T& out) const noexcept;
 
     // look dev
     void set_background_color(COLORREF c) const noexcept; // post message
-    void
-    force_set_background_color(COLORREF c) const noexcept; // send message
+    void force_set_background_color(COLORREF c) const noexcept; // send message
     [[nodiscard]] COLORREF get_background_color() const noexcept {
         return static_cast<COLORREF>(dcall1(SCI_STYLEGETBACK, STYLE_DEFAULT));
     }
@@ -181,7 +185,7 @@ class scintilla final
     void set_zoom(const int zoom) const noexcept {
         static constexpr int ZOOM_START = -10;
         static constexpr int ZOOM_END = 50;
-        dcall1(SCI_SETZOOM, std::clamp(zoom, ZOOM_START,ZOOM_END));
+        dcall1(SCI_SETZOOM, std::clamp(zoom, ZOOM_START, ZOOM_END));
     }
     [[nodiscard]] int get_zoom() const noexcept {
         return static_cast<int>(dcall0(SCI_GETZOOM));
@@ -198,7 +202,7 @@ class scintilla final
 
     using direct_function = npi_t (*)(sptr_t, int, uptr_t, sptr_t);
     // TODO(Igor): private
-    //NOLINTBEGIN(modernize-use-nodiscard)
+    // NOLINTBEGIN(modernize-use-nodiscard)
     npi_t dcall0(const int message) const {
         return direct_function_(direct_wnd_ptr_, message, 0, 0);
     }
@@ -210,9 +214,9 @@ class scintilla final
     }
     npi_t dcall2(const int message, const uptr_t w, const sptr_t l) const {
         return direct_function_(direct_wnd_ptr_, message, w, l);
-    } 
-    //NOLINTEND(modernize-use-nodiscard)
-
+    }
+    // NOLINTEND(modernize-use-nodiscard)
+private:
     std::unique_ptr<std::remove_pointer_t<HMODULE>, decltype(&::FreeLibrary)>
         native_dll_;
     HWND edit_window_{nullptr};

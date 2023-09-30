@@ -30,7 +30,7 @@ HWND scintilla::create_native_window(const DWORD dwExStyle,
     dcall1(SCI_SETVSCROLLBAR, 0);
 
     // TODO(Igor): atmosphere actor cannot change this color
-    if (notepad::opts::hide_selection & start_options) {
+    if(notepad::opts::hide_selection & start_options) {
         dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK,
                RGB(255, 255, 255));
     }
@@ -112,7 +112,7 @@ void scintilla::force_set_all_text_color(const COLORREF c) const noexcept {
     dcall2(SCI_STYLESETFORE, 0, c);
 }
 
-template <is_container_of_chars T>
+template<is_container_of_chars T>
 std::pair<npi_t, npi_t> scintilla::get_selection_text(T& out) const noexcept {
     const auto range = get_selection_range();
     out.reserve(range.second - range.first);
@@ -125,7 +125,7 @@ npi_t scintilla::get_caret_index_in_line() const noexcept {
     return ci - get_first_char_index_in_line(get_line_index(ci));
 }
 
-template <is_container_of_chars T>
+template<is_container_of_chars T>
 void scintilla::get_line_text(const npi_t line_index,
                               T& buffer) const noexcept {
     const npi_t line_length = get_line_lenght(line_index);
@@ -133,7 +133,7 @@ void scintilla::get_line_text(const npi_t line_index,
     dcall2(SCI_GETLINE, line_index, reinterpret_cast<sptr_t>(buffer.data()));
 }
 
-template <is_container_of_chars T>
+template<is_container_of_chars T>
 void scintilla::get_all_text(T& buffer) const noexcept {
     const npi_t len = get_all_text_length();
     buffer.reserve(len + 1);
@@ -142,7 +142,7 @@ void scintilla::get_all_text(T& buffer) const noexcept {
 
 void scintilla::show_spaces(const bool enable) const noexcept {
     int flag = SCWS_INVISIBLE;
-    if (enable) {
+    if(enable) {
         flag = SCWS_VISIBLEALWAYS;
     }
     PostMessage(get_native_window(), SCI_SETVIEWWS, flag, 0);

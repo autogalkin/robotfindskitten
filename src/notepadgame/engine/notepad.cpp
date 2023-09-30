@@ -19,7 +19,7 @@
 #include <thread>
 
 #include "engine/buffer.h"
-#include "engine/details/base_types.h"
+#include "engine/details/base_types.hpp"
 #include "engine/details/nonconstructors.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/details/iat_hook.h"
@@ -32,14 +32,14 @@ extern const pos GAME_AREA;
 
 volatile std::atomic_bool done(false);
 
-class thread_guard : public noncopyable {
+class thread_guard: public noncopyable {
     std::thread t;
 
-  public:
-    explicit thread_guard(std::thread&& t_) : t(std::move(t_)) {}
+public:
+    explicit thread_guard(std::thread&& t_): t(std::move(t_)) {}
     ~thread_guard() {
         done.store(true);
-        if (t.joinable()) {
+        if(t.joinable()) {
             t.join();
         }
     }
@@ -48,7 +48,7 @@ class thread_guard : public noncopyable {
 notepad::notepad()
     : scintilla_(std::nullopt), main_window_(), original_proc_(0),
       on_open_(std::make_unique<open_signal_t>()), fixed_time_step_(),
-      fps_count_(), buf_(GAME_AREA[0], GAME_AREA[1]) {}
+      fps_count_(), buf_(GAME_AREA.y, GAME_AREA.x) {}
 
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
 void notepad::tick_render() {
@@ -56,7 +56,7 @@ void notepad::tick_render() {
         [](auto fps) { notepad::get().window_title.render_thread_fps = fps; });
     // execute all commands from the Game thread
     commands_.consume_all([this](auto f) {
-        if (f) {
+        if(f) {
             f(this, &*scintilla_);
         }
     });
@@ -75,7 +75,6 @@ static constexpr int POPUP_WINDOW_OFFSET = 20;
 
 // game in another thread
 void notepad::start_game() {
-
     static thread_guard game_thread = thread_guard(std::thread(
         [&buf = buf_,
          on_open = std::exchange(
@@ -86,7 +85,7 @@ void notepad::start_game() {
             world w;
             (*on_open)(w, buf, cmds);
             on_open.reset();
-            while (!done.load()) {
+            while(!done.load()) {
                 fixed_time_step.sleep();
                 fps_count.fps([](auto fps) {
                     notepad::push_command([fps](notepad* np, scintilla*) {
@@ -114,14 +113,14 @@ void notepad::start_game() {
     SetLayeredWindowAttributes(w, popup_window.back_color, 0, LWA_COLORKEY);
     SetWindowPos(w, HWND_TOP, POPUP_WINDOW_OFFSET, 0, rect.right - rect.left,
                  POPUP_WINDOW_HEIGHT, 0);
-    auto deleter = [](HFONT font) { DeleteObject(font); };
     static constexpr int font_size = 38;
-    static std::unique_ptr<std::remove_pointer_t<HFONT>, decltype(deleter)>
+    static std::unique_ptr<std::remove_pointer_t<HFONT>,
+                           decltype(&::DeleteObject)>
         hFont{CreateFontW(font_size, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
                           ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
                           L"Consolas"),
-              std::move(deleter)};
+              &::DeleteObject};
     SendMessageW(w, WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()), TRUE);
     ShowWindow(w, SW_SHOW);
     UpdateWindow(w);
@@ -134,12 +133,12 @@ constexpr WPARAM MY_START = WM_USER + 100;
 LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
                       const LPARAM lp) {
     auto& np = notepad::get();
-    switch (msg) {
+    switch(msg) {
     case MY_START: {
         {
             // destroy the status bar
-            if (HWND stbar = FindWindowExW(np.get_window(), nullptr,
-                                           STATUSCLASSNAMEW, nullptr)) {
+            if(HWND stbar = FindWindowExW(np.get_window(), nullptr,
+                                          STATUSCLASSNAMEW, nullptr)) {
                 DestroyWindow(stbar);
             }
             // destroy the main menu
@@ -162,7 +161,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         break;
     }
     case WM_SIZE: {
-        if (np.scintilla_) {
+        if(np.scintilla_) {
             ::SetWindowPos(np.scintilla_->edit_window_, nullptr, 0, 0, 0, 0,
                            SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
             RECT rect = {NULL};
@@ -175,12 +174,11 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     }
     case WM_CTLCOLORSTATIC: {
         auto& np = notepad::get();
-        if (np.popup_window.window == reinterpret_cast<HWND>(lp)) {
-            auto deleter = [](HBRUSH br) { DeleteObject(br); };
+        if(np.popup_window.window == reinterpret_cast<HWND>(lp)) {
             static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
-                                   decltype(deleter)>
+                                   decltype(&::DeleteObject)>
                 hBrushLabel{CreateSolidBrush(np.popup_window.back_color),
-                            std::move(deleter)};
+                            &::DeleteObject};
             hBrushLabel.reset(CreateSolidBrush(np.popup_window.back_color));
             HDC popup = reinterpret_cast<HDC>(wp);
             auto& np = notepad::get();
@@ -203,16 +201,16 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
 bool hook_GetMessageW(const HMODULE module) {
     static decltype(&GetMessageW) original = nullptr;
     return iat_hook::hook_import<decltype(original)>(
-        module, iat_hook::modulename("user32.dll"),  iat_hook::funcname("GetMessageW"), original,
+        module, iat_hook::module_name("user32.dll"),
+        iat_hook::function_name("GetMessageW"), original,
         [](LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin,
            const UINT wMsgFilterMax) -> BOOL {
-            if (HWND stbar = FindWindowExW(notepad::get().get_window(), nullptr,
-                                           STATUSCLASSNAMEW, nullptr)) {
-            }
+            if(HWND stbar = FindWindowExW(notepad::get().get_window(), nullptr,
+                                          STATUSCLASSNAMEW, nullptr)) {}
             auto& np = notepad::get();
-            while (PeekMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax,
-                                PM_REMOVE)) {
-                switch (lpMsg->message) {
+            while(PeekMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax,
+                               PM_REMOVE)) {
+                switch(lpMsg->message) {
                 case WM_QUIT:
                     return 0;
                 case WM_MOUSEWHEEL: {
@@ -225,28 +223,28 @@ bool hook_GetMessageW(const HMODULE module) {
                     // horizontal scroll
                     auto v_scroll = 0;
                     auto h_scroll = 0;
-                    if (LOWORD(lpMsg->wParam) & MK_SHIFT) {
+                    if(LOWORD(lpMsg->wParam) & MK_SHIFT) {
                         auto char_width = np.scintilla_->get_char_width();
                         np.scintilla_->scroll(
                             scroll_delta > 0
                                 ? -3
-                                : (np.scintilla_->get_horizontal_scroll_offset() /
-                                                   char_width +
-                                               (np.scintilla_
-                                                    ->get_window_width() /
-                                                char_width) <
-                                           GAME_AREA[1]
+                                : (np.scintilla_->get_horizontal_scroll_offset()
+                                                   / char_width
+                                               + (np.scintilla_
+                                                      ->get_window_width()
+                                                  / char_width)
+                                           < GAME_AREA[1]
                                        ? 3
                                        : 0),
                             0);
                         lpMsg->message = WM_NULL;
                         // vertical scroll
-                    } else if (!(LOWORD(lpMsg->wParam))) {
+                    } else if(!(LOWORD(lpMsg->wParam))) {
                         np.scintilla_->scroll(
                             0, scroll_delta > 0
                                    ? -3
-                                   : ((np.scintilla_->get_lines_on_screen() -
-                                       1) < GAME_AREA[0]
+                                   : ((np.scintilla_->get_lines_on_screen() - 1)
+                                              < GAME_AREA[0]
                                           ? 3
                                           : 0));
                         lpMsg->message = WM_NULL;
@@ -268,7 +266,7 @@ bool hook_GetMessageW(const HMODULE module) {
                 case WM_RBUTTONUP:
                 case WM_LBUTTONDBLCLK:
                 case WM_RBUTTONDBLCLK: {
-                    if (notepad::opts::disable_mouse & np.options_.all) {
+                    if(notepad::opts::disable_mouse & np.options_.all) {
                         lpMsg->message = WM_NULL;
                     }
                     break;
@@ -300,7 +298,8 @@ bool hook_SendMessageW(const HMODULE module) {
     static decltype(&SendMessageW) original = nullptr;
 
     return iat_hook::hook_import<decltype(original)>(
-        module, iat_hook::modulename("user32.dll"), iat_hook::funcname("SendMessageW"), original,
+        module, iat_hook::module_name("user32.dll"),
+        iat_hook::function_name("SendMessageW"), original,
         [](HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) -> LRESULT {
             return original(hWnd, Msg, wParam, lParam);
         });
@@ -309,7 +308,8 @@ bool hook_SendMessageW(const HMODULE module) {
 bool hook_CreateWindowExW(HMODULE module) {
     static decltype(&CreateWindowExW) original = nullptr;
     return iat_hook::hook_import<decltype(original)>(
-        module, iat_hook::modulename("user32.dll"), iat_hook::funcname("CreateWindowExW"), original,
+        module, iat_hook::module_name("user32.dll"),
+        iat_hook::function_name("CreateWindowExW"), original,
 
         [](DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR lpWindowName,
            DWORD dwStyle, int X, int Y, int nWidth, int nHeight,
@@ -320,9 +320,9 @@ bool hook_CreateWindowExW(HMODULE module) {
             HWND out_hwnd;
 
             auto& np = notepad::get();
-            if (!lstrcmpW(lpClassName,
-                          WC_EDITW)) // handles the edit control creation
-                                     // and create custom window
+            if(!lstrcmpW(lpClassName,
+                         WC_EDITW)) // handles the edit control creation
+                                    // and create custom window
             {
                 np.scintilla_.emplace(construct_key<scintilla>{});
 
@@ -339,8 +339,7 @@ bool hook_CreateWindowExW(HMODULE module) {
                                     hInstance, lpParam);
             }
             // catch notepad.exe window
-            if (!lstrcmpW(lpClassName, L"Notepad")) {
-
+            if(!lstrcmpW(lpClassName, L"Notepad")) {
                 np.main_window_ = out_hwnd;
                 // patch the wnd proc
                 np.original_proc_ =
@@ -357,7 +356,8 @@ bool hook_CreateWindowExW(HMODULE module) {
 bool hook_SetWindowTextW(HMODULE module) {
     static decltype(&SetWindowTextW) original = nullptr;
     return iat_hook::hook_import<decltype(original)>(
-        module, iat_hook::modulename("user32.dll"), iat_hook::funcname("SetWindowTextW"), original,
+        module, iat_hook::module_name("user32.dll"),
+        iat_hook::function_name("SetWindowTextW"), original,
         [](HWND, LPCWSTR) -> BOOL { return FALSE; });
 }
 // NOLINTEND(bugprone-easily-swappable-parameters)

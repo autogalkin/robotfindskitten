@@ -17,18 +17,18 @@ class fixed_time_step {
     duration lag_accum_ = 0ms;
     point prev_point_ = clock::now();
 
-  public:
+public:
     void sleep() {
         const point new_point = clock::now();
         auto frame_time = prev_point_ + dt - new_point;
         /*250ms is the limit put in place on the frame time to cope with the
          *spiral of death.*/
         static constexpr auto LIMIT = 250ms;
-        if (frame_time > LIMIT) {
+        if(frame_time > LIMIT) {
             frame_time = LIMIT;
         }
         lag_accum_ += frame_time;
-        while (lag_accum_ > 0ms) {
+        while(lag_accum_ > 0ms) {
             const auto sleep_start = clock::now();
             std::this_thread::sleep_for(lag_accum_);
             const auto sleep_end = clock::now();
@@ -42,16 +42,17 @@ class fps_count {
     point start_point_ = clock::now();
     uint32_t frames_ = 0;
 
-  public:
-    template <typename Printer>
+public:
+    template<typename Printer>
         requires std::is_invocable_v<Printer, uint64_t>
     void fps(Printer&& printer) {
         frames_++;
         const point new_point_ = clock::now();
         const auto delta = new_point_ - start_point_;
-        if (delta >= 1s) {
-            printer(std::round(static_cast<double>(frames_) /
-                               (std::chrono::duration<double>(delta).count())));
+        if(delta >= 1s) {
+            printer(
+                std::round(static_cast<double>(frames_)
+                           / (std::chrono::duration<double>(delta).count())));
             frames_ = 0;
             start_point_ = new_point_;
         }

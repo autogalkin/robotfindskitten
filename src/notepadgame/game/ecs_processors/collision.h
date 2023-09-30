@@ -8,10 +8,9 @@
 #include <variant>
 #include <glm/mat2x2.hpp>
 
-#include "engine/details/base_types.h"
+#include "engine/details/base_types.hpp"
 
 namespace collision {
-
 
 using box = glm::mat<2, 2, npi_t>;
 class query;
@@ -20,22 +19,23 @@ inline static constexpr int end_of_list = -1;
 inline static constexpr int is_branch = -1;
 inline static constexpr int invalid_index = -1;
 
-template <typename T> class object_pool {
-  public:
+static constexpr int oblect_pool_initial_capacity = 128;
+template<typename T>
+class object_pool {
+public:
     using next_free_index = index;
-     using data_type = boost::container::small_vector<std::variant<T,
-     next_free_index>, 128 >;
-    //using data_type = std::vector<std::variant<T, next_free_index>>;
+    using data_type =
+        boost::container::small_vector<std::variant<T, next_free_index>,
+                                       oblect_pool_initial_capacity>;
     index insert(const T& elt) {
-        if (first_free_ != end_of_list) {
+        if(first_free_ != end_of_list) {
             const index ind = first_free_;
             first_free_ = std::get<next_free_index>(data_[first_free_]);
             data_[ind] = elt;
             return ind;
-        } else {
-            data_.push_back(std::variant<T, next_free_index>{elt});
-            return static_cast<index>(data_.size() - 1);
         }
+        data_.push_back(std::variant<T, next_free_index>{elt});
+        return static_cast<index>(data_.size() - 1);
     }
 
     void erase(size_t n) {
@@ -48,11 +48,17 @@ template <typename T> class object_pool {
         first_free_ = end_of_list;
     }
 
-    T& operator[](size_t n) { return std::get<T>(data_[n]); }
-    const T& operator[](size_t n) const { return std::get<T>(data_[n]); }
-    size_t size() { return data_.size(); }
+    T& operator[](size_t n) {
+        return std::get<T>(data_[n]);
+    }
+    const T& operator[](size_t n) const {
+        return std::get<T>(data_[n]);
+    }
+    size_t size() {
+        return data_.size();
+    }
 
-  private:
+private:
     index first_free_ = end_of_list;
     data_type data_{};
 };
@@ -60,7 +66,7 @@ template <typename T> class object_pool {
 class quad_tree {
     friend class collision::query;
 
-  public:
+public:
     using id_type = entt::entity;
     // is a max number of values a node can contain before we try to split it
     static constexpr std::size_t max_elements = 8;
@@ -73,7 +79,7 @@ class quad_tree {
         id_type id{};
     };
 
-  private:
+private:
     struct quadnode {
         // Points to the first child if this node is a branch or the first
         // element if this node is a leaf.
@@ -119,22 +125,25 @@ class quad_tree {
     // Stores the maximum depth allowed for the quadtree.
     uint8_t max_depth;
 
-  public:
-    explicit quad_tree(box rootrect, const uint8_t max_depth = 8)
-        : root_rect_(std::move(rootrect)), free_node_(end_of_list),
-          max_depth(max_depth) {
+public:
+    explicit quad_tree(box root_rect, const uint8_t max_depth = 8)
+        : root_rect_(root_rect), free_node_(end_of_list), max_depth(max_depth) {
         constexpr quadnode root_node = {.first_child = end_of_list,
                                         .count_entities = 0};
-        nodes_.reserve(128);
+        nodes_.reserve(oblect_pool_initial_capacity);
         nodes_.push_back(root_node);
     }
 
-    [[nodiscard]] const box& get_root_rect() const { return root_rect_; }
-    quad_entity& get_entity(const size_t element) { return entities_[element]; }
+    [[nodiscard]] const box& get_root_rect() const {
+        return root_rect_;
+    }
+    quad_entity& get_entity(const size_t element) {
+        return entities_[element];
+    }
 
-    index insert(const id_type id, const box& bbox);
+    index insert(id_type id, const box& bbox);
 
-    void remove(const size_t indx);
+    void remove(size_t indx);
 
     void query(const box& rect, std::vector<size_t>& intersect_result);
 
@@ -146,24 +155,22 @@ class quad_tree {
              const std::function<void(quad_node_data&)>& branch_visitor,
              const std::function<void(quad_node_data&)>& leaf_visitor) const;
 
-  private:
+private:
     [[nodiscard]] quad_node_data root_data() const {
         return {.rect = root_rect_, .i = 0, .depth = 0};
     }
 
-    void node_insert(const quad_node_data& node_data, const size_t element);
+    void node_insert(const quad_node_data& node_data, size_t element);
 
-    void leaf_insert(const quad_node_data& leaf, const size_t element);
+    void leaf_insert(const quad_node_data& leaf, size_t element);
 
     void split(quadnode& node, const quad_node_data& leaf);
 
     // the quadrant in which a value is
-    static quadrant get_quadrant(const box& node_box,
-                                 const box& value_box);
+    static quadrant get_quadrant(const box& node_box, const box& value_box);
 
     // compute from the box of parent node and index of its quadrant
-    static box compute_child_box(const box& parent,
-                                      const quadrant child);
+    static box compute_child_box(const box& parent, quadrant child);
 
     [[nodiscard]] std::vector<quad_node_data>
     find_leaves(const quad_node_data& start, const box& start_rect) const;
@@ -173,18 +180,20 @@ class quad_tree {
 
 enum class responce { block, ignore };
 struct agent {
-  private:
+private:
     friend class query;
     index index_in_quad_tree = invalid_index;
 };
 
 struct on_collide {
-    static responce block_always(entt::registry&, const entt::entity,
-                                 const entt::entity) {
+    static responce block_always(entt::registry& /*unused*/,
+                                 const entt::entity /*unused*/,
+                                 const entt::entity /*unused*/) {
         return responce::block;
     }
-    static responce ignore_always(entt::registry&, const entt::entity,
-                                  const entt::entity) {
+    static responce ignore_always(entt::registry& /*unused*/,
+                                  const entt::entity /*unused*/,
+                                  const entt::entity /*unused*/) {
         return responce::ignore;
     }
 
@@ -193,14 +202,13 @@ struct on_collide {
         call{&collision::on_collide::block_always};
 };
 
-class query{
-  public:
-    explicit query(world& w, const int game_area[2]);
+class query: ecs_proc_tag {
+public:
+    explicit query(world& w, pos game_area);
 
-    virtual void execute(entt::registry& reg,
-                         timings::duration delta);
+    virtual void execute(entt::registry& reg, timings::duration delta);
 
-  private:
+private:
     // mark entity to remove from tree and insert again
     struct need_update_entity {};
     // place outside of a class for store the processor in boost::any_container

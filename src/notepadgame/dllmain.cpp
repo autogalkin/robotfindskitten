@@ -1,21 +1,22 @@
 
 #include <Windows.h>
-#include <stdint.h>
+#include <cstdint>
 
 #include "engine/notepad.h"
+#include "engine/details/base_types.hpp"
 #include "game/game.h"
 
-extern constexpr int GAME_AREA[2] = {100, 150};
+extern constexpr pos GAME_AREA = {150, 100};
 
-class console final : public noncopyable, public nonmoveable {
-  public:
-    static console allocate(); 
-    ~console(){
+class console final: public noncopyable, public nonmoveable {
+public:
+    static console allocate();
+    ~console() {
         FreeConsole();
     }
-  private:
-    explicit console(){};
 
+private:
+    explicit console() = default;
 };
 
 inline console console::allocate() {
@@ -25,10 +26,9 @@ inline console console::allocate() {
     err = freopen_s(&fdummy, "CONOUT$", "w", stderr);
     std::cout.clear();
     std::clog.clear();
-    const HANDLE hConOut =
-        CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE,
-                    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
-                    FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hConOut = CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE,
+                                 FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                 OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
     SetStdHandle(STD_ERROR_HANDLE, hConOut);
     std::wcout.clear();
@@ -37,29 +37,31 @@ inline console console::allocate() {
 }
 
 BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
-                      LPVOID lp_reserved) {
+                      LPVOID /*lp_reserved*/) {
     //  the h_module is notepadgame.dll
 
-    if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
+    if(ul_reason_for_call == DLL_PROCESS_ATTACH) {
         // Ignore thread notifications
         DisableThreadLibraryCalls(h_module);
 
         // run the notepad singleton
         notepad& np = notepad::get();
-        const auto np_module = GetModuleHandleW(
+        auto* const np_module = GetModuleHandleW(
             nullptr); // get the module handle of the notepad.exe
 
         [[maybe_unused]] constexpr notepad::opts start_options =
-            notepad::opts::empty | notepad::opts::show_eol | notepad::opts::show_spaces;
+            notepad::opts::empty | notepad::opts::show_eol
+            | notepad::opts::show_spaces;
 
-
-        np.on_open()->get().connect([](world& world, back_buffer& b, notepad::commands_queue_t& cmds) {
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+        np.on_open()->get().connect(
+            [](world& world, back_buffer& b, notepad::commands_queue_t& cmds) {
 #ifndef NDEBUG
-            static auto log_console = console::allocate();
+                static auto log_console = console::allocate();
 #endif // NDEBUG
-            printf("Notepad is loaded and initialized. Start a game\n");
-            game::start(world, b, cmds, GAME_AREA);
-        });
+                printf("Notepad is loaded and initialized. Start a game\n");
+                game::start(world, b, cmds, GAME_AREA);
+            });
 
         np.connect_to_notepad(
             np_module, start_options); // start initialization and a game loop

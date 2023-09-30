@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "engine/details/base_types.h"
+#include "engine/details/base_types.hpp"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/motion.h"
 #include "libs/easing/easing.h"
@@ -28,10 +28,12 @@ struct actor {
     }
 };
 struct projectile final {
-    static collision::responce on_collide(entt::registry& r,
-                                          const entt::entity self,
-                                          const entt::entity other) {
-        if (r.all_of<projectile>(other)) {
+    static collision::responce
+    on_collide(entt::registry& r,
+               // TODO(Igor) make phantom types
+               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+               const entt::entity self, const entt::entity other) {
+        if(r.all_of<projectile>(other)) {
             return collision::responce::ignore;
         }
         r.emplace_or_replace<life::begin_die>(self);
@@ -41,7 +43,7 @@ struct projectile final {
     make(entt::registry& reg, const entt::entity e, loc start, velocity dir,
          const std::chrono::milliseconds life_time = std::chrono::seconds{1}) {
         reg.emplace<projectile>(e);
-        reg.emplace<sprite>(e, "-");
+        reg.emplace<sprite>(e, sprite::unchecked_construct_tag{}, "-");
         reg.emplace<visible_in_game>(e);
         reg.emplace<z_depth>(e, 1);
         reg.emplace<loc>(e, start);
@@ -60,71 +62,81 @@ struct projectile final {
                 call = true](entt::registry& reg_, const entt::entity e_,
                              timeline::direction) mutable {
                 auto& i = reg_.get<translation>(e_).pin().y;
+                static constexpr std::pair ease_range{0., 0.1};
                 i = easing::easeinrange(
-                    duration - std::chrono::duration<double>(
-                                   reg_.get<life::lifetime>(e_).duration)
-                                   .count(),
-                    {0., 0.1}, duration, &easing::easeInExpo);
-                // TODO почему i = 0.1 Но прибавляется строка
-                if (std::lround(i * 10) != 0 && call) {
+                    duration
+                        - std::chrono::duration<double>(
+                              reg_.get<life::lifetime>(e_).duration)
+                              .count(),
+                    // TODO(Igor) почему i = 0.1 Но прибавляется строка
+                    ease_range, duration, &easing::easeInExpo);
+                // TODO(Igor) why scale
+                static constexpr int scale = 10;
+                if(std::lround(i * scale) != 0 && call) {
                     reg_.emplace<previous_sprite>(
-                        e_, std::exchange(reg_.get<sprite>(e_), sprite("_")));
+                        e_,
+                        std::exchange(
+                            reg_.get<sprite>(e_),
+                            sprite(sprite::unchecked_construct_tag{}, "_")));
                     call = false;
                 }
             });
 
         reg.emplace<timeline::eval_direction>(e, timeline::direction::forward);
-        reg.emplace<life::death_last_will>(
-            e, [](entt::registry& reg_, const entt::entity ent) {
-                const auto& current_proj_location = reg_.get<loc>(ent);
-                const auto& trans = reg_.get<translation>(ent);
+        reg.emplace<life::death_last_will>(e, [](entt::registry& reg_,
+                                                 const entt::entity ent) {
+            const auto& current_proj_location = reg_.get<loc>(ent);
+            const auto& trans = reg_.get<translation>(ent);
 
-                const auto new_e = reg_.create();
-                reg_.emplace<projectile>(new_e);
-                reg_.emplace<loc>(new_e, current_proj_location);
-                reg_.emplace<translation>(new_e, trans.get());
-                reg_.emplace<sprite>(new_e, "*");
-                reg_.emplace<visible_in_game>(new_e);
-                reg_.emplace<z_depth>(new_e, 1);
-                reg_.emplace<life::lifetime>(new_e, std::chrono::seconds{1});
+            const auto new_e = reg_.create();
+            reg_.emplace<projectile>(new_e);
+            reg_.emplace<loc>(new_e, current_proj_location);
+            reg_.emplace<translation>(new_e, trans.get());
+            reg_.emplace<sprite>(new_e, sprite::unchecked_construct_tag{}, "*");
+            reg_.emplace<visible_in_game>(new_e);
+            reg_.emplace<z_depth>(new_e, 1);
+            reg_.emplace<life::lifetime>(new_e, std::chrono::seconds{1});
 
-                reg_.emplace<life::death_last_will>(
-                    new_e, [](entt::registry& r_, const entt::entity ent_) {
-                        auto& lb = r_.get<loc>(ent_);
-                        auto& trans = r_.get<translation>(ent_);
+            reg_.emplace<life::death_last_will>(
+                new_e, [](entt::registry& r_, const entt::entity ent_) {
+                    auto& lb = r_.get<loc>(ent_);
+                    auto& trans = r_.get<translation>(ent_);
 
-                        auto create_fragment = [&r_, lb, trans](loc offset,
-                                                                velocity dir_) {
-                            const entt::entity proj = r_.create();
-                            r_.emplace<projectile>(proj);
-                            r_.emplace<sprite>(proj, ".");
-                            r_.emplace<loc>(proj, lb + offset);
-                            r_.emplace<translation>(proj, trans.get());
-                            r_.emplace<visible_in_game>(proj);
-                            r_.emplace<z_depth>(proj, 0);
-                            r_.emplace<velocity>(proj, dir_);
-                            r_.emplace<life::lifetime>(proj,
-                                                       std::chrono::seconds{1});
-                            r_.emplace<non_uniform_movement_tag>(proj);
-                            r_.emplace<collision::agent>(proj);
-                            r_.emplace<collision::on_collide>(
-                                proj, &projectile::on_collide);
-                        };
+                    auto create_fragment = [&r_, lb, trans](loc offset,
+                                                            velocity dir_) {
+                        const entt::entity proj = r_.create();
+                        r_.emplace<projectile>(proj);
+                        r_.emplace<sprite>(
+                            proj, sprite::unchecked_construct_tag{}, ".");
+                        r_.emplace<loc>(proj, lb + offset);
+                        r_.emplace<translation>(proj, trans.get());
+                        r_.emplace<visible_in_game>(proj);
+                        r_.emplace<z_depth>(proj, 0);
+                        r_.emplace<velocity>(proj, dir_);
+                        r_.emplace<life::lifetime>(proj,
+                                                   std::chrono::seconds{1});
+                        r_.emplace<non_uniform_movement_tag>(proj);
+                        r_.emplace<collision::agent>(proj);
+                        r_.emplace<collision::on_collide>(
+                            proj, &projectile::on_collide);
+                    };
 
-                        create_fragment({0., 1.}, {0, 2});
-                        create_fragment({0., -1.}, {0., -2.});
-                        create_fragment({0, 0}, {1, 0});
-                        create_fragment({-1, 0}, {-1, 0});
-                    });
-            });
+                    create_fragment({0., 1.}, {0, 2});
+                    create_fragment(
+                        {0., -1.},
+                        {0., -2.}); // NOLINT(readability-magic-numbers)
+                    create_fragment({0, 0}, {1, 0});
+                    create_fragment({-1, 0}, {-1, 0});
+                });
+        });
     }
 };
 struct gun {
-
-    static collision::responce on_collide(entt::registry& reg,
-                                          const entt::entity self,
-                                          const entt::entity collider) {
-        if (reg.all_of<character>(collider)) {
+    static collision::responce
+    on_collide(entt::registry& reg,
+               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+               const entt::entity self, const entt::entity collider) {
+        if(reg.all_of<character>(collider)) {
             reg.emplace_or_replace<life::begin_die>(self);
             return collision::responce::ignore;
         }
@@ -133,7 +145,8 @@ struct gun {
 
     static void make(entt::registry& reg, const entt::entity e, loc loc) {
         reg.emplace<gun>(e);
-        actor::make_base_renderable(reg, e, loc, 1, sprite("<"));
+        actor::make_base_renderable(
+            reg, e, loc, 1, sprite(sprite::unchecked_construct_tag{}, "<"));
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &gun::on_collide);
     }
@@ -147,9 +160,11 @@ struct gun {
         using namespace pos_declaration;
         const loc spawn_translation =
             dir == draw_direction::right ? loc(sh.bounds()[X], 0) : loc(-1, 0);
-        projectile::make(reg, proj, l + spawn_translation,
-                         velocity{15 * static_cast<float>(dir), 0},
-                         std::chrono::seconds{4});
+        static constexpr float projectile_start_force = 15.;
+        projectile::make(
+            reg, proj, l + spawn_translation,
+            velocity(projectile_start_force * static_cast<float>(dir), 0),
+            std::chrono::seconds{4});
     }
 };
 
@@ -179,31 +194,36 @@ struct timer final {
 };
 
 struct character final {
-    static collision::responce on_collide(entt::registry& reg,
-                                          const entt::entity self,
-                                          const entt::entity collider) {
-        // TODO collision functions without cast?
-        if (reg.all_of<gun>(collider)) {
+    static collision::responce
+    on_collide(entt::registry& reg,
+               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+               const entt::entity self, const entt::entity collider) {
+        // TODO(Igor) collision functions without cast?
+        if(reg.all_of<gun>(collider)) {
             auto& animation = reg.get<sprite>(self);
             auto dir = reg.get<draw_direction>(self);
             reg.emplace<previous_sprite>(
                 self, std::exchange(
                           animation,
-                          sprite(dir == draw_direction::left ? "-#" : "#-")));
+                          sprite(sprite::unchecked_construct_tag{},
+                                 dir == draw_direction::left ? "-#" : "#-")));
             reg.emplace<on_change_direction>(
                 self, [self, &reg](draw_direction new_dr, sprite& sp) {
-                    auto s = new_dr == draw_direction::left ? "-#" : "#-";
-                    reg.emplace<previous_sprite>(self,
-                                                 std::exchange(sp, sprite(s)));
+                    const auto* s =
+                        new_dr == draw_direction::left ? "-#" : "#-";
+                    reg.emplace<previous_sprite>(
+                        self,
+                        std::exchange(
+                            sp, sprite(sprite::unchecked_construct_tag{}, s)));
                 });
 
             auto& [signal] = reg.get<input::processor::down_signal>(self);
             signal.connect([](entt::registry& reg_, const entt::entity chrcter,
                               const input::state_t& state,
-                              const timings::duration dt) {
-                if (auto key = input::has_key(state, input::key::space);
-                    key && !(key->press_count % 5)) {
-                    
+                              const timings::duration /*dt*/) {
+                static constexpr int every_key = 5;
+                if(auto key = input::has_key(state, input::key::space);
+                   key && !(key->press_count % every_key)) {
                     gun::fire(reg_, chrcter);
                 }
             });
@@ -224,30 +244,23 @@ struct character final {
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &character::on_collide);
     }
-    /*
-        auto& vel = view.get<velocity>(entity);
-        auto& trans = view.get<translation>(entity);
 
-        constexpr float alpha = 1.f / 60.f;
-
-        loc friction = -(vel * friction_factor);
-        vel += friction * loc(alpha);
-
-        trans.pin() = vel * static_cast<double>(alpha);
-
-    */
-    template <input::key UP = input::key::w, input::key LEFT = input::key::a,
-              input::key DOWN = input::key::s, input::key RIGHT = input::key::d>
+    template<input::key UP = input::key::w, input::key LEFT = input::key::a,
+             input::key DOWN = input::key::s, input::key RIGHT = input::key::d>
     static void process_movement_input(entt::registry& reg,
                                        const entt::entity e,
                                        const input::state_t& state,
-                                       const timings::duration dt) {
+                                       const timings::duration /*dt*/) {
         auto& vel = reg.get<velocity>(e);
-        auto upd = [](double& vel, int value, int pressed_count) mutable{
-            vel += value * easing::easeInExpo(glm::mix(0.8, 1.1, pressed_count/100.));
+        static constexpr glm::vec2 acceleration_range{0.8, 1.1};
+        auto upd = [](double& vel, int value, int pressed_count) mutable {
+            vel += value
+                   * easing::easeInExpo(glm::mix(acceleration_range.x,
+                                                 acceleration_range.y,
+                                                 pressed_count / 100.));
         };
-        for (auto k : state) {
-            switch (k.key) {
+        for(auto k: state) {
+            switch(k.key) {
             case UP:
                 upd(vel.y, -1, k.press_count);
                 break;
@@ -277,7 +290,6 @@ struct atmosphere final {
         reg.emplace<timeline::eval_direction>(e, timeline::direction::reverse);
     }
     static void run_cycle(entt::registry& reg, const entt::entity timer) {
-
         const auto cycle_timeline = reg.create();
 
         timeline::make(reg, cycle_timeline, &atmosphere::update_cycle,
@@ -303,8 +315,8 @@ struct atmosphere final {
         const auto& [start, end] = reg.get<color_range>(e);
         const auto& [current_lifetime] = reg.get<life::lifetime>(e);
 
-        double value = (current_lifetime - cycle_duration) /
-                       (std::chrono::duration<double>{0} - cycle_duration);
+        double value = (current_lifetime - cycle_duration)
+                       / (std::chrono::duration<double>{0} - cycle_duration);
         value *= static_cast<double>(d);
 
         const COLORREF new_back_color =
@@ -323,21 +335,24 @@ struct atmosphere final {
                 np->popup_window.back_color = new_back_color;
                 SetWindowText(np->popup_window.window,
                               np->popup_window.text.data());
-                static_assert(int(' ') + 100 == 132);
-                int style = 132;
-                // TODO to scintilla wrapper
+                // TODO(Igor) values from lexer
+                static constexpr int space_code = 32;
+                static constexpr int style_start = 100;
+                static_assert(static_cast<int>(' ') == space_code);
+                int style = style_start + space_code;
+                // TODO(Igor) to Scintilla wrapper
                 sct->dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, new_back_color);
                 sct->dcall2(SCI_STYLESETBACK, 0, new_back_color);
                 sct->dcall2(SCI_STYLESETFORE, STYLE_DEFAULT, new_front_color);
                 sct->dcall2(SCI_STYLESETFORE, 0, new_front_color);
-                for (auto i : ALL_COLORS) {
+                for(auto i: ALL_COLORS) {
                     sct->dcall2(SCI_STYLESETBACK, style, new_back_color);
                     style++;
                 }
             });
     }
 
-  private:
-    inline static auto time_between_cycle = std::chrono::seconds{20};
-    inline static auto cycle_duration = std::chrono::seconds{2};
+private:
+    inline static const auto time_between_cycle = std::chrono::seconds{20};
+    inline static const auto cycle_duration = std::chrono::seconds{2};
 };

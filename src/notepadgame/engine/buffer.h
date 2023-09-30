@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-#include "engine/details/base_types.h"
+#include "engine/details/base_types.hpp"
 #include <algorithm>
 #include <numeric>
 #include "range/v3/view/enumerate.hpp"
@@ -21,9 +21,9 @@ class back_buffer {
     // ensure null-terminated
     std::basic_string<char_size> buf_;
     std::vector<int32_t> z_buf_;
-    mutable std::shared_mutex rw_lock_;
 
   public:
+    mutable std::mutex mutex_;
     explicit back_buffer(size_t height, size_t width)
         : width_(width),
           buf_(std::basic_string<char_size>(width * height, ' ')),
@@ -33,14 +33,14 @@ class back_buffer {
             buf_[i * width - ENDL_SIZE] = '\n';
         }
     }
-    void draw(const pos& pivot, const sprite_view sh, int32_t depth);
-    void erase(const pos& pivot, const sprite_view sh, int32_t depth);
+    void draw(const pos& pivot, sprite_view sh, int32_t depth);
+    void erase(const pos& pivot,sprite_view sh, int32_t depth);
 
     template <typename Visitor>
         requires std::is_invocable_v<Visitor,
                                      const std::basic_string<char_size>&>
     void view(Visitor&& visitor) const {
-        std::shared_lock<std::shared_mutex> lock(rw_lock_);
+        std::lock_guard<std::mutex> lock(mutex_);
         visitor(buf_);
     }
 
@@ -48,7 +48,7 @@ class back_buffer {
     // visitor traverse all sprite matrix
     template <typename Visitor>
         requires std::is_invocable_v<Visitor, const pos, char_size>
-    void traverse_sprite_positions(const pos pivot, const sprite_view sp,
+    void traverse_sprite_positions(pos pivot, sprite_view sp,
                                    Visitor&& visitor) const;
 };
 
@@ -57,11 +57,11 @@ template <typename Visitor>
 void back_buffer::traverse_sprite_positions(const pos sprite_pivot,
                                             const sprite_view sp,
                                             Visitor&& visitor) const {
-    for (size_t i = 0; i < sp.data.size(); i++) {
-        if (pos p = sprite_pivot + pos(i % sp.width, i / sp.width);
+    for (size_t i = 0; i < sp.data().size(); i++) {
+        if (pos p = sprite_pivot + pos(i % sp.width(), i / sp.width());
             p.x >= 0 && p.x < width_ - 1 && p.y >= 0 &&
             p.y < buf_.size() / (width_ - 1)) {
-            visitor(p, sp.data[i]);
+            visitor(p, sp.data()[i]);
         }
     }
 }

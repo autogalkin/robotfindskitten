@@ -16,3 +16,6 @@ Checks: >
   -readability-identifier-length,
   -performance-no-int-to-ptr,
   -misc-non-private-member-variables-in-classes,
+  -readability-convert-member-functions-to-static,
+  -misc-no-recursion,
+  -google-build-using-namespace,

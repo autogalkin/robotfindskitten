@@ -5,7 +5,7 @@ set(ENGINE_SOURCES
     )
 set(ENGINE_HEADERS
     engine/buffer.h
-    engine/details/base_types.h
+    engine/details/base_types.hpp
     engine/details/iat_hook.h
     engine/details/nonconstructors.h
     engine/scintilla_wrapper.h

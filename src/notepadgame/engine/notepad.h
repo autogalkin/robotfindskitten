@@ -30,14 +30,13 @@ bool hook_SetWindowTextW(HMODULE module);
 // NOLINTEND(readability-redundant-declaration)
 
 struct title_line {
-
     uint32_t game_thread_fps;
     uint32_t render_thread_fps;
     [[nodiscard]] std::wstring make() {
         return std::format(buf_, game_thread_fps, render_thread_fps);
     };
 
-  private:
+private:
     static constexpr auto buf_ =
         L"robotfindskitten, fps: game_thread {:02} | render_thread {:02}";
 };
@@ -60,7 +59,7 @@ class notepad {
                                  const DWORD ul_reason_for_call,
                                  LPVOID lp_reserved);
 
-  public:
+public:
     struct opts {
         uint8_t all = static_cast<uint8_t>(values::empty);
         // Not enum class
@@ -101,7 +100,9 @@ class notepad {
         hook_GetMessageW(module);
         hook_SetWindowTextW(module);
     }
-    [[nodiscard]] HWND get_window() const { return main_window_; }
+    [[nodiscard]] HWND get_window() const {
+        return main_window_;
+    }
 
     popup popup_window;
 
@@ -113,7 +114,7 @@ class notepad {
         return notepad::get().commands_.push(cmd);
     };
 
-  private:
+private:
     static notepad& get() {
         static notepad notepad{};
         return notepad;
