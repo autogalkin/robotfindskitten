@@ -46,6 +46,9 @@ inline void define_all_styles(scintilla* sc) {
 
 inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
                   const pos game_area) {
+
+    world w2;
+
     cmds.push([](notepad*, scintilla* sc) {
         sc->set_lexer(&game_lexer);
         define_all_styles(sc);
@@ -89,7 +92,7 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
         unique_position(i);
     }
     auto w_uuid = boost::uuids::random_generator()();
-    notepad::push_command([w_uuid]( notepad* np, scintilla* sc) {
+    notepad::push_command([w_uuid](notepad* np, scintilla* sc) {
         static constexpr int POPUP_WINDOW_HEIGHT = 100;
         static constexpr int POPUP_WINDOW_OFFSET = 20;
         auto w = show_static_control(
@@ -115,21 +118,23 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
             reg.emplace<collision::on_collide>(
                 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
                 ent, [w_uuid](entt::registry& reg, const entt::entity self,
-                        const entt::entity collider) {
+                              const entt::entity collider) {
                     if(reg.all_of<character>(collider)) {
                         char ascii_mesh = reg.get<sprite>(self).data()[0];
                         const auto l = reg.get<const loc>(self);
                         rng.seed(static_cast<int64_t>(
                             static_cast<int>(ascii_mesh) + l.y + l.x));
                         size_t rand_msg = dist(rng);
-                        notepad::push_command([w_uuid, msg = messages[rand_msg]](
-                                                  notepad* np, scintilla*) {
-                            auto w = std::ranges::find_if(
-                                np->static_controls,
-                                [w_uuid](auto& w) { return w.id == w_uuid; });
-                            SetWindowText(w->wnd.get(), msg.data());
-                            w->text = msg;
-                        });
+                        notepad::push_command(
+                            [w_uuid, msg = messages[rand_msg]](notepad* np,
+                                                               scintilla*) {
+                                auto w = std::ranges::find_if(
+                                    np->static_controls, [w_uuid](auto& w) {
+                                        return w.id == w_uuid;
+                                    });
+                                SetWindowText(w->wnd.get(), msg.data());
+                                w->text = msg;
+                            });
                     }
                     if(reg.all_of<projectile>(collider)) {
                         reg.emplace_or_replace<life::begin_die>(self);
@@ -198,5 +203,19 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
             reg.emplace<input::processor::down_signal>(ent);
         input_callback.connect(&character::process_movement_input<>);
     });
+
+    timings::fixed_time_step fixed_time_step;
+    timings::fps_count fps_count;
+    volatile std::atomic_bool done(false);
+    while(!done.load()) {
+        fixed_time_step.sleep();
+        fps_count.fps([](auto fps) {
+            notepad::push_command([fps](notepad* np, scintilla*) {
+                np->window_title.game_thread_fps = fps;
+            });
+        });
+        // TODO(Igor): real alpha
+        w.tick(timings::dt);
+    }
 };
 } // namespace game
