@@ -221,8 +221,6 @@ bool hook_GetMessageW(const HMODULE module) {
                     // SendMessage(np.popup_window.window, WM_PAINT, 0, 0);
                     auto scroll_delta = GET_WHEEL_DELTA_WPARAM(lpMsg->wParam);
                     // horizontal scroll
-                    auto v_scroll = 0;
-                    auto h_scroll = 0;
                     if(LOWORD(lpMsg->wParam) & MK_SHIFT) {
                         auto char_width = np.scintilla_->get_char_width();
                         np.scintilla_->scroll(
@@ -233,7 +231,7 @@ bool hook_GetMessageW(const HMODULE module) {
                                                + (np.scintilla_
                                                       ->get_window_width()
                                                   / char_width)
-                                           < GAME_AREA[1]
+                                           < GAME_AREA.x
                                        ? 3
                                        : 0),
                             0);
@@ -244,7 +242,7 @@ bool hook_GetMessageW(const HMODULE module) {
                             0, scroll_delta > 0
                                    ? -3
                                    : ((np.scintilla_->get_lines_on_screen() - 1)
-                                              < GAME_AREA[0]
+                                              < GAME_AREA.y
                                           ? 3
                                           : 0));
                         lpMsg->message = WM_NULL;

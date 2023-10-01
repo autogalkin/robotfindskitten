@@ -38,7 +38,8 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E touch "${SCI_PACHED_STAMP}"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     DEPENDS "${SCI_PATCH_FILE}"
-    COMMENT "Replace Scintilla source code files with patched own")
+    COMMENT "Replace Scintilla source code files with patched files"
+)
 
 # find make
 find_program(IS_NMAKE_EXISTS nmake)
@@ -73,7 +74,7 @@ add_custom_target(
     scintilla ALL
     COMMAND ${SCI_BUILD_COMMAND}
     WORKING_DIRECTORY "${scintilla_SOURCE_DIR}/win32"
-    # Run only bin/Scintilla.dll was touched by scintilla_patch
+    DEPENDS "${SCI_PACHED_STAMP}"
     COMMENT "Build Scintilla with original Makefile")
 
 # revert patch after build Scintilla
