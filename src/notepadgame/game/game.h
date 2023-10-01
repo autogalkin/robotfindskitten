@@ -65,20 +65,23 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
         atmosphere::make(reg, e);
     });
 
-    {
-        constexpr int ITEMS_COUNT = 150;
-        std::array<pos, ITEMS_COUNT> all{};
-        std::mt19937 gen(std::random_device{}());
-        std::uniform_int_distribution<> dist_x(0, game_area.x - 1 - 1);
-        std::uniform_int_distribution<> dist_y(0, game_area.y - 1);
-        for(auto i = 0; i < ITEMS_COUNT; i++) {
-            pos p;
-            do {
-                p = pos{dist_x(gen), dist_y(gen)};
-            } while(
-                std::ranges::any_of(all.begin(), all.begin() + i,
+    constexpr int ITEMS_COUNT = 201;
+    std::array<pos, ITEMS_COUNT> all{};
+    std::mt19937 gen(std::random_device{}());
+    std::uniform_int_distribution<> dist_x(0, game_area.x - 1 - 1);
+    std::uniform_int_distribution<> dist_y(0, game_area.y - 1);
+    auto unique_position = [&dist_x, &dist_y, &gen, &all](int32_t item_index) {
+        pos p;
+        do {
+            p = pos{dist_x(gen), dist_y(gen)};
+        } while(std::ranges::any_of(all.begin(), all.begin() + item_index,
                                     [p](auto other) { return p == other; }));
-            all[i] = p;
+        all[item_index] = p;
+        return p;
+    };
+    {
+        for(auto i = 0; i < ITEMS_COUNT-1; i++) {
+            pos p = unique_position(i);
         }
         std::uniform_int_distribution<> dist_ch(printable_range.first,
                                                 printable_range.second);
@@ -141,11 +144,18 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
         gun::make(reg, e, gun_pos);
     });
 #endif
-    w.spawn_actor([](entt::registry& reg, const entt::entity ent) {
+    w.spawn_actor([pos = unique_position(all.size()-1), game_area](entt::registry& reg,
+                                                      const entt::entity ent) {
         reg.emplace<sprite>(ent,
                             sprite(sprite::unchecked_construct_tag{}, "#"));
-        static constexpr pos char_pos = pos{20, 14};
-        character::make(reg, ent, char_pos);
+        character::make(reg, ent, pos);
+        notepad::push_command([pos, game_area](notepad*, scintilla* sc) {
+            auto height = sc->get_lines_on_screen();
+            auto width = sc->get_window_width() / sc->get_char_width();
+            sc->scroll(std::max(0, static_cast<int>(std::min(pos.x - width / 2,
+                                                 game_area.x - width))),
+                       std::max(0, std::min(pos.y - height / 2, game_area.y - height)));
+        });
         auto& [input_callback] =
             reg.emplace<input::processor::down_signal>(ent);
         input_callback.connect(&character::process_movement_input<>);

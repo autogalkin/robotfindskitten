@@ -2,11 +2,10 @@
 #include <boost/lockfree/spsc_queue.hpp>
 #include <memory>
 #include <optional>
+#include <type_traits>
 
 // clang-format off
 #include "Richedit.h"
-#include <type_traits>
-#include <wingdi.h>
 #include <winuser.h>
 #include <Windows.h>
 #include "CommCtrl.h"
