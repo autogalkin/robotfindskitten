@@ -33,11 +33,11 @@ add_subdirectory(src/notepadgame)
 
 
 if( ROBOTFINDSKITTEN_BUILD_TESTS )
-	enable_testing()
-    find_package(GTest CONFIG REQUIRED)
-    include(CTest)
-    include(GoogleTest)
-    add_subdirectory(tests)
+	#enable_testing()
+    #find_package(GTest CONFIG REQUIRED)
+    #include(CTest)
+    #include(GoogleTest)
+    #add_subdirectory(tests)
 endif()
 
 

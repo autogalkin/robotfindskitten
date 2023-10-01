@@ -31,6 +31,24 @@ struct actor {
         reg.emplace<z_depth>(e, z_depth_position);
     }
 };
+
+inline void emplace_simple_death(entt::registry& reg, const entt::entity e) {
+    reg.emplace<life::death_last_will>(e, [](entt::registry& reg_,
+                                             const entt::entity self) {
+        const auto dead = reg_.create();
+        auto old_loc = reg_.get<loc>(self);
+        actor::make_base_renderable(
+            reg_, dead, old_loc - loc(1, 0), 1,
+            sprite(sprite::unchecked_construct_tag{}, "___"));
+        reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
+        reg_.emplace<timeline::eval_direction>(dead);
+        reg_.emplace<timeline::what_do>(
+            dead,
+            [](entt::registry& r_, const entt::entity e_,
+               timeline::direction /**/) { r_.get<translation>(e_).mark(); });
+    });
+}
+
 struct projectile {
     static collision::responce
     on_collide(entt::registry& r,
@@ -189,9 +207,9 @@ make(entt::registry& reg, const entt::entity e,
 // waits for the end of time and call a given function
 struct timer {
     static void
-    make(entt::registry& reg, const entt::entity e,
+    make(entt::registry& reg, entt::entity e,
          std::function<void(entt::registry&, entt::entity)> what_do,
-         const std::chrono::milliseconds duration = std::chrono::seconds{1}) {
+         std::chrono::milliseconds duration = std::chrono::seconds{1}) {
         reg.emplace<life::lifetime>(e, duration);
         reg.emplace<life::death_last_will>(e, std::move(what_do));
     }
@@ -284,71 +302,96 @@ struct character {
     }
 };
 
-struct kitten {
-    static void make(entt::registry& reg, const entt::entity e, loc loc,
-                     sprite sp) {
-        reg.emplace<kitten>(e);
-        actor::make_base_renderable(reg, e, loc, 1, std::move(sp));
-        reg.emplace<collision::agent>(e);
-        reg.emplace<collision::on_collide>(e, &kitten::on_collide);
+enum class game_status_flag {
+    unset,
+    find,
+    kill,
+};
+
+namespace kitten {
+struct kitten_tag {};
+inline collision::responce
+on_collide(entt::registry& reg,
+           // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+           const entt::entity self, const entt::entity collider,
+           game_status_flag& game_over_flag) {
+    if(reg.all_of<projectile>(collider)) {
+        game_over_flag = game_status_flag::kill;
+        emplace_simple_death(reg, self);
+        reg.emplace<life::begin_die>(self);
     }
-    static collision::responce
-    on_collide(entt::registry& reg,
-               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-               const entt::entity /*self*/, const entt::entity collider) {
-        if(reg.all_of<projectile>(collider)) {}
 
-        if(reg.all_of<character>(collider)) {
-            auto w_uuid = boost::uuids::random_generator()();
-            notepad::push_command([w_uuid](notepad* np, scintilla* sct) {
-                auto w = show_static_control(
-                    np->get_window(), np->back_color, RGB(0, 0, 0),
-                    // NOLINTNEXTLINE(readability-magic-numbers)
-                    pos(sct->get_window_width(), 50), pos(20, 0));
-                w.id = w_uuid;
-                np->static_controls.emplace_back(std::move(w));
-            });
-
-            timings::fixed_time_step fixed_time_step{};
+    if(reg.all_of<character>(collider)) {
+        auto& ch = reg.get<input::processor::down_signal>(collider);
+        std::exchange(ch, input::processor::down_signal{});
+        reg.emplace<life::begin_die>(self);
+        auto w = static_control{};
+        auto w_uuid = w.get_id();
+        auto a = std::shared_ptr<int>(nullptr, [](int*){});
+        notepad::push_command(std::move([w=std::move(w)](notepad* np, scintilla* sct) mutable {
+            w
+             //NOLINTNEXTLINE(readability-magic-numbers)
+            .with_size({sct->get_window_width(), 50}).with_position({20, 0})
+            .with_text("#")
+            .with_text_color(RGB(0, 0, 0))
+            .show(np);
+            np->static_controls.emplace_back(std::move(w));
+        }));
+        const auto end_anim = reg.create();
+        reg.emplace<timeline::eval_direction>(end_anim);
+        reg.emplace<timeline::what_do>(
             // NOLINTNEXTLINE(readability-magic-numbers)
-            int w_pos = 20;
-            int timer = 0;
-            while(true) {
-                fixed_time_step.sleep();
-                w_pos += 1;
+            end_anim, [w_uuid,timer = 0](
+                          entt::registry& /*r*/, const entt::entity /*e*/,
+                          timeline::direction /**/) mutable {
                 timer += 1;
                 // NOLINTNEXTLINE(readability-magic-numbers)
-                if(!(timer % 5)) {
-                    notepad::push_command(
-                        [&w_pos, w_uuid](notepad* np, scintilla* sct) {
-                            // NOLINTNEXTLINE(readability-magic-numbers)
-                            auto w = std::ranges::find_if(
-                                np->static_controls,
-                                [w_uuid](auto& w) { return w.id == w_uuid; });
-                            RECT rect = sct->get_window_rect();
-                            SetWindowText(w->wnd.get(), "#");
-                            std::cout << "setpos";
-                            SetWindowPos(
-                                w->wnd.get(), HWND_TOP, w_pos, 0,
-                                // NOLINTNEXTLINE(readability-magic-numbers)
-                                100, 50, 0);
-                        });
-                }
-                // NOLINTNEXTLINE(readability-magic-numbers)
-                if(timer == 500) {
+                if(!(timer % 2)) {
                     notepad::push_command(
                         [w_uuid](notepad* np, scintilla*  /*sct*/) {
-                            np->static_controls.erase(std::ranges::find_if(
+                            auto w = std::ranges::find_if(
                                 np->static_controls,
-                                [w_uuid](auto& w) { return w.id == w_uuid; }));
+                                [w_uuid](auto& w) { return w.get_id() == w_uuid; });
+                            w->position.x +=1;
+                            SetWindowText(*w, "#");
+                            SetWindowPos(
+                                *w, HWND_TOP, w->position.x,w->position.y,
+                                w->size.x, w->size.y, 0);
                         });
-                    break;
                 }
-            }
-        }
-        return collision::responce::ignore;
+            });
+        using namespace std::chrono_literals;
+        timer::make(
+            reg,end_anim,
+            [w_uuid=w_uuid, &game_over_flag](entt::registry&  /*reg*/, const entt::entity  /*timer*/) {
+                notepad::push_command(
+                    [w_uuid](notepad* np, scintilla* /*sct*/) {
+                        np->static_controls.erase(std::ranges::find_if(
+                            np->static_controls,
+                            [w_uuid](auto& w) { return w.get_id() == w_uuid; }));
+                    });
+
+                game_over_flag = game_status_flag::find;
+            },
+            4s);
     }
+    return collision::responce::ignore;
 };
+inline void make(entt::registry& reg, const entt::entity e, loc loc, sprite sp,
+                 game_status_flag& game_over_flag) {
+    reg.emplace<kitten_tag>(e);
+    actor::make_base_renderable(reg, e, loc, 1, std::move(sp));
+    reg.emplace<collision::agent>(e);
+    reg.emplace<collision::on_collide>(
+        e, collision::on_collide{[&game_over_flag](
+               entt::registry& reg,
+               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+               entt::entity self, entt::entity collider) {
+            return kitten::on_collide(reg, self, collider, game_over_flag);
+        }});
+}
+
+} // namespace kitten
 
 struct atmosphere {
     struct color_range {
@@ -404,7 +447,7 @@ struct atmosphere {
                 np->back_color = new_back_color;
                 for(auto& w: np->static_controls) {
                     w.fore_color = new_front_color;
-                    SetWindowText(w.wnd.get(), w.text.data());
+                    SetWindowText(w.get_wnd(), w.text.data());
                 }
                 // TODO(Igor) values from lexer
                 static constexpr int space_code = 32;

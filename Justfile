@@ -28,3 +28,12 @@ configure-x64-release:
 
 run-debug:
     .\out\bin\x64-debug\loader.exe 
+
+run-release:
+    .\out\bin\x64-debug\loader.exe 
+
+lldb:
+    lldb -s .lldb .\out\bin\x64-debug\loader.exe 
+
+lldb-notepad:
+    lldb -n notepad.exe

@@ -27,9 +27,8 @@
 #include "engine/world.h"
 #include "engine/time.h"
 
-extern const pos GAME_AREA;
-
-volatile std::atomic_bool done(false);
+std::shared_ptr<std::atomic_bool> shutdown_token =
+    std::make_shared<std::atomic_bool>(false);
 
 class thread_guard: public noncopyable {
     std::thread t;
@@ -37,7 +36,7 @@ class thread_guard: public noncopyable {
 public:
     explicit thread_guard(std::thread&& t_): t(std::move(t_)) {}
     ~thread_guard() {
-        done.store(true);
+        ::shutdown_token->store(true);
         if(t.joinable()) {
             t.join();
         }
@@ -47,7 +46,7 @@ public:
 notepad::notepad()
     : scintilla_(std::nullopt), main_window_(), original_proc_(0),
       on_open_(std::make_unique<open_signal_t>()), fixed_time_step_(),
-      fps_count_(), buf_(GAME_AREA.y, GAME_AREA.x) {}
+      fps_count_() {}
 
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
 void notepad::tick_render() {
@@ -60,44 +59,18 @@ void notepad::tick_render() {
         }
     });
     notepad::get().set_window_title(notepad::get().window_title.make());
-    // swap buffers in Scintilla
-    // always valid optional
-    const auto pos = scintilla_->get_caret_index();
-    buf_.view([this](const std::basic_string<char_size>& buf) {
-        scintilla_->set_new_all_text(buf);
-    });
-    scintilla_->set_caret_index(pos);
 }
 
 // game in another thread
 void notepad::start_game() {
-    static thread_guard game_thread = thread_guard(std::thread(
-        [&buf = buf_,
-         on_open = std::exchange(
+    static const thread_guard game_thread = thread_guard(std::thread(
+        [on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
-         &cmds = commands_]() mutable {
-            timings::fixed_time_step fixed_time_step;
-            timings::fps_count fps_count;
-            world w;
-            (*on_open)(w, buf, cmds);
-            on_open.reset();
-            while(!done.load()) {
-                fixed_time_step.sleep();
-                fps_count.fps([](auto fps) {
-                    notepad::push_command([fps](notepad* np, scintilla*) {
-                        np->window_title.game_thread_fps = fps;
-                    });
-                });
-                // TODO(Igor): real alpha
-                w.tick(timings::dt);
-            }
-        }));
-
+         &cmds = commands_]() { (*on_open)(shutdown_token); }));
     RECT rect = {NULL};
     ::GetWindowRect(main_window_, &rect);
     ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0,
                    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-
 }
 // NOLINTEND(bugprone-unchecked-optional-access)
 
@@ -140,7 +113,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
             RECT rect = {NULL};
             GetWindowRect(np.scintilla_->edit_window_, &rect);
             for(auto& w: np.static_controls) {
-                ::SetWindowPos(w.wnd.get(), nullptr, w.position.x, w.position.y,
+                ::SetWindowPos(w, nullptr, w.position.x, w.position.y,
                                w.size.x, w.size.y, SWP_NOACTIVATE);
             }
         }
@@ -149,7 +122,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     case WM_CTLCOLORSTATIC: {
         auto& np = notepad::get();
         for(auto& w: np.static_controls) {
-            if(w.wnd.get() == reinterpret_cast<HWND>(lp)) {
+            if(w == reinterpret_cast<HWND>(lp)) {
                 static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
                                        decltype(&::DeleteObject)>
                     hBrushLabel{CreateSolidBrush(np.back_color),
@@ -158,7 +131,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
                 HDC popup = reinterpret_cast<HDC>(wp);
                 auto& np = notepad::get();
                 SetTextColor(popup, w.fore_color);
-                SetLayeredWindowAttributes(w.wnd.get(), np.back_color, 0,
+                SetLayeredWindowAttributes(w, np.back_color, 0,
                                            LWA_COLORKEY);
                 SetBkColor(popup, np.back_color);
                 return reinterpret_cast<LRESULT>(hBrushLabel.get());
@@ -201,7 +174,7 @@ bool hook_GetMessageW(const HMODULE module) {
                                                + (np.scintilla_
                                                       ->get_window_width()
                                                   / char_width)
-                                           < GAME_AREA.x
+                                           < np.scintilla_->get_line_lenght(0)
                                        ? 3
                                        : 0),
                             0);
@@ -212,7 +185,7 @@ bool hook_GetMessageW(const HMODULE module) {
                             0, scroll_delta > 0
                                    ? -3
                                    : ((np.scintilla_->get_lines_on_screen() - 1)
-                                              < GAME_AREA.y
+                                              < np.scintilla_->get_lines_count()
                                           ? 3
                                           : 0));
                         lpMsg->message = WM_NULL;
@@ -331,23 +304,16 @@ bool hook_SetWindowTextW(HMODULE module) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
 // NOLINTEND(readability-function-cognitive-complexity)
 
-static_control
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-show_static_control(HWND parent_window, COLORREF back_color_alpha,
-                    COLORREF fore_color, pos size, pos position) {
-    static_control w;
-    w.fore_color = fore_color;
-    w.size = size;
-    w.position = position;
+void static_control::show(notepad* np) noexcept {
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-    w.wnd.reset(CreateWindowEx(
-        WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST, "STATIC", "",
-        dwStyle, 0, 0, size.x, size.y, parent_window, nullptr,
-        GetModuleHandle(nullptr), nullptr));
-    SetLayeredWindowAttributes(w.wnd.get(), back_color_alpha, 0, LWA_COLORKEY);
-    SetWindowPos(w.wnd.get(), HWND_TOP, w.position.x, w.position.y, size.x,
-                 size.y, 0);
+    wnd_.reset(CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+                              "STATIC", "", dwStyle, 0, 0, size.x, size.y,
+                              np->get_window(), nullptr,
+                              GetModuleHandle(nullptr), nullptr));
+    SetLayeredWindowAttributes(wnd_.get(), np->back_color, 0, LWA_COLORKEY);
+    SetWindowPos(wnd_.get(), HWND_TOP, position.x, position.y, size.x, size.y,
+                 0);
     static constexpr int font_size = 38;
     static const std::unique_ptr<std::remove_pointer_t<HFONT>,
                                  decltype(&::DeleteObject)>
@@ -356,9 +322,8 @@ show_static_control(HWND parent_window, COLORREF back_color_alpha,
                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
                           L"Consolas"),
               &::DeleteObject};
-    SendMessageW(w.wnd.get(), WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()),
+    SendMessageW(wnd_.get(), WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()),
                  TRUE);
-    ShowWindow(w.wnd.get(), SW_SHOW);
-    UpdateWindow(w.wnd.get());
-    return w;
-};
+    ShowWindow(wnd_.get(), SW_SHOW);
+    UpdateWindow(wnd_.get());
+}

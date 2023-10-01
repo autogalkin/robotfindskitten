@@ -12,6 +12,7 @@
 #include "engine/details/base_types.hpp"
 
 #include "engine/time.h"
+#include "factories.h"
 #include "game/ecs_processors/collision.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input.h"
@@ -43,16 +44,23 @@ inline void define_all_styles(scintilla* sc) {
         style++;
     }
 }
-
-inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
-                  const pos game_area) {
-
-    world w2;
-
-    cmds.push([](notepad*, scintilla* sc) {
+inline void run(pos game_area);
+inline void start(pos game_area,
+                  // NOLINTNEXTLINE(performance-unnecessary-value-param)
+                  std::shared_ptr<std::atomic_bool> shutdown) {
+    notepad::push_command([](notepad*, scintilla* sc) {
         sc->set_lexer(&game_lexer);
         define_all_styles(sc);
     });
+    while(!shutdown->load()) {
+        run(game_area);
+    }
+};
+inline void run(pos game_area) {
+    // Delete order important!
+    back_buffer game_buffer{game_area};
+    world w{};
+    //
 
     auto& exec = w.procs;
     exec.emplace_back(input::processor{});
@@ -61,7 +69,7 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
     exec.emplace_back(timeline::executor{});
     exec.emplace_back(rotate_animator{});
     exec.emplace_back(collision::query(w, game_area));
-    exec.emplace_back(redrawer(buf, w));
+    exec.emplace_back(redrawer(game_buffer, w));
     exec.emplace_back(life::death_last_will_executor{});
     exec.emplace_back(life::killer{});
     exec.emplace_back(life::life_ticker{});
@@ -91,17 +99,20 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
     for(auto i = 0; i < ITEMS_COUNT; i++) {
         unique_position(i);
     }
-    auto w_uuid = boost::uuids::random_generator()();
-    notepad::push_command([w_uuid](notepad* np, scintilla* sc) {
-        static constexpr int POPUP_WINDOW_HEIGHT = 100;
-        static constexpr int POPUP_WINDOW_OFFSET = 20;
-        auto w = show_static_control(
-            np->get_window(), np->back_color, RGB(0, 0, 0),
-            pos(sc->get_window_width(), POPUP_WINDOW_HEIGHT),
-            pos(POPUP_WINDOW_OFFSET, 0));
-        w.id = w_uuid;
-        np->static_controls.emplace_back(std::move(w));
-    });
+    auto msg_w = static_control{};
+    auto w_uuid = msg_w.get_id();
+    
+    notepad::push_command(
+        [msg_w = std::move(msg_w)](notepad* np, scintilla* sc) mutable {
+            static constexpr int POPUP_WINDOW_HEIGHT = 100;
+            static constexpr int POPUP_WINDOW_OFFSET = 20;
+            msg_w.with_size(pos(sc->get_window_width(), POPUP_WINDOW_HEIGHT))
+                .with_position(pos(POPUP_WINDOW_OFFSET, 0))
+                .with_text_color(RGB(0, 0, 0))
+                .show(np);
+             np->static_controls.emplace_back(std::move(msg_w));
+        });
+    
     std::uniform_int_distribution<> dist_ch(printable_range.first,
                                             printable_range.second);
     for(size_t i = 0; i < all.size() - 3; i++) {
@@ -130,9 +141,9 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
                                                                scintilla*) {
                                 auto w = std::ranges::find_if(
                                     np->static_controls, [w_uuid](auto& w) {
-                                        return w.id == w_uuid;
+                                        return w.get_id() == w_uuid;
                                     });
-                                SetWindowText(w->wnd.get(), msg.data());
+                                SetWindowText(*w, msg.data());
                                 w->text = msg;
                             });
                     }
@@ -141,30 +152,17 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
                     }
                     return collision::responce::block;
                 });
-            reg.emplace<life::death_last_will>(
-                ent, [](entt::registry& reg_, const entt::entity self) {
-                    const auto dead = reg_.create();
-                    auto old_loc = reg_.get<loc>(self);
-
-                    actor::make_base_renderable(
-                        reg_, dead, old_loc - loc(1, 0), 1,
-                        sprite(sprite::unchecked_construct_tag{}, "___"));
-                    reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
-                    reg_.emplace<timeline::eval_direction>(dead);
-                    reg_.emplace<timeline::what_do>(
-                        dead, [](entt::registry& r_, const entt::entity e_,
-                                 timeline::direction /**/) {
-                            r_.get<translation>(e_).mark();
-                        });
-                });
+            emplace_simple_death(reg, ent);
         });
     }
-    w.spawn_actor([kitten_pos = all[kitten_i], kitten_mesh = dist_ch(gen)](
-                      entt::registry& reg, const entt::entity e) {
+
+    game_status_flag game_flag = game_status_flag::unset;
+    w.spawn_actor([kitten_pos = all[kitten_i], kitten_mesh = dist_ch(gen),
+                   &game_flag](entt::registry& reg, const entt::entity e) {
 #ifndef NDEBUG
         static constexpr auto debug_kitten_pos = pos{10, 30};
         kitten::make(reg, e, debug_kitten_pos,
-                     sprite(sprite::unchecked_construct_tag{}, "Q"));
+                     sprite(sprite::unchecked_construct_tag{}, "Q"), game_flag);
 #else
         kitten::make(reg, e, kitten_pos, kitten_mesh);
 #endif
@@ -204,10 +202,10 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
         input_callback.connect(&character::process_movement_input<>);
     });
 
-    timings::fixed_time_step fixed_time_step;
-    timings::fps_count fps_count;
-    volatile std::atomic_bool done(false);
-    while(!done.load()) {
+    timings::fixed_time_step fixed_time_step{};
+    timings::fps_count fps_count{};
+
+    while(game_flag == game_status_flag::unset) {
         fixed_time_step.sleep();
         fps_count.fps([](auto fps) {
             notepad::push_command([fps](notepad* np, scintilla*) {
@@ -216,6 +214,15 @@ inline void start(world& w, back_buffer& buf, notepad::commands_queue_t& cmds,
         });
         // TODO(Igor): real alpha
         w.tick(timings::dt);
+        // render
+        notepad::push_command([&game_buffer](notepad* /*np*/, scintilla* sc) {
+            // swap buffers in Scintilla
+            const auto pos = sc->get_caret_index();
+            game_buffer.view([sc](const std::basic_string<char_size>& buf) {
+                sc->set_new_all_text(buf);
+            });
+            sc->set_caret_index(pos);
+        });
     }
 };
 } // namespace game

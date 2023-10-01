@@ -55,12 +55,12 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
 
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         np.on_open()->get().connect(
-            [](world& world, back_buffer& b, notepad::commands_queue_t& cmds) {
+            [](auto shutdown) {
 #ifndef NDEBUG
                 static auto log_console = console::allocate();
 #endif // NDEBUG
                 printf("Notepad is loaded and initialized. Start a game\n");
-                game::start(world, b, cmds, GAME_AREA);
+                game::start(GAME_AREA, shutdown);
             });
 
         np.connect_to_notepad(

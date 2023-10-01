@@ -7,12 +7,13 @@
 #include <memory>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <thread>
 #include "engine/buffer.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/world.h"
-#include <boost/uuid/uuid.hpp> 
-#include <boost/uuid/uuid_generators.hpp> 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 
 #include "engine/time.h"
 
@@ -45,19 +46,56 @@ private:
 
 struct static_control {
     using id_t = boost::uuids::uuid;
-    using window_t = std::unique_ptr<std::remove_pointer_t<HWND>,
-                                     decltype(&::DestroyWindow)>;
+    // std::shared_ptr because boost::lockfree::spsc_queue no supported emplace
+    // See '#31 Support moveable objects and allow emplacing (Pull request)'
+    // https://github.com/boostorg/lockfree/pull/31
+    using window_t = std::shared_ptr<std::remove_pointer_t<HWND>>;
+
+private:
+    window_t wnd_ = {nullptr, &::DestroyWindow};
+    id_t id_      = make_id();
+
+public:
+    static id_t make_id() noexcept {
+        return boost::uuids::random_generator()();
+    }
+    static_control& with_position(pos where) noexcept {
+        this->position = where;
+        return *this;
+    }
+    static_control& with_size(pos size) noexcept {
+        this->size = size;
+        return *this;
+    }
+    static_control& with_text(std::string_view text) noexcept {
+        this->text = text;
+        return *this;
+    }
+    static_control& with_text_color(COLORREF color) noexcept {
+        this->fore_color = color;
+        return *this;
+    }
+    void show(notepad* np)noexcept;
+
+    [[nodiscard]] id_t get_id() const noexcept {
+        return id_;
+    }
+    operator HWND() { // NOLINT(google-explicit-constructor)
+        return wnd_.get();
+    }
+    [[nodiscard]] HWND get_wnd() const noexcept {
+        return wnd_.get();
+    }
     pos size;
     pos position;
     std::string_view text;
-    window_t wnd = {nullptr, &::DestroyWindow};
-    id_t id = boost::uuids::random_generator()();
     COLORREF fore_color = RGB(0, 0, 0);
 };
 
 static_control
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-show_static_control(HWND parent_window, COLORREF back_color_alpha, COLORREF fore_color,  pos size, pos position);
+show_static_control(HWND parent_window, COLORREF back_color_alpha,
+                    COLORREF fore_color, pos size, pos position);
 
 // A static Singelton for notepad.exe wrapper
 class notepad {
@@ -95,7 +133,7 @@ public:
     using commands_queue_t = boost::lockfree::spsc_queue<
         command_t, boost::lockfree::capacity<command_queue_capacity>>;
     using open_signal_t = boost::signals2::signal<void(
-        world&, back_buffer&, notepad::commands_queue_t&)>;
+        std::shared_ptr<std::atomic_bool> shutdown_signal)>;
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
     on_open() {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
@@ -119,12 +157,13 @@ public:
         SetWindowTextW(main_window_, title.data());
     }
     // TODO(Igor): maybe a ecs processor which will push all commands together?
-    static bool push_command(const command_t& cmd) {
+    static bool push_command(command_t&& cmd) {
         return notepad::get().commands_.push(cmd);
     };
 
     std::vector<static_control> static_controls;
     COLORREF back_color = RGB(255, 255, 255);
+
 
 private:
     static notepad& get() {
@@ -138,7 +177,6 @@ private:
     void tick_render();
     explicit notepad();
     opts options_{opts::empty};
-    back_buffer buf_;
     HWND main_window_;
     timings::fixed_time_step fixed_time_step_;
     timings::fps_count fps_count_;

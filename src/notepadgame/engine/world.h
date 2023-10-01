@@ -30,6 +30,7 @@ struct ecs_proc_tag {};
 
 class world: public noncopyable, public nonmoveable {
 public:
+    world() = default;
     // insertion order is important!
     // boost::any_collection<ecs_processor_base> processors;
     std::vector<ecs_proc_base> procs;
