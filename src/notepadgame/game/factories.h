@@ -206,10 +206,10 @@ make(entt::registry& reg, const entt::entity e,
 
 // waits for the end of time and call a given function
 struct timer {
-    static void
-    make(entt::registry& reg, entt::entity e,
-         std::function<void(entt::registry&, entt::entity)> what_do,
-         std::chrono::milliseconds duration = std::chrono::seconds{1}) {
+    static void make(entt::registry& reg, entt::entity e,
+                     std::function<void(entt::registry&, entt::entity)> what_do,
+                     std::chrono::milliseconds duration = std::chrono::seconds{
+                         1}) {
         reg.emplace<life::lifetime>(e, duration);
         reg.emplace<life::death_last_will>(e, std::move(what_do));
     }
@@ -327,49 +327,59 @@ on_collide(entt::registry& reg,
         reg.emplace<life::begin_die>(self);
         auto w = static_control{};
         auto w_uuid = w.get_id();
-        auto a = std::shared_ptr<int>(nullptr, [](int*){});
-        notepad::push_command(std::move([w=std::move(w)](notepad* np, scintilla* sct) mutable {
-            w
-             //NOLINTNEXTLINE(readability-magic-numbers)
-            .with_size({sct->get_window_width(), 50}).with_position({20, 0})
-            .with_text("#")
-            .with_text_color(RGB(0, 0, 0))
-            .show(np);
-            np->static_controls.emplace_back(std::move(w));
-        }));
+        auto a = std::shared_ptr<int>(nullptr, [](int*) {});
+        notepad::push_command(
+            std::move([w = std::move(w)](notepad* np, scintilla* sct) mutable {
+                w
+                    // NOLINTNEXTLINE(readability-magic-numbers)
+                    .with_size({sct->get_window_width(), 50})
+                    .with_position({20, 0})
+                    .with_text("#")
+                    .with_text_color(RGB(0, 0, 0))
+                    .show(np);
+                np->static_controls.emplace_back(std::move(w));
+            }));
         const auto end_anim = reg.create();
         reg.emplace<timeline::eval_direction>(end_anim);
         reg.emplace<timeline::what_do>(
             // NOLINTNEXTLINE(readability-magic-numbers)
-            end_anim, [w_uuid,timer = 0](
+            end_anim, [w_uuid = w_uuid, timer = 0](
                           entt::registry& /*r*/, const entt::entity /*e*/,
                           timeline::direction /**/) mutable {
                 timer += 1;
                 // NOLINTNEXTLINE(readability-magic-numbers)
                 if(!(timer % 2)) {
-                    notepad::push_command(
-                        [w_uuid](notepad* np, scintilla*  /*sct*/) {
-                            auto w = std::ranges::find_if(
-                                np->static_controls,
-                                [w_uuid](auto& w) { return w.get_id() == w_uuid; });
-                            w->position.x +=1;
-                            SetWindowText(*w, "#");
-                            SetWindowPos(
-                                *w, HWND_TOP, w->position.x,w->position.y,
-                                w->size.x, w->size.y, 0);
-                        });
+                    notepad::push_command([w_uuid](notepad* np,
+                                                   scintilla* /*sct*/) {
+                        auto w = std::ranges::find_if(
+                            np->static_controls,
+                            [w_uuid](auto& w) { return w.get_id() == w_uuid; });
+                        if(w == np->static_controls.end()) {
+                            return;
+                        }
+                        w->position.x += 1;
+                        SetWindowText(*w, w->text.data());
+                        SetWindowPos(*w, HWND_TOP, w->position.x, w->position.y,
+                                     w->size.x, w->size.y, 0);
+                    });
                 }
             });
         using namespace std::chrono_literals;
         timer::make(
-            reg,end_anim,
-            [w_uuid=w_uuid, &game_over_flag](entt::registry&  /*reg*/, const entt::entity  /*timer*/) {
-                notepad::push_command(
-                    [w_uuid](notepad* np, scintilla* /*sct*/) {
-                        np->static_controls.erase(std::ranges::find_if(
-                            np->static_controls,
-                            [w_uuid](auto& w) { return w.get_id() == w_uuid; }));
-                    });
+            reg, end_anim,
+            [w_uuid = w_uuid, &game_over_flag](entt::registry& /*reg*/,
+                                               const entt::entity /*timer*/) {
+                notepad::push_command([w_uuid](notepad* np,
+                                               scintilla* /*sct*/) {
+                    auto it = std::ranges::find_if(
+                        np->static_controls,
+                        [w_uuid](auto& w) { return w.get_id() == w_uuid; });
+                        if(it == np->static_controls.end()){
+                            std::cout << "control not found";
+                            return;
+                        }
+                        np->static_controls.erase(it);
+                });
 
                 game_over_flag = game_status_flag::find;
             },
@@ -383,12 +393,14 @@ inline void make(entt::registry& reg, const entt::entity e, loc loc, sprite sp,
     actor::make_base_renderable(reg, e, loc, 1, std::move(sp));
     reg.emplace<collision::agent>(e);
     reg.emplace<collision::on_collide>(
-        e, collision::on_collide{[&game_over_flag](
-               entt::registry& reg,
-               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-               entt::entity self, entt::entity collider) {
-            return kitten::on_collide(reg, self, collider, game_over_flag);
-        }});
+        e, collision::on_collide{
+               [&game_over_flag](
+                   entt::registry& reg,
+                   // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+                   entt::entity self, entt::entity collider) {
+                   return kitten::on_collide(reg, self, collider,
+                                             game_over_flag);
+               }});
 }
 
 } // namespace kitten

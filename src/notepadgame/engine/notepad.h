@@ -52,7 +52,7 @@ struct static_control {
     using window_t = std::shared_ptr<std::remove_pointer_t<HWND>>;
 
 private:
-    window_t wnd_ = {nullptr, &::DestroyWindow};
+    window_t wnd_ = {nullptr};
     id_t id_      = make_id();
 
 public:

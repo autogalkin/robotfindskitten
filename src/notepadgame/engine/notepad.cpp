@@ -310,7 +310,9 @@ void static_control::show(notepad* np) noexcept {
     wnd_.reset(CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
                               "STATIC", "", dwStyle, 0, 0, size.x, size.y,
                               np->get_window(), nullptr,
-                              GetModuleHandle(nullptr), nullptr));
+                              GetModuleHandle(nullptr), nullptr), [](HWND w){
+                                  PostMessage(w, WM_CLOSE, 0, 0);
+        });
     SetLayeredWindowAttributes(wnd_.get(), np->back_color, 0, LWA_COLORKEY);
     SetWindowPos(wnd_.get(), HWND_TOP, position.x, position.y, size.x, size.y,
                  0);
