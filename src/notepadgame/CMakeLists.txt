@@ -167,7 +167,7 @@ foreach(_target IN LISTS NOTEPADGAME_ALL_TARGETS)
         PROPERTIES CXX_STANDARD 20
                    CXX_STANDARD_REQUIRED ON
                    LINKER_LANGUAGE CXX)
-    target_compile_definitions(${_target} PUBLIC # windows.h
+    target_compile_definitions(${_target} PRIVATE # windows.h
                                                  NOMINMAX WIN32_LEAN_AND_MEAN)
     target_include_directories(
         ${_target}

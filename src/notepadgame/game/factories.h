@@ -9,9 +9,13 @@
 #include "game/ecs_processors/life.h"
 
 #include "engine/notepad.h"
+#include "engine/time.h"
 #include "game/lexer.h"
 #include "game/comps.h"
 #include <utility>
+#include <winuser.h>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 
 struct coin;
 struct character;
@@ -27,7 +31,7 @@ struct actor {
         reg.emplace<z_depth>(e, z_depth_position);
     }
 };
-struct projectile final {
+struct projectile {
     static collision::responce
     on_collide(entt::registry& r,
                // TODO(Igor) make phantom types
@@ -143,10 +147,10 @@ struct gun {
         return collision::responce::block;
     }
 
-    static void make(entt::registry& reg, const entt::entity e, loc loc) {
+    static void make(entt::registry& reg, const entt::entity e, loc loc,
+                     sprite sp) {
         reg.emplace<gun>(e);
-        actor::make_base_renderable(
-            reg, e, loc, 1, sprite(sprite::unchecked_construct_tag{}, "<"));
+        actor::make_base_renderable(reg, e, loc, 1, std::move(sp));
         reg.emplace<collision::agent>(e);
         reg.emplace<collision::on_collide>(e, &gun::on_collide);
     }
@@ -183,7 +187,7 @@ make(entt::registry& reg, const entt::entity e,
 }; // namespace timeline
 
 // waits for the end of time and call a given function
-struct timer final {
+struct timer {
     static void
     make(entt::registry& reg, const entt::entity e,
          std::function<void(entt::registry&, entt::entity)> what_do,
@@ -193,7 +197,7 @@ struct timer final {
     }
 };
 
-struct character final {
+struct character {
     static collision::responce
     on_collide(entt::registry& reg,
                // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -280,7 +284,73 @@ struct character final {
     }
 };
 
-struct atmosphere final {
+struct kitten {
+    static void make(entt::registry& reg, const entt::entity e, loc loc,
+                     sprite sp) {
+        reg.emplace<kitten>(e);
+        actor::make_base_renderable(reg, e, loc, 1, std::move(sp));
+        reg.emplace<collision::agent>(e);
+        reg.emplace<collision::on_collide>(e, &kitten::on_collide);
+    }
+    static collision::responce
+    on_collide(entt::registry& reg,
+               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+               const entt::entity /*self*/, const entt::entity collider) {
+        if(reg.all_of<projectile>(collider)) {}
+
+        if(reg.all_of<character>(collider)) {
+            auto w_uuid = boost::uuids::random_generator()();
+            notepad::push_command([w_uuid](notepad* np, scintilla* sct) {
+                auto w = show_static_control(
+                    np->get_window(), np->back_color, RGB(0, 0, 0),
+                    // NOLINTNEXTLINE(readability-magic-numbers)
+                    pos(sct->get_window_width(), 50), pos(20, 0));
+                w.id = w_uuid;
+                np->static_controls.emplace_back(std::move(w));
+            });
+
+            timings::fixed_time_step fixed_time_step{};
+            // NOLINTNEXTLINE(readability-magic-numbers)
+            int w_pos = 20;
+            int timer = 0;
+            while(true) {
+                fixed_time_step.sleep();
+                w_pos += 1;
+                timer += 1;
+                // NOLINTNEXTLINE(readability-magic-numbers)
+                if(!(timer % 5)) {
+                    notepad::push_command(
+                        [&w_pos, w_uuid](notepad* np, scintilla* sct) {
+                            // NOLINTNEXTLINE(readability-magic-numbers)
+                            auto w = std::ranges::find_if(
+                                np->static_controls,
+                                [w_uuid](auto& w) { return w.id == w_uuid; });
+                            RECT rect = sct->get_window_rect();
+                            SetWindowText(w->wnd.get(), "#");
+                            std::cout << "setpos";
+                            SetWindowPos(
+                                w->wnd.get(), HWND_TOP, w_pos, 0,
+                                // NOLINTNEXTLINE(readability-magic-numbers)
+                                100, 50, 0);
+                        });
+                }
+                // NOLINTNEXTLINE(readability-magic-numbers)
+                if(timer == 500) {
+                    notepad::push_command(
+                        [w_uuid](notepad* np, scintilla*  /*sct*/) {
+                            np->static_controls.erase(std::ranges::find_if(
+                                np->static_controls,
+                                [w_uuid](auto& w) { return w.id == w_uuid; }));
+                        });
+                    break;
+                }
+            }
+        }
+        return collision::responce::ignore;
+    }
+};
+
+struct atmosphere {
     struct color_range {
         COLORREF start{RGB(0, 0, 0)};
         COLORREF end{RGB(255, 255, 255)};
@@ -331,10 +401,11 @@ struct atmosphere final {
 
         notepad::push_command(
             [new_back_color, new_front_color](notepad* np, scintilla* sct) {
-                np->popup_window.fore_color = new_front_color;
-                np->popup_window.back_color = new_back_color;
-                SetWindowText(np->popup_window.window,
-                              np->popup_window.text.data());
+                np->back_color = new_back_color;
+                for(auto& w: np->static_controls) {
+                    w.fore_color = new_front_color;
+                    SetWindowText(w.wnd.get(), w.text.data());
+                }
                 // TODO(Igor) values from lexer
                 static constexpr int space_code = 32;
                 static constexpr int style_start = 100;

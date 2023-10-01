@@ -61,8 +61,7 @@ void scintilla::init_direct_access_to_scintilla() {
 }
 
 uint32_t scintilla::get_window_width() const noexcept {
-    RECT r;
-    get_window_rect(r);
+    RECT r = get_window_rect();
     return r.right - r.left;
 }
 

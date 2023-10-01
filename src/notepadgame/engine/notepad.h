@@ -11,14 +11,16 @@
 #include "engine/buffer.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/world.h"
+#include <boost/uuid/uuid.hpp> 
+#include <boost/uuid/uuid_generators.hpp> 
 
 #include "engine/time.h"
 
 // custom WindowProc
+// NOLINTBEGIN(readability-redundant-declaration)
 static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp,
                                       LPARAM lp);
 
-// NOLINTBEGIN(readability-redundant-declaration)
 // Capture and block keyboard and mouse inputs
 bool hook_GetMessageW(HMODULE module);
 // Capture opened files
@@ -41,12 +43,21 @@ private:
         L"robotfindskitten, fps: game_thread {:02} | render_thread {:02}";
 };
 
-struct popup {
+struct static_control {
+    using id_t = boost::uuids::uuid;
+    using window_t = std::unique_ptr<std::remove_pointer_t<HWND>,
+                                     decltype(&::DestroyWindow)>;
+    pos size;
+    pos position;
     std::string_view text;
-    HWND window;
+    window_t wnd = {nullptr, &::DestroyWindow};
+    id_t id = boost::uuids::random_generator()();
     COLORREF fore_color = RGB(0, 0, 0);
-    COLORREF back_color = RGB(255, 255, 255);
 };
+
+static_control
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+show_static_control(HWND parent_window, COLORREF back_color_alpha, COLORREF fore_color,  pos size, pos position);
 
 // A static Singelton for notepad.exe wrapper
 class notepad {
@@ -104,8 +115,6 @@ public:
         return main_window_;
     }
 
-    popup popup_window;
-
     void set_window_title(const std::wstring_view title) const {
         SetWindowTextW(main_window_, title.data());
     }
@@ -113,6 +122,9 @@ public:
     static bool push_command(const command_t& cmd) {
         return notepad::get().commands_.push(cmd);
     };
+
+    std::vector<static_control> static_controls;
+    COLORREF back_color = RGB(255, 255, 255);
 
 private:
     static notepad& get() {

@@ -137,8 +137,10 @@ public:
         return static_cast<uint8_t>(dcall1(SCI_TEXTHEIGHT, STYLE_DEFAULT));
     }
     // pixels
-    bool get_window_rect(RECT& outrect) const noexcept {
-        return GetClientRect(get_native_window(), &outrect);
+    [[nodiscard]] RECT get_window_rect() const noexcept {
+        RECT r;
+        GetWindowRect(get_native_window(), &r);
+        return r;
     }
     [[nodiscard]] uint32_t get_window_width() const noexcept;
     [[nodiscard]] uint8_t get_font_size() const noexcept /*size in pt*/ {

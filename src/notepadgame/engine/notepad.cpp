@@ -69,9 +69,6 @@ void notepad::tick_render() {
     scintilla_->set_caret_index(pos);
 }
 
-static constexpr int POPUP_WINDOW_HEIGHT = 100;
-static constexpr int POPUP_WINDOW_OFFSET = 20;
-
 // game in another thread
 void notepad::start_game() {
     static thread_guard game_thread = thread_guard(std::thread(
@@ -97,33 +94,10 @@ void notepad::start_game() {
         }));
 
     RECT rect = {NULL};
-    GetWindowRect(main_window_, &rect);
+    ::GetWindowRect(main_window_, &rect);
     ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0,
                    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 
-    DWORD dwStyle =
-        WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-
-    GetWindowRect(scintilla_->edit_window_, &rect);
-    auto* w = CreateWindowEx(
-        WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST, "STATIC", "",
-        dwStyle, 0, 0, rect.right - rect.left, POPUP_WINDOW_HEIGHT,
-        main_window_, nullptr, GetModuleHandle(nullptr), nullptr);
-    SetLayeredWindowAttributes(w, popup_window.back_color, 0, LWA_COLORKEY);
-    SetWindowPos(w, HWND_TOP, POPUP_WINDOW_OFFSET, 0, rect.right - rect.left,
-                 POPUP_WINDOW_HEIGHT, 0);
-    static constexpr int font_size = 38;
-    static std::unique_ptr<std::remove_pointer_t<HFONT>,
-                           decltype(&::DeleteObject)>
-        hFont{CreateFontW(font_size, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
-                          ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
-                          L"Consolas"),
-              &::DeleteObject};
-    SendMessageW(w, WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()), TRUE);
-    ShowWindow(w, SW_SHOW);
-    UpdateWindow(w);
-    popup_window.window = w;
 }
 // NOLINTEND(bugprone-unchecked-optional-access)
 
@@ -165,28 +139,30 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
                            SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
             RECT rect = {NULL};
             GetWindowRect(np.scintilla_->edit_window_, &rect);
-            ::SetWindowPos(np.popup_window.window, nullptr, POPUP_WINDOW_OFFSET,
-                           0, rect.right - rect.left, POPUP_WINDOW_HEIGHT,
-                           SWP_NOACTIVATE);
+            for(auto& w: np.static_controls) {
+                ::SetWindowPos(w.wnd.get(), nullptr, w.position.x, w.position.y,
+                               w.size.x, w.size.y, SWP_NOACTIVATE);
+            }
         }
         break;
     }
     case WM_CTLCOLORSTATIC: {
         auto& np = notepad::get();
-        if(np.popup_window.window == reinterpret_cast<HWND>(lp)) {
-            static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
-                                   decltype(&::DeleteObject)>
-                hBrushLabel{CreateSolidBrush(np.popup_window.back_color),
-                            &::DeleteObject};
-            hBrushLabel.reset(CreateSolidBrush(np.popup_window.back_color));
-            HDC popup = reinterpret_cast<HDC>(wp);
-            auto& np = notepad::get();
-            SetTextColor(popup, np.popup_window.fore_color);
-            SetLayeredWindowAttributes(np.popup_window.window,
-                                       np.popup_window.back_color, 0,
-                                       LWA_COLORKEY);
-            SetBkColor(popup, np.popup_window.back_color);
-            return reinterpret_cast<LRESULT>(hBrushLabel.get());
+        for(auto& w: np.static_controls) {
+            if(w.wnd.get() == reinterpret_cast<HWND>(lp)) {
+                static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
+                                       decltype(&::DeleteObject)>
+                    hBrushLabel{CreateSolidBrush(np.back_color),
+                                &::DeleteObject};
+                hBrushLabel.reset(CreateSolidBrush(np.back_color));
+                HDC popup = reinterpret_cast<HDC>(wp);
+                auto& np = notepad::get();
+                SetTextColor(popup, w.fore_color);
+                SetLayeredWindowAttributes(w.wnd.get(), np.back_color, 0,
+                                           LWA_COLORKEY);
+                SetBkColor(popup, np.back_color);
+                return reinterpret_cast<LRESULT>(hBrushLabel.get());
+            }
         }
         break;
     }
@@ -213,11 +189,6 @@ bool hook_GetMessageW(const HMODULE module) {
                 case WM_QUIT:
                     return 0;
                 case WM_MOUSEWHEEL: {
-                    auto* dc = GetDC(np.popup_window.window);
-                    SetBkColor(dc, RGB(255, 255, 0));
-                    ReleaseDC(np.popup_window.window, dc);
-
-                    // SendMessage(np.popup_window.window, WM_PAINT, 0, 0);
                     auto scroll_delta = GET_WHEEL_DELTA_WPARAM(lpMsg->wParam);
                     // horizontal scroll
                     if(LOWORD(lpMsg->wParam) & MK_SHIFT) {
@@ -359,3 +330,35 @@ bool hook_SetWindowTextW(HMODULE module) {
 }
 // NOLINTEND(bugprone-easily-swappable-parameters)
 // NOLINTEND(readability-function-cognitive-complexity)
+
+static_control
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+show_static_control(HWND parent_window, COLORREF back_color_alpha,
+                    COLORREF fore_color, pos size, pos position) {
+    static_control w;
+    w.fore_color = fore_color;
+    w.size = size;
+    w.position = position;
+    DWORD dwStyle =
+        WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+    w.wnd.reset(CreateWindowEx(
+        WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST, "STATIC", "",
+        dwStyle, 0, 0, size.x, size.y, parent_window, nullptr,
+        GetModuleHandle(nullptr), nullptr));
+    SetLayeredWindowAttributes(w.wnd.get(), back_color_alpha, 0, LWA_COLORKEY);
+    SetWindowPos(w.wnd.get(), HWND_TOP, w.position.x, w.position.y, size.x,
+                 size.y, 0);
+    static constexpr int font_size = 38;
+    static const std::unique_ptr<std::remove_pointer_t<HFONT>,
+                                 decltype(&::DeleteObject)>
+        hFont{CreateFontW(font_size, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
+                          ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
+                          L"Consolas"),
+              &::DeleteObject};
+    SendMessageW(w.wnd.get(), WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()),
+                 TRUE);
+    ShowWindow(w.wnd.get(), SW_SHOW);
+    UpdateWindow(w.wnd.get());
+    return w;
+};

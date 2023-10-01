@@ -14,12 +14,13 @@
                 "rhs": "Windows"
             },
             "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl.exe",
                 "CMAKE_CXX_COMPILER": "cl.exe",
                 "CMAKE_CXX_LINK_EXECUTABLE": "link.exe",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/${presetName}-install",
-                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-                "Boost_NO_WARN_NEW_VERSIONS": "1"
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+            },
+            "environment": {
+                "UUID_LINK": "-D_WIN32_WINNT=0x0601 -DBOOST_UUID_FORCE_AUTO_LINK"
             }
         },
         {
@@ -28,9 +29,10 @@
             "description": "Target Windows Debug (64-bit).",
             "inherits": "windows-base",
             "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_LINK_FLAGS": "/DEBUG:FULL",
-                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od /EHsc"
+                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od /EHsc $env{UUID_LINK}"
             },
             "architecture": {
                 "value": "x64",
@@ -48,7 +50,7 @@
             "inherits": "windows-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "/MP /EHsc"
+                "CMAKE_CXX_FLAGS": "/MP /EHsc $env{UUID_LINK}"
             }
         }
     ],
