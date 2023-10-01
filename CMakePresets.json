@@ -32,7 +32,8 @@
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_LINK_FLAGS": "/DEBUG:FULL",
-                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od /EHsc $env{UUID_LINK}"
+                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od /EHsc $env{UUID_LINK}",
+                "ROBOTFINDSKITTEN_BUILD_TESTS": true
             },
             "architecture": {
                 "value": "x64",

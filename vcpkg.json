@@ -2,6 +2,7 @@
     "name": "notepadgame",
     "version-string": "0.1.0",
     "dependencies": [
+      "gtest",
       "boost",
       "glm",
       "range-v3",

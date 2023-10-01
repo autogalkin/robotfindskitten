@@ -30,6 +30,17 @@ add_subdirectory(src/loader)
 # game
 add_subdirectory(src/notepadgame)
 
+
+
+if( ROBOTFINDSKITTEN_BUILD_TESTS )
+	enable_testing()
+    find_package(GTest CONFIG REQUIRED)
+    include(CTest)
+    include(GoogleTest)
+    add_subdirectory(tests)
+endif()
+
+
 add_custom_target(
     copy-compile-commands ALL
     ${CMAKE_COMMAND} -E copy_if_different
