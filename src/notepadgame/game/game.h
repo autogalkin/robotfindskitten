@@ -28,7 +28,7 @@
 namespace game {
 
 static std::array messages =
-    std::to_array<std::string_view>({ALL_GAME_MESSAGES});
+    std::to_array<std::string_view>(ALL_GAME_MESSAGES);
 using rng_type = std::mt19937;
 static std::uniform_int_distribution<rng_type::result_type>
     dist(0, messages.size() - 1);
