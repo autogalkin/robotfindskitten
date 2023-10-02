@@ -27,8 +27,7 @@
 
 namespace game {
 
-static std::array messages =
-    std::to_array<std::string_view>(ALL_GAME_MESSAGES);
+static std::array messages = std::to_array<std::string_view>(ALL_GAME_MESSAGES);
 using rng_type = std::mt19937;
 static std::uniform_int_distribution<rng_type::result_type>
     dist(0, messages.size() - 1);
@@ -57,7 +56,7 @@ inline void start(pos game_area,
     }
 };
 inline void run(pos game_area) {
-    // Delete order important!
+    // Delete order is important!
     back_buffer game_buffer{game_area};
     world w{};
     //
@@ -84,35 +83,31 @@ inline void run(pos game_area) {
     constexpr int gun_i = 197;
     std::array<pos, ITEMS_COUNT> all{};
     std::mt19937 gen(std::random_device{}());
-    std::uniform_int_distribution<> dist_x(0, game_area.x - 1 - 1);
-    std::uniform_int_distribution<> dist_y(0, game_area.y - 1);
-    auto unique_position = [&dist_x, &dist_y, &gen, &all](int32_t item_index) {
-        pos p;
-        do {
-            p = pos{dist_x(gen), dist_y(gen)};
-        } while(std::ranges::any_of(all.begin(), all.begin() + item_index,
+    {
+        std::uniform_int_distribution<> dist_x(0, game_area.x - 1 - 1);
+        std::uniform_int_distribution<> dist_y(0, game_area.y - 1);
+        for(auto i = 0; i < ITEMS_COUNT; i++) {
+            pos p;
+            do {
+                p = pos{dist_x(gen), dist_y(gen)};
+            } while(
+                std::ranges::any_of(all.begin(), all.begin() + i,
                                     [p](auto other) { return p == other; }));
-        all[item_index] = p;
-        return p;
-    };
-
-    for(auto i = 0; i < ITEMS_COUNT; i++) {
-        unique_position(i);
+            all[i] = p;
+        }
     }
     auto msg_w = static_control{};
     auto w_uuid = msg_w.get_id();
-    
     notepad::push_command(
         [msg_w = std::move(msg_w)](notepad* np, scintilla* sc) mutable {
-            static constexpr int POPUP_WINDOW_HEIGHT = 100;
-            static constexpr int POPUP_WINDOW_OFFSET = 20;
-            msg_w.with_size(pos(sc->get_window_width(), POPUP_WINDOW_HEIGHT))
-                .with_position(pos(POPUP_WINDOW_OFFSET, 0))
+            static constexpr int height = 100;
+            static constexpr int wnd_x = 20;
+            msg_w.with_size(pos(sc->get_window_width(), height))
+                .with_position(pos(wnd_x, 0))
                 .with_text_color(RGB(0, 0, 0))
                 .show(np);
-             np->static_controls.emplace_back(std::move(msg_w));
+            np->static_controls.emplace_back(std::move(msg_w));
         });
-    
     std::uniform_int_distribution<> dist_ch(printable_range.first,
                                             printable_range.second);
     for(size_t i = 0; i < all.size() - 3; i++) {
@@ -127,9 +122,8 @@ inline void run(pos game_area) {
                 sprite(sprite::unchecked_construct_tag{}, s));
             reg.emplace<collision::agent>(ent);
             reg.emplace<collision::on_collide>(
-                // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-                ent, [w_uuid](entt::registry& reg, const entt::entity self,
-                              const entt::entity collider) {
+                ent, [w_uuid](entt::registry& reg, collision::self self,
+                              collision::collider collider) {
                     if(reg.all_of<character>(collider)) {
                         char ascii_mesh = reg.get<sprite>(self).data()[0];
                         const auto l = reg.get<const loc>(self);

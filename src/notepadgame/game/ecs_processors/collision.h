@@ -4,6 +4,7 @@
 #include "engine/world.h"
 #include "range/v3/view/iota.hpp"
 #include <chrono>
+#include <entt/entity/fwd.hpp>
 #include <entt/entt.hpp>
 #include <variant>
 #include <glm/mat2x2.hpp>
@@ -185,20 +186,35 @@ private:
     index index_in_quad_tree = invalid_index;
 };
 
+struct collider{
+    entt::entity ent;
+    explicit collider(const entt::entity& e): ent(e) {}
+    explicit  collider(entt::entity&& e): ent(e) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    operator entt::entity() const noexcept { return ent;}
+};
+struct self{
+    entt::entity ent;
+    explicit  self(const entt::entity& e): ent(e) {}
+    explicit  self(entt::entity&& e): ent(e) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    operator entt::entity() const noexcept { return ent;}
+};
+
 struct on_collide {
     static responce block_always(entt::registry& /*unused*/,
-                                 const entt::entity /*unused*/,
-                                 const entt::entity /*unused*/) {
+                                 self /*unused*/,
+                                 collider /*unused*/) {
         return responce::block;
     }
     static responce ignore_always(entt::registry& /*unused*/,
-                                  const entt::entity /*unused*/,
-                                  const entt::entity /*unused*/) {
+                                  self /*unused*/,
+                                  collider /*unused*/) {
         return responce::ignore;
     }
 
-    std::function<responce(entt::registry&, entt::entity self,
-                           entt::entity collider)>
+    std::function<responce(entt::registry&, self s,
+                           collider cl)>
         call{&collision::on_collide::block_always};
 };
 

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "engine/details/base_types.hpp"
+#include "ecs_processors/collision.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/motion.h"
 #include "libs/easing/easing.h"
@@ -52,9 +53,7 @@ inline void emplace_simple_death(entt::registry& reg, const entt::entity e) {
 struct projectile {
     static collision::responce
     on_collide(entt::registry& r,
-               // TODO(Igor) make phantom types
-               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-               const entt::entity self, const entt::entity other) {
+               collision::self self, collision::collider other) {
         if(r.all_of<projectile>(other)) {
             return collision::responce::ignore;
         }
@@ -62,8 +61,8 @@ struct projectile {
         return collision::responce::block;
     }
     static void
-    make(entt::registry& reg, const entt::entity e, loc start, velocity dir,
-         const std::chrono::milliseconds life_time = std::chrono::seconds{1}) {
+    make(entt::registry& reg, entt::entity e, loc start, velocity dir,
+        std::chrono::milliseconds life_time = std::chrono::seconds{1}) {
         reg.emplace<projectile>(e);
         reg.emplace<sprite>(e, sprite::unchecked_construct_tag{}, "-");
         reg.emplace<visible_in_game>(e);
@@ -156,8 +155,7 @@ struct projectile {
 struct gun {
     static collision::responce
     on_collide(entt::registry& reg,
-               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-               const entt::entity self, const entt::entity collider) {
+               const  collision::self self, const  collision::collider collider) {
         if(reg.all_of<character>(collider)) {
             reg.emplace_or_replace<life::begin_die>(self);
             return collision::responce::ignore;
@@ -218,8 +216,7 @@ struct timer {
 struct character {
     static collision::responce
     on_collide(entt::registry& reg,
-               // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-               const entt::entity self, const entt::entity collider) {
+               const collision::self self, const  collision::collider collider) {
         // TODO(Igor) collision functions without cast?
         if(reg.all_of<gun>(collider)) {
             auto& animation = reg.get<sprite>(self);
@@ -312,8 +309,7 @@ namespace kitten {
 struct kitten_tag {};
 inline collision::responce
 on_collide(entt::registry& reg,
-           // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-           const entt::entity self, const entt::entity collider,
+           collision::self self,  collision::collider collider,
            game_status_flag& game_over_flag) {
     if(reg.all_of<projectile>(collider)) {
         game_over_flag = game_status_flag::kill;
@@ -333,6 +329,7 @@ on_collide(entt::registry& reg,
                 w
                     // NOLINTNEXTLINE(readability-magic-numbers)
                     .with_size({sct->get_window_width(), 50})
+                    // NOLINTNEXTLINE(readability-magic-numbers)
                     .with_position({20, 0})
                     .with_text("#")
                     .with_text_color(RGB(0, 0, 0))
@@ -396,8 +393,7 @@ inline void make(entt::registry& reg, const entt::entity e, loc loc, sprite sp,
         e, collision::on_collide{
                [&game_over_flag](
                    entt::registry& reg,
-                   // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-                   entt::entity self, entt::entity collider) {
+                   collision::self self, collision::collider collider) {
                    return kitten::on_collide(reg, self, collider,
                                              game_over_flag);
                }});

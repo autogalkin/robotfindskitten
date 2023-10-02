@@ -322,9 +322,9 @@ void query::execute(entt::registry& reg, timings::duration /*dt*/) {
                     if(const auto cl = tree_->get_entity(collide).id;
                        cl != entity) {
                         const auto cl_resp =
-                            view.get<on_collide>(cl).call(reg, cl, entity);
+                            view.get<on_collide>(cl).call(reg, self(cl), collider(entity));
                         if(const auto resp = view.get<on_collide>(entity).call(
-                               reg, entity, cl);
+                               reg, self(entity), collider(cl));
                            cl_resp == responce::block
                            && resp == responce::block) {
                             trans = loc(0);
