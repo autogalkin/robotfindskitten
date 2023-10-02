@@ -18,8 +18,11 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 
-struct coin;
 struct character;
+
+inline double remap(double value, glm::vec2 from, glm::vec2 to) {
+    return (((value - from.x) * (to.y - to.x)) / (from.y - from.x)) + to.x;
+};
 
 struct actor {
     static void make_base_renderable(entt::registry& reg, const entt::entity e,
@@ -78,29 +81,42 @@ struct projectile {
 
         reg.emplace<life::lifetime>(e, life_time);
 
+                // NOLINTBEGIN(readability-magic-numbers)
         reg.emplace<timeline::what_do>(
-            e, [duration = std::chrono::duration<double>(life_time).count(),
-                call = true](entt::registry& reg_, const entt::entity e_,
-                             timeline::direction) mutable {
-                auto& i = reg_.get<translation>(e_).pin().y;
-                static constexpr std::pair ease_range{0., 0.1};
-                i = easing::easeinrange(
-                    duration
-                        - std::chrono::duration<double>(
-                              reg_.get<life::lifetime>(e_).duration)
-                              .count(),
-                    // TODO(Igor) почему i = 0.1 Но прибавляется строка
-                    ease_range, duration, &easing::easeInExpo);
-                // TODO(Igor) why scale
-                static constexpr int scale = 10;
-                if(std::lround(i * scale) != 0 && call) {
+            e, [duration = life_time/timings::dt,
+                call = true, i =-1*life_time/timings::dt/3](entt::registry& reg_, const entt::entity e_,
+                                    timeline::direction) mutable {
+                using namespace std::chrono_literals;
+                i +=1;
+                auto& tr = reg_.get<translation>(e_).pin().y;
+                //static constexpr std::pair ease_range{0., 0.1};
+                // NOLINTBEGIN( bugprone-narrowing-conversions)
+                auto value =  glm::bounceEaseInOut(glm::clamp(
+                                       remap(std::max(0LL, i), {0, duration}, {0., 1.}), 0., 1.));
+                std::cout << "values" << "\n";
+                std::cout << 'v' << value << "\n";
+                std::cout << 'i' << i << "\n";
+                tr = value;
+                std::cout << 't' << tr << "\n";
+                // tr = easing::easeinrange(
+                //     duration
+                //         - std::chrono::duration<double>(
+                //               reg_.get<life::lifetime>(e_).duration)
+                //               .count(),
+                //     // TODO(Igor) почему i = 0.1 Но прибавляется строка
+                //     ease_range, duration, &easing::easeInExpo);
+                // // TODO(Igor) why scale
+                // static constexpr int scale = 10;
+                if(i > 100 && call) {
                     reg_.emplace<previous_sprite>(
                         e_,
                         std::exchange(
                             reg_.get<sprite>(e_),
                             sprite(sprite::unchecked_construct_tag{}, "_")));
                     call = false;
+                // NOLINTEND( bugprone-narrowing-conversions)
                 }
+                // NOLINTEND(readability-magic-numbers)
             });
 
         reg.emplace<timeline::eval_direction>(e, timeline::direction::forward);
@@ -333,7 +349,7 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
         notepad::push_command(
             std::move([ch = std::move(w_char), kt = std::move(w_kitten)](
                           notepad* np, scintilla* /*sct*/) mutable {
-                for(auto& i : np->static_controls){
+                for(auto& i: np->static_controls) {
                     i.text = "";
                 }
                 static constexpr pos w_size = pos(20, 50);
@@ -368,12 +384,7 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
                        || k == np->static_controls.end()) {
                         return;
                     }
-                    auto remap = [](double value, glm::vec2 from,
-                                    glm::vec2 to) {
-                        return (((value - from.x) * (to.y - to.x))
-                                / (from.y - from.x))
-                               + to.x;
-                    };
+
                     ch->position.x = std::min(
                         290, static_cast<int>(glm::round(
                                  remap(glm::cubicEaseOut(
