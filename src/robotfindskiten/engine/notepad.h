@@ -16,6 +16,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 
 #include "engine/time.h"
+#include "config.h"
 
 // custom WindowProc
 // NOLINTBEGIN(readability-redundant-declaration)
@@ -41,7 +42,7 @@ struct title_line {
 
 private:
     static constexpr auto buf_ =
-        L"robotfindskitten, fps: game_thread {:02} | render_thread {:02}";
+        PROJECT_NAME L", fps: game_thread {:02} | render_thread {:02}";
 };
 
 struct static_control {

@@ -16,12 +16,12 @@ target_compile_definitions( ${PROJECT_NAME} PUBLIC # windows.h
                                 NOMINMAX WIN32_LEAN_AND_MEAN)
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC
-        notepadgame
+        robotfindskitten
         GTest::gtest_main)
 
-set(PROJECT_FOR_TEST_DIR "${CMAKE_SOURCE_DIR}/src/notepadgame/")
+set(PROJECT_FOR_TEST_DIR "${CMAKE_SOURCE_DIR}/src/robotfindskitten/")
 target_include_directories(${PROJECT_NAME} PRIVATE "${GTEST_INCLUDE_DIR}" "${PROJECT_FOR_TEST_DIR}")
-target_link_libraries(${PROJECT_NAME} notepadgame "${GTEST_LIBRARIES}" "${GTEST_MAIN_LIBRARIES}" pthread)
+target_link_libraries(${PROJECT_NAME} robotfindskitten "${GTEST_LIBRARIES}" "${GTEST_MAIN_LIBRARIES}" pthread)
 gtest_discover_tests(${PROJECT_NAME}
         # set a working directory so your project root so that you can find test data via paths relative to the project root
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}

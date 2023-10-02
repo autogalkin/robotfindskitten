@@ -38,7 +38,7 @@ inline console console::allocate() {
 
 BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
                       LPVOID /*lp_reserved*/) {
-    //  the h_module is notepadgame.dll
+    //  the h_module is robotfindskitten.dll
 
     if(ul_reason_for_call == DLL_PROCESS_ATTACH) {
         // Ignore thread notifications

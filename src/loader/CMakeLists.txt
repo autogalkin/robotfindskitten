@@ -9,6 +9,9 @@ target_compile_definitions(
            WIN32_LEAN_AND_MEAN
            _CRT_SECURE_NO_WARNINGS # getenv
 )
+target_include_directories(${PROJECT_NAME} PUBLIC
+                           "${CMAKE_BINARY_DIR}"
+                           )
 install(
     FILES $<TARGET_PDB_FILE:${PROJECT_NAME}>
     CONFIGURATIONS Debug RUNTIME

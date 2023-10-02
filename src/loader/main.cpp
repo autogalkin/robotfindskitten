@@ -7,6 +7,8 @@
 
 #include <Windows.h>
 
+#include "config.h"
+
 class dll_injection_error final : public std::runtime_error {
   public:
     explicit dll_injection_error(std::string message)
@@ -57,7 +59,7 @@ int main(int argc, char* argv[]) {
         }
 
         const auto dll_path =
-            std::filesystem::absolute("notepadgame.dll").string();
+            std::filesystem::absolute(PROJECT_NAME".dll").string();
 
         const std::unique_ptr<std::remove_pointer_t<LPVOID>,
                               std::function<void(LPVOID)>>
@@ -96,7 +98,7 @@ int main(int argc, char* argv[]) {
             error("Failed to resume main process thread");
         }
 
-        std::cout << "Done! the notepadgame dll thread_id="
+        std::cout << "Done! the robotfindskitten dll thread_id="
                   << GetThreadId(remote_thread) << std::endl;
 
     } catch (const dll_injection_error& err) {

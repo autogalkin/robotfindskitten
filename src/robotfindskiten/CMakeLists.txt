@@ -1,5 +1,5 @@
 project(
-    notepadgame LANGUAGES CXX
+    robotfindskitten LANGUAGES CXX
     )
 
 include(FetchContent)
@@ -87,7 +87,7 @@ add_custom_target(
 add_dependencies(revert_scintilla_patch scintilla)
 
 
-# build notepadgame.dll
+# build robotfindskitten.dll
 
 find_package(
     range-v3
@@ -157,11 +157,11 @@ add_subdirectory(libs/easing)
 
 list(
     APPEND
-    NOTEPADGAME_ALL_TARGETS
+    ROBOTFINDSKITTEN_ALL_TARGETS
     engine
     game
     ${PROJECT_NAME})
-foreach(_target IN LISTS NOTEPADGAME_ALL_TARGETS)
+foreach(_target IN LISTS ROBOTFINDSKITTEN_ALL_TARGETS)
     set_target_properties(
         ${_target}
         PROPERTIES CXX_STANDARD 20
@@ -177,6 +177,7 @@ foreach(_target IN LISTS NOTEPADGAME_ALL_TARGETS)
                 "${scintilla_SOURCE_DIR}/include"
                 "${lexilla_SOURCE_DIR}/lexlib"
                 "${lexilla_SOURCE_DIR}/include"
+                "${CMAKE_BINARY_DIR}"
                 )
 endforeach()
 

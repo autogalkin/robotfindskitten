@@ -23,6 +23,7 @@
 
 #include <random>
 #include <array>
+#include "config.h"
 // clang-format on
 
 static inline constexpr std::pair<int, int> printable_range{32, 127};
@@ -52,7 +53,7 @@ inline decltype(RGB(0, 0, 0)) get_color(char c) noexcept {
 // clang-format on
 class lexer: public Lexilla::DefaultLexer {
 public:
-    lexer(): DefaultLexer("robotfindskitten", static_cast<int>('#')) {}
+    lexer(): DefaultLexer(PROJECT_NAME, static_cast<int>('#')) {}
     void SCI_METHOD Lex(Sci_PositionU startPos, Sci_Position length,
                         int initStyle, Scintilla::IDocument* pAccess) override {
         try {

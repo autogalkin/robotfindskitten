@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(
-    notepadgame
+    robotfindskitten
     LANGUAGES CXX)
 
 if(NOT
@@ -21,6 +21,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS
 # force msvc to use utf-8
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
+
+configure_file(${CMAKE_SOURCE_DIR}/src/config.h.in config.h @ONLY)
+
+
 get_filename_component(
     NPGAME_SCINTILLA_DIR
     "${CMAKE_SOURCE_DIR}/extern/thirdparty/scintilla"
@@ -28,7 +32,7 @@ get_filename_component(
 # dll injector
 add_subdirectory(src/loader)
 # game
-add_subdirectory(src/notepadgame)
+add_subdirectory(src/robotfindskitten)
 
 
 

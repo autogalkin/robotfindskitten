@@ -1,4 +1,4 @@
-# notepadgame
+# robotfindskitten
 
 ![title](./resources/title.png?raw=true "Title")
 
@@ -10,7 +10,7 @@
 
 ## About <a name = "about"></a>
 
-`notepadgame` is an example of an open-world 2D top-down game that runs within the standard Windows notepad.exe application. The game engine uses DLL injection to modify the notepad.exe process at startup and make the following changes:
+`robotfindskitten` is an example of an open-world 2D top-down game that runs within the standard Windows notepad.exe application. The game engine uses DLL injection to modify the notepad.exe process at startup and make the following changes:
 
 - Replaces the default Win32 EditControl with Scintilla, which is used in notepad++
 - Updates the notepad.exe message processing mechanism from GetMessageW to PeekMessageW, providing a modern way to implement a fixed-time-step game loop
@@ -40,11 +40,11 @@ The project uses vcpkg to manage dependencies, and depends on several libraries:
 - utfcpp
 - range-v3
 
-### Getting notepadgame
+### Getting robotfindskitten
 
-Please note that the notepadgame depends on a scintilla submodule. The simplest way to clone it is:
+Please note that the robotfindskitten depends on a scintilla submodule. The simplest way to clone it is:
 ```
-git clone --recurse-submodules -j8 git@github.com:autogalkin/notepadgame.git 
+git clone --recurse-submodules -j8 git@github.com:autogalkin/robotfindskitten.git 
 ```
 
 ### Build

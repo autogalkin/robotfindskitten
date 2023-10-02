@@ -1950,7 +1950,7 @@ long Editor::TextWidth(uptr_t style, const char *text) {
 void Editor::ReconfigureScrollBars() {}
 
 void Editor::SetScrollBars() {
-    // THIS PART CHANGED BY NOTEPADGAME FOR DISABLE AUTOMATIC VERTICAL SCROLLING
+    // THIS PART CHANGED BY ROBOTFINDSKITTEN FOR DISABLE AUTOMATIC VERTICAL SCROLLING
     return;
     /*
 	// Overridden on GTK to defer to idle
@@ -2755,7 +2755,7 @@ void Editor::NotifyModified(Document *, DocModification mh, void *) {
 		}
 		CheckModificationForWrap(mh);
 		if (mh.linesAdded != 0) {
-            // THIS PART CHANGED BY NOTEPADGAME FOR DISABLE AUTOMATIC VERTICAL SCROLLING
+            // THIS PART CHANGED BY ROBOTFINDSKITTEN FOR DISABLE AUTOMATIC VERTICAL SCROLLING
             //
 			// Avoid scrolling of display if change before current display
 			//if (mh.position < posTopLine && !CanDeferToLastStep(mh)) {
