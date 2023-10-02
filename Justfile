@@ -29,6 +29,8 @@ configure-x64-release:
 run-debug:
     .\out\bin\x64-debug\loader.exe 
 
+build-run-debug: build-x64-debug && run-debug
+
 run-release:
     .\out\bin\x64-debug\loader.exe 
 
