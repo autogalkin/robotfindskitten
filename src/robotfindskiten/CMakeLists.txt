@@ -173,7 +173,6 @@ foreach(_target IN LISTS ROBOTFINDSKITTEN_ALL_TARGETS)
         ${_target}
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                 ${Boost_INCLUDE_DIRS}
-                "${CMAKE_CURRENT_SOURCE_DIR}/libs"
                 "${scintilla_SOURCE_DIR}/include"
                 "${lexilla_SOURCE_DIR}/lexlib"
                 "${lexilla_SOURCE_DIR}/include"
