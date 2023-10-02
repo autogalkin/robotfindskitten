@@ -8,7 +8,7 @@
 #include "game/ecs_processors/collision.h"
 #include "game/ecs_processors/input.h"
 #include "game/ecs_processors/life.h"
-
+#include "glm/gtx/easing.hpp"
 #include "engine/notepad.h"
 #include "engine/time.h"
 #include "game/lexer.h"
@@ -317,59 +317,87 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
     }
 
     if(reg.all_of<character>(collider)) {
+        // NOLINTBEGIN(readability-magic-numbers)
         reg.emplace<life::begin_die>(collider);
         reg.emplace<life::begin_die>(self);
-        auto w = static_control{};
-        auto w_uuid = w.get_id();
-        notepad::push_command(std::move(
-            [w = std::move(w)](notepad* np, scintilla* /*sct*/) mutable {
+        auto w_char = static_control{}
+                          .with_position(pos(20, 0))
+                          .with_text("#")
+                          .with_text_color(RGB(0, 0, 0));
+        auto w_kitten = static_control{}
+                            .with_position(pos(300 + 280, 0))
+                            .with_text(reg.get<sprite>(self).data())
+                            .with_text_color(RGB(255, 0, 0));
+        auto ch_uuid = w_char.get_id();
+        auto k_uuid = w_kitten.get_id();
+        notepad::push_command(
+            std::move([ch = std::move(w_char), kt = std::move(w_kitten)](
+                          notepad* np, scintilla* /*sct*/) mutable {
+                for(auto& i : np->static_controls){
+                    i.text = "";
+                }
                 static constexpr pos w_size = pos(20, 50);
-                static constexpr pos w_pos = pos(20, 0);
-                HDC hDC = GetDC(w);
-                RECT r = { 0, 0, 0, 0 };
-                DrawText(hDC, w.text.data(), static_cast<int>(w.text.size()), &r, DT_CALCRECT);
-                ReleaseDC(w, hDC);
-                w.with_size(w_size) // {r.right-r.left, r.bottom-r.top}
-                    .with_position(w_pos) // {r.left, r.top}
-                    .with_text("#")
-                    .with_text_color(RGB(0, 0, 0))
+                HDC hDC = GetDC(ch);
+                RECT r = {0, 0, 0, 0};
+                DrawText(hDC, ch.text.data(), static_cast<int>(ch.text.size()),
+                         &r, DT_CALCRECT);
+                ReleaseDC(ch, hDC);
+                ch.with_size(w_size) // {r.right-r.left, r.bottom-r.top}
                     .show(np);
-                np->static_controls.emplace_back(std::move(w));
+                kt.with_size(w_size) // {r.right-r.left, r.bottom-r.top}
+                    .show(np);
+                np->static_controls.emplace_back(std::move(ch));
+                np->static_controls.emplace_back(std::move(kt));
             }));
         const auto end_anim = reg.create();
         reg.emplace<timeline::eval_direction>(end_anim);
         reg.emplace<timeline::what_do>(
-            end_anim, [w_uuid = w_uuid, timer = 0](
+            end_anim, [ch_uuid = ch_uuid, k_uuid = k_uuid, timer = 20.](
                           entt::registry& /*r*/, const entt::entity /*e*/,
                           timeline::direction /**/) mutable {
-                timer += 1;
-                // NOLINTNEXTLINE(readability-magic-numbers)
-                if(!(timer % 2)) {
-                    notepad::push_command([w_uuid](notepad* np,
-                                                   scintilla* /*sct*/) {
-                        auto w = std::ranges::find_if(
-                            np->static_controls,
-                            [w_uuid](auto& w) { return w.get_id() == w_uuid; });
-                        if(w == np->static_controls.end()) {
-                            return;
-                        }
-                        w->position.x = static_cast<int>(easing::easeinrange(
-                            // NOLINTNEXTLINE(readability-magic-numbers)
-                            0.1,
-                            // NOLINTNEXTLINE(readability-magic-numbers)
-                            {20, 300}, 4, &easing::easeInExpo));
-                        std::cout <<  w->position.x << '\n';
-                        SetWindowText(*w, w->text.data());
-                        SetWindowPos(*w, HWND_TOP, w->position.x, w->position.y,
-                                     w->size.x, w->size.y, 0);
-                    });
-                }
+                timer += 1.;
+                notepad::push_command([ch_uuid, timer, k_uuid](
+                                          notepad* np, scintilla* /*sct*/) {
+                    auto ch = std::ranges::find_if(
+                        np->static_controls,
+                        [ch_uuid](auto& w) { return w.get_id() == ch_uuid; });
+                    auto k = std::ranges::find_if(
+                        np->static_controls,
+                        [k_uuid](auto& w) { return w.get_id() == k_uuid; });
+                    if(ch == np->static_controls.end()
+                       || k == np->static_controls.end()) {
+                        return;
+                    }
+                    auto remap = [](double value, glm::vec2 from,
+                                    glm::vec2 to) {
+                        return (((value - from.x) * (to.y - to.x))
+                                / (from.y - from.x))
+                               + to.x;
+                    };
+                    ch->position.x = std::min(
+                        290, static_cast<int>(glm::round(
+                                 remap(glm::cubicEaseOut(
+                                           remap(timer, {20., 290.}, {0., 1.})),
+                                       {0., 1.}, {20., 290.}))));
+                    k->position.x = static_cast<int>(
+                        glm::round(remap(glm::cubicEaseOut(remap(
+                                             std::max(305., 300 + 280. - timer),
+                                             {300 + 280., 305.}, {0., 1.})),
+                                         {0., 1.}, {300 + 280., 305})));
+                    SetWindowText(*ch, ch->text.data());
+                    SetWindowPos(*ch, HWND_TOP, ch->position.x, ch->position.y,
+                                 ch->size.x, ch->size.y, 0);
+                    SetWindowText(*k, k->text.data());
+                    SetWindowPos(*k, HWND_TOP, k->position.x, k->position.y,
+                                 k->size.x, k->size.y, 0);
+                    // NOLINTEND(readability-magic-numbers)
+                });
             });
         using namespace std::chrono_literals;
         timer::make(
             reg, end_anim,
-            [w_uuid = w_uuid, &game_over_flag](entt::registry& /*reg*/,
-                                               const entt::entity /*timer*/) {
+            [w_uuid = ch_uuid, &game_over_flag](entt::registry& /*reg*/,
+                                                const entt::entity /*timer*/) {
                 notepad::push_command(
                     [w_uuid](notepad* np, scintilla* /*sct*/) {
                         auto it = std::ranges::find_if(
