@@ -9,6 +9,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 
+#include "engine/buffer.h"
 #include "engine/details/base_types.hpp"
 
 #include "engine/time.h"
@@ -43,7 +44,7 @@ inline void define_all_styles(scintilla* sc) {
         style++;
     }
 }
-inline void run(pos game_area);
+inline void run(pos game_area, back_buffer& game_buffer);
 inline void start(pos game_area,
                   // NOLINTNEXTLINE(performance-unnecessary-value-param)
                   std::shared_ptr<std::atomic_bool> shutdown) {
@@ -51,16 +52,16 @@ inline void start(pos game_area,
         sc->set_lexer(&game_lexer);
         define_all_styles(sc);
     });
+    back_buffer game_buffer{game_area};
     while(!shutdown->load()) {
-        run(game_area);
+        run(game_area, game_buffer);
+        game_buffer.clear();
+        // restart
     }
 };
-inline void run(pos game_area) {
-    // Delete order is important!
-    back_buffer game_buffer{game_area};
-    world w{};
-    //
+inline void run(pos game_area, back_buffer& game_buffer) {
 
+    world w{};
     auto& exec = w.procs;
     exec.emplace_back(input::processor{});
     exec.emplace_back(uniform_motion{});
@@ -177,7 +178,7 @@ inline void run(pos game_area) {
                             sprite(sprite::unchecked_construct_tag{}, "#"));
 
 #ifndef NDEBUG
-        static constexpr auto debug_character_pos = pos{11, 15};
+        static constexpr auto debug_character_pos = pos{10, 25};
         character::make(reg, ent, debug_character_pos);
 #else
         character::make(reg, ent, char_pos);

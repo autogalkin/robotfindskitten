@@ -22,6 +22,12 @@ class back_buffer {
     // ensure null-terminated
     std::basic_string<char_size> buf_;
     std::vector<int32_t> z_buf_;
+    void set_lines() {
+        for(npi_t i = 1; i < buf_.size() / width_; i++) {
+            static constexpr int ENDL_SIZE = 1;
+            buf_[i * width_ - ENDL_SIZE] = '\n';
+        }
+    }
 
 public:
     mutable std::mutex mutex_;
@@ -29,13 +35,16 @@ public:
         : width_(size.x), buf_(std::basic_string<char_size>(
                               static_cast<size_t>(size.x * size.y), ' ')),
           z_buf_(static_cast<size_t>(size.x * size.y)) {
-        for(npi_t i = 1; i < size.y; i++) {
-            static constexpr int ENDL_SIZE = 1;
-            buf_[i * width_ - ENDL_SIZE] = '\n';
-        }
+        set_lines();
     }
     void draw(const pos& pivot, sprite_view sh, int32_t depth);
     void erase(const pos& pivot, sprite_view sh, int32_t depth);
+    void clear() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        std::fill(buf_.begin(), buf_.end(), ' ');
+        set_lines();
+        std::fill(z_buf_.begin(), z_buf_.end(), 0);
+    };
 
     template<typename Visitor>
         requires std::is_invocable_v<Visitor,

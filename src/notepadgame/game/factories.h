@@ -51,9 +51,9 @@ inline void emplace_simple_death(entt::registry& reg, const entt::entity e) {
 }
 
 struct projectile {
-    static collision::responce
-    on_collide(entt::registry& r,
-               collision::self self, collision::collider other) {
+    static collision::responce on_collide(entt::registry& r,
+                                          collision::self self,
+                                          collision::collider other) {
         if(r.all_of<projectile>(other)) {
             return collision::responce::ignore;
         }
@@ -62,7 +62,7 @@ struct projectile {
     }
     static void
     make(entt::registry& reg, entt::entity e, loc start, velocity dir,
-        std::chrono::milliseconds life_time = std::chrono::seconds{1}) {
+         std::chrono::milliseconds life_time = std::chrono::seconds{1}) {
         reg.emplace<projectile>(e);
         reg.emplace<sprite>(e, sprite::unchecked_construct_tag{}, "-");
         reg.emplace<visible_in_game>(e);
@@ -153,9 +153,9 @@ struct projectile {
     }
 };
 struct gun {
-    static collision::responce
-    on_collide(entt::registry& reg,
-               const  collision::self self, const  collision::collider collider) {
+    static collision::responce on_collide(entt::registry& reg,
+                                          const collision::self self,
+                                          const collision::collider collider) {
         if(reg.all_of<character>(collider)) {
             reg.emplace_or_replace<life::begin_die>(self);
             return collision::responce::ignore;
@@ -214,9 +214,9 @@ struct timer {
 };
 
 struct character {
-    static collision::responce
-    on_collide(entt::registry& reg,
-               const collision::self self, const  collision::collider collider) {
+    static collision::responce on_collide(entt::registry& reg,
+                                          const collision::self self,
+                                          const collision::collider collider) {
         // TODO(Igor) collision functions without cast?
         if(reg.all_of<gun>(collider)) {
             auto& animation = reg.get<sprite>(self);
@@ -307,10 +307,9 @@ enum class game_status_flag {
 
 namespace kitten {
 struct kitten_tag {};
-inline collision::responce
-on_collide(entt::registry& reg,
-           collision::self self,  collision::collider collider,
-           game_status_flag& game_over_flag) {
+inline collision::responce on_collide(entt::registry& reg, collision::self self,
+                                      collision::collider collider,
+                                      game_status_flag& game_over_flag) {
     if(reg.all_of<projectile>(collider)) {
         game_over_flag = game_status_flag::kill;
         emplace_simple_death(reg, self);
@@ -318,19 +317,20 @@ on_collide(entt::registry& reg,
     }
 
     if(reg.all_of<character>(collider)) {
-        auto& ch = reg.get<input::processor::down_signal>(collider);
-        std::exchange(ch, input::processor::down_signal{});
+        reg.emplace<life::begin_die>(collider);
         reg.emplace<life::begin_die>(self);
         auto w = static_control{};
         auto w_uuid = w.get_id();
-        auto a = std::shared_ptr<int>(nullptr, [](int*) {});
-        notepad::push_command(
-            std::move([w = std::move(w)](notepad* np, scintilla* sct) mutable {
-                w
-                    // NOLINTNEXTLINE(readability-magic-numbers)
-                    .with_size({sct->get_window_width(), 50})
-                    // NOLINTNEXTLINE(readability-magic-numbers)
-                    .with_position({20, 0})
+        notepad::push_command(std::move(
+            [w = std::move(w)](notepad* np, scintilla* /*sct*/) mutable {
+                static constexpr pos w_size = pos(20, 50);
+                static constexpr pos w_pos = pos(20, 0);
+                HDC hDC = GetDC(w);
+                RECT r = { 0, 0, 0, 0 };
+                DrawText(hDC, w.text.data(), static_cast<int>(w.text.size()), &r, DT_CALCRECT);
+                ReleaseDC(w, hDC);
+                w.with_size(w_size) // {r.right-r.left, r.bottom-r.top}
+                    .with_position(w_pos) // {r.left, r.top}
                     .with_text("#")
                     .with_text_color(RGB(0, 0, 0))
                     .show(np);
@@ -339,7 +339,6 @@ on_collide(entt::registry& reg,
         const auto end_anim = reg.create();
         reg.emplace<timeline::eval_direction>(end_anim);
         reg.emplace<timeline::what_do>(
-            // NOLINTNEXTLINE(readability-magic-numbers)
             end_anim, [w_uuid = w_uuid, timer = 0](
                           entt::registry& /*r*/, const entt::entity /*e*/,
                           timeline::direction /**/) mutable {
@@ -354,7 +353,12 @@ on_collide(entt::registry& reg,
                         if(w == np->static_controls.end()) {
                             return;
                         }
-                        w->position.x += 1;
+                        w->position.x = static_cast<int>(easing::easeinrange(
+                            // NOLINTNEXTLINE(readability-magic-numbers)
+                            0.1,
+                            // NOLINTNEXTLINE(readability-magic-numbers)
+                            {20, 300}, 4, &easing::easeInExpo));
+                        std::cout <<  w->position.x << '\n';
                         SetWindowText(*w, w->text.data());
                         SetWindowPos(*w, HWND_TOP, w->position.x, w->position.y,
                                      w->size.x, w->size.y, 0);
@@ -366,17 +370,13 @@ on_collide(entt::registry& reg,
             reg, end_anim,
             [w_uuid = w_uuid, &game_over_flag](entt::registry& /*reg*/,
                                                const entt::entity /*timer*/) {
-                notepad::push_command([w_uuid](notepad* np,
-                                               scintilla* /*sct*/) {
-                    auto it = std::ranges::find_if(
-                        np->static_controls,
-                        [w_uuid](auto& w) { return w.get_id() == w_uuid; });
-                        if(it == np->static_controls.end()){
-                            std::cout << "control not found";
-                            return;
-                        }
+                notepad::push_command(
+                    [w_uuid](notepad* np, scintilla* /*sct*/) {
+                        auto it = std::ranges::find_if(
+                            np->static_controls,
+                            [w_uuid](auto& w) { return w.get_id() == w_uuid; });
                         np->static_controls.erase(it);
-                });
+                    });
 
                 game_over_flag = game_status_flag::find;
             },
@@ -390,13 +390,11 @@ inline void make(entt::registry& reg, const entt::entity e, loc loc, sprite sp,
     actor::make_base_renderable(reg, e, loc, 1, std::move(sp));
     reg.emplace<collision::agent>(e);
     reg.emplace<collision::on_collide>(
-        e, collision::on_collide{
-               [&game_over_flag](
-                   entt::registry& reg,
-                   collision::self self, collision::collider collider) {
-                   return kitten::on_collide(reg, self, collider,
-                                             game_over_flag);
-               }});
+        e, collision::on_collide{[&game_over_flag](
+                                     entt::registry& reg, collision::self self,
+                                     collision::collider collider) {
+            return kitten::on_collide(reg, self, collider, game_over_flag);
+        }});
 }
 
 } // namespace kitten
