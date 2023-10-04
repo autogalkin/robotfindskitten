@@ -97,18 +97,18 @@ inline void run(pos game_area, back_buffer& game_buffer) {
     }
     static_control::id_t w_uuid;
     {
-    auto msg_w = static_control{};
-    w_uuid = msg_w.get_id();
-    notepad::push_command(
-        [msg_w = std::move(msg_w)](notepad* np, scintilla* sc) mutable {
-            static constexpr int height = 100;
-            static constexpr int wnd_x = 20;
-            msg_w.with_size(pos(sc->get_window_width(), height))
-                .with_position(pos(wnd_x, 0))
-                .with_text_color(RGB(0, 0, 0))
-                .show(np);
-            np->static_controls.emplace_back(std::move(msg_w));
-        });
+        auto msg_w = static_control{};
+        w_uuid = msg_w.get_id();
+        notepad::push_command(
+            [msg_w = std::move(msg_w)](notepad* np, scintilla* sc) mutable {
+                static constexpr int height = 100;
+                static constexpr int wnd_x = 20;
+                msg_w.with_size(pos(sc->get_window_width(), height))
+                    .with_position(pos(wnd_x, 0))
+                    .with_text_color(RGB(0, 0, 0))
+                    .show(np);
+                np->static_controls.emplace_back(std::move(msg_w));
+            });
     }
     std::uniform_int_distribution<> dist_ch(printable_range.first,
                                             printable_range.second);
@@ -160,7 +160,10 @@ inline void run(pos game_area, back_buffer& game_buffer) {
         kitten::make(reg, e, debug_kitten_pos,
                      sprite(sprite::unchecked_construct_tag{}, "Q"), game_flag);
 #else
-        kitten::make(reg, e, kitten_pos, kitten_mesh);
+        std::string s{' '};
+        s[0] = static_cast<char>(kitten_mesh);
+        kitten::make(reg, e, kitten_pos,
+                     sprite(sprite::unchecked_construct_tag{}, s), game_flag);
 #endif
     });
     w.spawn_actor([gun_pos = all[gun_i], gun_mesh = dist_ch(gen)](
@@ -170,11 +173,14 @@ inline void run(pos game_area, back_buffer& game_buffer) {
         gun::make(reg, e, debug_gun_pos,
                   sprite(sprite::unchecked_construct_tag{}, "<"));
 #else
-        gun::make(reg, e, gun_pos, gun_mesh);
+        std::string s{' '};
+        s[0] = static_cast<char>(gun_mesh);
+        gun::make(reg, e, gun_pos,
+                  sprite(sprite::unchecked_construct_tag{}, s));
 #endif
     });
-    w.spawn_actor([char_pos = all[character_i]
-                   ](entt::registry& reg, const entt::entity ent) {
+    w.spawn_actor([char_pos = all[character_i], game_area](entt::registry& reg,
+                                                const entt::entity ent) {
         reg.emplace<sprite>(ent,
                             sprite(sprite::unchecked_construct_tag{}, "#"));
 
