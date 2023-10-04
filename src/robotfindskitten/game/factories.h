@@ -369,14 +369,46 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
                 np->static_controls.emplace_back(std::move(ch));
                 np->static_controls.emplace_back(std::move(kt));
             }));
+        /*
+            dt = 1./60.
+
+            total_iterations = int(5 / dt)
+            print(total_iterations)
+
+            start_x = point[0]
+            end_x = start_x + 60
+            changing_x = end_x - start_x
+
+            start_y = point[1]
+            end_y = start_y + 10
+            changing_y = end_y - start_y
+            for current_iteration in range(total_iterations):
+                    x = changing_x * easeOutExpo(current_iteration/total_iterations) + start_x
+                        y = changing_y * easeInSine(current_iteration/total_iterations) + start_y
+                            point[0] = round(x)
+                                point[1] = round(y)
+                                    set(point, '-' if point[1] - start_y < 6 else '_')
+
+
+        */
+        using namespace std::chrono_literals;
         const auto end_anim = reg.create();
         reg.emplace<timeline::eval_direction>(end_anim);
         reg.emplace<timeline::what_do>(
-            end_anim, [ch_uuid = ch_uuid, k_uuid = k_uuid, timer = 20.](
+            end_anim, [ch_uuid = ch_uuid, k_uuid = k_uuid, 
+                total_iterations=static_cast<double>(4s/timings::dt)*1.,
+                current_iteration = 0.,
+                start_x = 20,
+                changing_x = 280
+                ](
                           entt::registry& /*r*/, const entt::entity /*e*/,
                           timeline::direction /**/) mutable {
-                timer += 1.;
-                notepad::push_command([ch_uuid, timer, k_uuid](
+                double alpha = std::min(total_iterations, current_iteration)/total_iterations;
+                double ch_x = changing_x * glm::quarticEaseOut(alpha) + start_x;
+                double k_x  = -1 * changing_x * glm::cubicEaseOut(alpha) + start_x+280+280;
+
+                current_iteration += 1.;
+                notepad::push_command([ch_uuid, k_uuid, k_x, ch_x](
                                           notepad* np, scintilla* /*sct*/) {
                     auto ch = std::ranges::find_if(
                         np->static_controls,
@@ -388,17 +420,8 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
                        || k == np->static_controls.end()) {
                         return;
                     }
-
-                    ch->position.x = std::min(
-                        290, static_cast<int>(glm::round(
-                                 remap(glm::cubicEaseOut(
-                                           remap(timer, {20., 290.}, {0., 1.})),
-                                       {0., 1.}, {20., 290.}))));
-                    k->position.x = static_cast<int>(
-                        glm::round(remap(glm::cubicEaseOut(remap(
-                                             std::max(305., 300 + 280. - timer),
-                                             {300 + 280., 305.}, {0., 1.})),
-                                         {0., 1.}, {300 + 280., 305})));
+                    ch->position.x =  static_cast<int32_t>(glm::round(ch_x));
+                    k->position.x = static_cast<int32_t>(glm::round(k_x));
                     SetWindowText(*ch, ch->text.data());
                     SetWindowPos(*ch, HWND_TOP, ch->position.x, ch->position.y,
                                  ch->size.x, ch->size.y, 0);
@@ -408,7 +431,6 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
                     // NOLINTEND(readability-magic-numbers)
                 });
             });
-        using namespace std::chrono_literals;
         timer::make(
             reg, end_anim,
             [w_uuid = ch_uuid, &game_over_flag](entt::registry& /*reg*/,
