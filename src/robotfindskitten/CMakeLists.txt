@@ -9,83 +9,104 @@ FetchContent_Declare(
     URL_HASH "SHA1=7a72a85442706acbcb4075816a5cc4e58a6bc21c"
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/scintilla
-    )
+)
 FetchContent_Declare(
     lexilla
     URL "https://sourceforge.net/projects/scintilla/files/lexilla/5.2.7/lexilla527.zip/download"
     URL_HASH "SHA1=f46943e10cad2677d503970b671710341e2db42f"
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/lexilla
-    )
+)
 FetchContent_MakeAvailable(lexilla scintilla)
+
+option(REBUILD_SCINTILLA
+    "Rebuild Scintilla (Need if patch changed), \
+    Disabled for improve compilation speed"
+    OFF)
 
 # patch scintilla source code
 set(SCI_PATCH_FILE
-    "${CMAKE_SOURCE_DIR}/extern/scintilla-patch/src/Editor.cxx")
+"${CMAKE_SOURCE_DIR}/extern/scintilla-patch/src/Editor.cxx")
 set(SCI_ORIG_FILE "${scintilla_SOURCE_DIR}/src/Editor.cxx")
 set(SCI_TEMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/Editor_temp.cxx")
 set(SCI_OUT_FILE "${scintilla_SOURCE_DIR}/bin/Scintilla.dll")
 set(LEX_OUT_FILE "${lexilla_SOURCE_DIR}/bin/Lexilla.dll")
 set(SCI_PACHED_STAMP
-    "${CMAKE_CURRENT_BINARY_DIR}/scintilla_already_patched.stamp")
+"${CMAKE_CURRENT_BINARY_DIR}/scintilla_already_patched.stamp")
 
-add_custom_command(
-    OUTPUT ${SCI_PACHED_STAMP}
-    COMMAND ${CMAKE_COMMAND} -E copy "${SCI_ORIG_FILE}"
-            "${SCI_TEMP_FILE}"
-    COMMAND ${CMAKE_COMMAND} -E copy "${SCI_PATCH_FILE}"
-            "${SCI_ORIG_FILE}"
-    COMMAND ${CMAKE_COMMAND} -E touch "${SCI_PACHED_STAMP}"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    DEPENDS "${SCI_PATCH_FILE}"
-    COMMENT "Replace Scintilla source code files with patched files"
-)
+if(NOT EXISTS "${SCI_OUT_FILE}")
+    set(REBUILD_SCINTILLA ON)
+endif()
+if(REBUILD_SCINTILLA)
+    add_custom_command(
+        OUTPUT ${SCI_PACHED_STAMP}
+        COMMAND ${CMAKE_COMMAND} -E copy "${SCI_ORIG_FILE}"
+                "${SCI_TEMP_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${SCI_PATCH_FILE}"
+                "${SCI_ORIG_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E touch "${SCI_PACHED_STAMP}"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        DEPENDS "${SCI_PATCH_FILE}"
+        COMMENT "Replace Scintilla source code files with patched files"
+    )
 
-# find make
-find_program(IS_NMAKE_EXISTS nmake)
-if(IS_NMAKE_EXISTS)
-    set(SCI_BUILD_COMMAND nmake -f scintilla.mak)
-else()
-    message("Nmake not found, try to find Make and GCC")
-    find_program(
+    # find make
+    find_program(IS_NMAKE_EXISTS nmake)
+    if(IS_NMAKE_EXISTS)
+        set(SCI_BUILD_COMMAND nmake -f scintilla.mak)
+    else()
+        message("Nmake not found, try to find Make and GCC")
+        find_program(
         IS_MAKE_EXISTS
         make
         mingw32-make)
-    find_program(
+        find_program(
         IS_GCC_EXISTS
         gcc
         g++)
-    if(IS_MAKE_EXISTS AND IS_GCC_EXISTS)
-        set(SCI_BUILD_COMMAND make)
-    else()
-        if(NOT IS_MAKE_EXISTS)
-            message(SEND_ERROR "Make not found")
-        endif()
-        if(NOT IS_GCC_EXISTS)
-            message(SEND_ERROR "GCC not found")
-        endif()
-        message(FATAL_ERROR "Unable to compile Scintilla..")
+        if(IS_MAKE_EXISTS AND IS_GCC_EXISTS)
+            set(SCI_BUILD_COMMAND make)
+        else()
+            if(NOT IS_MAKE_EXISTS)
+                message(SEND_ERROR "Make not found")
+            endif()
+            if(NOT IS_GCC_EXISTS)
+                message(SEND_ERROR "GCC not found")
+            endif()
+            message(FATAL_ERROR "Unable to compile Scintilla..")
 
+        endif()
     endif()
+
+    # run scintilla makefile
+    add_custom_target(
+        scintilla ALL
+        COMMAND ${SCI_BUILD_COMMAND}
+        WORKING_DIRECTORY "${scintilla_SOURCE_DIR}/win32"
+        DEPENDS "${SCI_PACHED_STAMP}"
+        COMMENT "Build Scintilla with original Makefile")
+
+    # revert patch after build Scintilla
+    add_custom_target(
+        revert_scintilla_patch
+        COMMAND ${CMAKE_COMMAND} -E copy "${NPGAME_SCI_TEMP_FILE}"
+                "${SCI_ORIG_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E remove "${NPGAME_SCI_TEMP_FILE}"
+        COMMENT "Revert Scintilla patches"
+    )
+
+    add_dependencies(revert_scintilla_patch scintilla)
+    install(
+        FILES "${SCI_OUT_FILE}"
+        CONFIGURATIONS Debug
+        DESTINATION .)
+
+    install(
+        FILES "${SCI_OUT_FILE}"
+        CONFIGURATIONS Release
+        DESTINATION .)
+
 endif()
-
-# run scintilla makefile
-add_custom_target(
-    scintilla ALL
-    COMMAND ${SCI_BUILD_COMMAND}
-    WORKING_DIRECTORY "${scintilla_SOURCE_DIR}/win32"
-    DEPENDS "${SCI_PACHED_STAMP}"
-    COMMENT "Build Scintilla with original Makefile")
-
-# revert patch after build Scintilla
-add_custom_target(
-    revert_scintilla_patch
-    COMMAND ${CMAKE_COMMAND} -E copy "${NPGAME_SCI_TEMP_FILE}"
-            "${SCI_ORIG_FILE}"
-    COMMAND ${CMAKE_COMMAND} -E remove "${NPGAME_SCI_TEMP_FILE}"
-    COMMENT "Revert Scintilla patches")
-add_dependencies(revert_scintilla_patch scintilla)
-
 
 # build robotfindskitten.dll
 
@@ -110,9 +131,6 @@ include(engine/CMakeLists.txt)
 include(game/CMakeLists.txt)
 
 add_library(engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
-
-
-
 add_library(game STATIC ${GAME_SOURCES} ${GAME_HEADERS})
 file(READ "${CMAKE_CURRENT_LIST_DIR}/game/assets/messages.txt" MESSAGES_FILE_CONTENT)
 string(REPLACE "\n" ";" MESSAGES_LIST ${MESSAGES_FILE_CONTENT})
@@ -132,12 +150,12 @@ file(GLOB LEX_SOURCES CONFIGURE_DEPENDS ${lexilla_SOURCE_DIR}/lexlib/*.cxx)
 file(GLOB LEX_HEADERS CONFIGURE_DEPENDS ${lexilla_SOURCE_DIR}/lexlib/*.h)
 add_library(lexlib STATIC ${LEX_SOURCES} ${LEX_HEADERS})
 
-    set_target_properties(
+set_target_properties(
         lexlib
         PROPERTIES CXX_STANDARD 20
                    CXX_STANDARD_REQUIRED ON
                    LINKER_LANGUAGE CXX)
-    target_compile_definitions(lexlib PUBLIC # windows.h
+target_compile_definitions(lexlib PUBLIC # windows.h
                                                  NOMINMAX WIN32_LEAN_AND_MEAN)
 target_include_directories(lexlib PRIVATE
 "${scintilla_SOURCE_DIR}/include"
@@ -201,14 +219,3 @@ install(
     TARGETS ${PROJECT_NAME}
     CONFIGURATIONS Release
     RUNTIME DESTINATION .)
-
-install(
-    FILES "${SCI_OUT_FILE}"
-    CONFIGURATIONS Debug
-    DESTINATION .)
-
-install(
-    FILES "${SCI_OUT_FILE}"
-    CONFIGURATIONS Release
-    DESTINATION .)
-
