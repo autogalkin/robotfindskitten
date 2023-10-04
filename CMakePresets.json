@@ -20,7 +20,8 @@
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
             },
             "environment": {
-                "UUID_LINK": "-D_WIN32_WINNT=0x0601 -DBOOST_UUID_FORCE_AUTO_LINK"
+                "UUID_LINK": "-D_WIN32_WINNT=0x0601 -DBOOST_UUID_FORCE_AUTO_LINK",
+                "MSVC_FLAGS": "/nologo /W3 /EHsc /D_CRT_SECURE_NO_WARNINGS"
             }
         },
         {
@@ -32,7 +33,7 @@
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_LINK_FLAGS": "/DEBUG:FULL",
-                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od /EHsc $env{UUID_LINK}",
+                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od $env{MSVC_FLAGS} $env{UUID_LINK}",
                 "ROBOTFINDSKITTEN_BUILD_TESTS": true
             },
             "architecture": {
@@ -51,7 +52,7 @@
             "inherits": "windows-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "/MP /EHsc $env{UUID_LINK}"
+                "CMAKE_CXX_FLAGS": "/MP /O2 $env{MSVC_FLAGS} $env{UUID_LINK}"
             }
         }
     ],
