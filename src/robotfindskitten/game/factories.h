@@ -330,31 +330,29 @@ struct kitten_tag {};
 inline collision::responce on_collide(entt::registry& reg, collision::self self,
                                       collision::collider collider,
                                       game_status_flag& game_over_flag) {
+        using namespace std::chrono_literals;
     if(reg.all_of<projectile>(collider)) {
-        game_over_flag = game_status_flag::kill;
         emplace_simple_death(reg, self);
         reg.emplace<life::begin_die>(self);
-    }
-
-    if(reg.all_of<character>(collider)) {
-        // NOLINTBEGIN(readability-magic-numbers)
         reg.emplace<life::begin_die>(collider);
-        reg.emplace<life::begin_die>(self);
+        // NOLINTBEGIN(readability-magic-numbers)
         auto w_char = static_control{}
                           .with_position(pos(20, 0))
                           .with_text("#")
                           .with_text_color(RGB(0, 0, 0));
         auto w_kitten = static_control{}
-                            .with_position(pos(300 + 280, 0))
-                            .with_text(reg.get<sprite>(self).data())
-                            .with_text_color(RGB(255, 0, 0));
+                            .with_position(pos(50, 0))
+                            .with_text("___")
+                            .with_text_color(RGB(0, 0, 0));
+        std::cout << w_kitten.text << '\n';
         auto ch_uuid = w_char.get_id();
         auto k_uuid = w_kitten.get_id();
         notepad::push_command(
-            std::move([ch = std::move(w_char), kt = std::move(w_kitten)](
+            [ch = std::move(w_char), kt = std::move(w_kitten)](
                           notepad* np, scintilla* /*sct*/) mutable {
                 for(auto& i: np->static_controls) {
                     i.text = "";
+                    SetWindowText(i.get_wnd(), i.text.data());
                 }
                 static constexpr pos w_size = pos(20, 50);
                 HDC hDC = GetDC(ch);
@@ -368,31 +366,99 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
                     .show(np);
                 np->static_controls.emplace_back(std::move(ch));
                 np->static_controls.emplace_back(std::move(kt));
-            }));
-        /*
-            dt = 1./60.
-
-            total_iterations = int(5 / dt)
-            print(total_iterations)
-
-            start_x = point[0]
-            end_x = start_x + 60
-            changing_x = end_x - start_x
-
-            start_y = point[1]
-            end_y = start_y + 10
-            changing_y = end_y - start_y
-            for current_iteration in range(total_iterations):
-                    x = changing_x * easeOutExpo(current_iteration/total_iterations) + start_x
-                        y = changing_y * easeInSine(current_iteration/total_iterations) + start_y
-                            point[0] = round(x)
-                                point[1] = round(y)
-                                    set(point, '-' if point[1] - start_y < 6 else '_')
-
-
-        */
-        using namespace std::chrono_literals;
+            });
         const auto end_anim = reg.create();
+        reg.emplace<timeline::eval_direction>(end_anim);
+        reg.emplace<timeline::what_do>(
+            end_anim, [ch_uuid = ch_uuid,
+                total_iterations=static_cast<double>(4s/timings::dt)*1.,
+                current_iteration = 0.,
+                start_x = 20,
+                changing_x = 250
+                ](
+                          entt::registry& /*r*/, const entt::entity /*e*/,
+                          timeline::direction /**/) mutable {
+                double alpha = std::min(total_iterations, current_iteration)/total_iterations;
+                double ch_x = changing_x * glm::backEaseOut(alpha) + start_x;
+                current_iteration += 1.;
+                notepad::push_command([ch_uuid, ch_x](
+                                          notepad* np, scintilla* /*sct*/) {
+                    auto ch = std::ranges::find_if(
+                        np->static_controls,
+                        [ch_uuid](auto& w) { return w.get_id() == ch_uuid; });
+                        if(ch == np->static_controls.end()
+                       ) {
+                        return;
+                    }
+                    ch->position.x =  static_cast<int32_t>(glm::round(ch_x));
+                    SetWindowText(*ch, ch->text.data());
+                    SetWindowPos(*ch, HWND_TOP, ch->position.x, ch->position.y,
+                                 ch->size.x, ch->size.y, 0);
+                    // NOLINTEND(readability-magic-numbers)
+                });
+            });
+        timer::make(
+            reg, end_anim,
+            [w_uuid = ch_uuid, k_uuid=k_uuid, &game_over_flag](entt::registry& /*reg*/,
+                                                const entt::entity /*timer*/) {
+                notepad::push_command(
+                    [w_uuid, k_uuid](notepad* np, scintilla* /*sct*/) {
+                        auto it = std::ranges::find_if(
+                            np->static_controls,
+                            [k_uuid](auto& w) { return w.get_id() == k_uuid; });
+                        np->static_controls.erase(it);
+                        it = std::ranges::find_if(
+                            np->static_controls,
+                            [w_uuid](auto& w) { return w.get_id() == w_uuid; });
+                        np->static_controls.erase(it);
+                    });
+
+                game_over_flag = game_status_flag::kill;
+            },
+            4s);
+
+        return collision::responce::ignore;
+    }
+
+    if(reg.all_of<character>(collider)) {
+        // NOLINTBEGIN(readability-magic-numbers)
+        reg.emplace<life::begin_die>(collider);
+        reg.emplace<life::begin_die>(self);
+
+        const auto end_anim = reg.create();
+        reg.emplace<sprite>(end_anim, reg.get<sprite>(self));
+        auto w_char = static_control{}
+                          .with_position(pos(20, 0))
+                          .with_text("#")
+                          .with_text_color(RGB(0, 0, 0));
+        auto w_kitten = static_control{}
+                            .with_position(pos(300 + 280, 0))
+                            .with_text(reg.get<sprite>(end_anim).data())
+                            .with_text_color(RGB(0, 0, 0));
+        auto ch_uuid = w_char.get_id();
+        auto k_uuid = w_kitten.get_id();
+        notepad::push_command(
+            [ch = std::move(w_char), kt = std::move(w_kitten)](
+                          notepad* np, scintilla* /*sct*/) mutable {
+                for(auto& i: np->static_controls) {
+                    i.text = "";
+                    SetWindowText(i.get_wnd(), i.text.data());
+                }
+                static constexpr pos w_size = pos(20, 50);
+                HDC hDC = GetDC(ch);
+                RECT r = {0, 0, 0, 0};
+                DrawText(hDC, ch.text.data(), static_cast<int>(ch.text.size()),
+                         &r, DT_CALCRECT);
+                ReleaseDC(ch, hDC);
+                ch.with_size(w_size) // {r.right-r.left, r.bottom-r.top}
+                    .show(np);
+                kt.with_size(w_size) // {r.right-r.left, r.bottom-r.top}
+                    .show(np);
+                np->static_controls.emplace_back(std::move(ch));
+                np->static_controls.emplace_back(std::move(kt));
+            });
+
+
         reg.emplace<timeline::eval_direction>(end_anim);
         reg.emplace<timeline::what_do>(
             end_anim, [ch_uuid = ch_uuid, k_uuid = k_uuid, 
@@ -405,7 +471,7 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
                           timeline::direction /**/) mutable {
                 double alpha = std::min(total_iterations, current_iteration)/total_iterations;
                 double ch_x = changing_x * glm::quarticEaseOut(alpha) + start_x;
-                double k_x  = -1 * changing_x * glm::cubicEaseOut(alpha) + start_x+280+280;
+                double k_x  = -1 * (changing_x-30) * glm::cubicEaseOut(alpha) + start_x+280;
 
                 current_iteration += 1.;
                 notepad::push_command([ch_uuid, k_uuid, k_x, ch_x](
@@ -433,11 +499,15 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
             });
         timer::make(
             reg, end_anim,
-            [w_uuid = ch_uuid, &game_over_flag](entt::registry& /*reg*/,
+            [w_uuid = ch_uuid, k_uuid=k_uuid, &game_over_flag](entt::registry& /*reg*/,
                                                 const entt::entity /*timer*/) {
                 notepad::push_command(
-                    [w_uuid](notepad* np, scintilla* /*sct*/) {
+                    [w_uuid, k_uuid](notepad* np, scintilla* /*sct*/) {
                         auto it = std::ranges::find_if(
+                            np->static_controls,
+                            [k_uuid](auto& w) { return w.get_id() == k_uuid; });
+                        np->static_controls.erase(it);
+                        it = std::ranges::find_if(
                             np->static_controls,
                             [w_uuid](auto& w) { return w.get_id() == w_uuid; });
                         np->static_controls.erase(it);
@@ -446,6 +516,7 @@ inline collision::responce on_collide(entt::registry& reg, collision::self self,
                 game_over_flag = game_status_flag::find;
             },
             4s);
+        return collision::responce::ignore;
     }
     return collision::responce::ignore;
 };
@@ -530,7 +601,7 @@ struct atmosphere {
                 sct->dcall2(SCI_STYLESETBACK, 0, new_back_color);
                 sct->dcall2(SCI_STYLESETFORE, STYLE_DEFAULT, new_front_color);
                 sct->dcall2(SCI_STYLESETFORE, 0, new_front_color);
-                for(auto i: ALL_COLORS) {
+                for(size_t i=0; i < ALL_COLORS.size(); i++) { 
                     sct->dcall2(SCI_STYLESETBACK, style, new_back_color);
                     style++;
                 }

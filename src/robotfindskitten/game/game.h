@@ -95,8 +95,10 @@ inline void run(pos game_area, back_buffer& game_buffer) {
             all[i] = p;
         }
     }
+    static_control::id_t w_uuid;
+    {
     auto msg_w = static_control{};
-    auto w_uuid = msg_w.get_id();
+    w_uuid = msg_w.get_id();
     notepad::push_command(
         [msg_w = std::move(msg_w)](notepad* np, scintilla* sc) mutable {
             static constexpr int height = 100;
@@ -107,6 +109,7 @@ inline void run(pos game_area, back_buffer& game_buffer) {
                 .show(np);
             np->static_controls.emplace_back(std::move(msg_w));
         });
+    }
     std::uniform_int_distribution<> dist_ch(printable_range.first,
                                             printable_range.second);
     for(size_t i = 0; i < all.size() - 3; i++) {
