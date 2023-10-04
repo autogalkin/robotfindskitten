@@ -173,10 +173,16 @@ public:
     std::pair<npi_t, npi_t> get_selection_text(T& out) const noexcept;
 
     // look dev
-    void set_background_color(int32_t style, COLORREF c) const noexcept; // post message
-    void force_set_background_color(int32_t style, COLORREF c) const noexcept; // send message
-    [[nodiscard]] COLORREF get_background_color() const noexcept {
-        return static_cast<COLORREF>(dcall1(SCI_STYLEGETBACK, STYLE_DEFAULT));
+    void set_back_color(int32_t style, COLORREF c) const noexcept; // post message
+    void force_set_back_color(int32_t style, COLORREF c) const noexcept; // send message
+    [[nodiscard]] COLORREF get_background_color(int32_t style) const noexcept {
+        return static_cast<COLORREF>(dcall1(SCI_STYLEGETBACK, style));
+    }
+    [[nodiscard]] COLORREF get_text_color(int32_t style) const noexcept {
+        return static_cast<COLORREF>(dcall1(SCI_STYLEGETFORE, style));
+    }
+    void clear_all_styles() const noexcept{
+        dcall0(SCI_STYLECLEARALL);
     }
     void set_text_color(int32_t style, COLORREF c) const noexcept; // post message
     void force_set_text_color(int32_t style, COLORREF c) const noexcept; // send message

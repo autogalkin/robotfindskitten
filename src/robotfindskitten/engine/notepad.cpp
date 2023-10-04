@@ -13,6 +13,7 @@
 // clang-format on
 
 #include <boost/lockfree/spsc_queue.hpp>
+#include <glm/vector_relational.hpp>
 #include <winuser.h>
 
 #include "engine/details/base_types.hpp"
@@ -117,19 +118,22 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     }
     case WM_CTLCOLORSTATIC: {
         auto& np = notepad::get();
-        for(auto& w: np.static_controls) {
-            if(w == reinterpret_cast<HWND>(lp)) {
-                static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
-                                       decltype(&::DeleteObject)>
-                    hBrushLabel{CreateSolidBrush(np.back_color),
-                                &::DeleteObject};
-                hBrushLabel.reset(CreateSolidBrush(np.back_color));
-                HDC popup = reinterpret_cast<HDC>(wp);
-                auto& np = notepad::get();
-                SetTextColor(popup, w.fore_color);
-                SetLayeredWindowAttributes(w, np.back_color, 0, LWA_COLORKEY);
-                SetBkColor(popup, np.back_color);
-                return reinterpret_cast<LRESULT>(hBrushLabel.get());
+        if(np.scintilla_) {
+            auto back_color =
+                np.scintilla_->get_background_color(STYLE_DEFAULT);
+            for(auto& w: np.static_controls) {
+                if(w == reinterpret_cast<HWND>(lp)) {
+                    static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
+                                           decltype(&::DeleteObject)>
+                        hBrushLabel{CreateSolidBrush(back_color),
+                                    &::DeleteObject};
+                    hBrushLabel.reset(CreateSolidBrush(back_color));
+                    HDC popup = reinterpret_cast<HDC>(wp);
+                    SetTextColor(popup, w.fore_color);
+                    SetLayeredWindowAttributes(w, back_color, 0, LWA_COLORKEY);
+                    SetBkColor(popup, back_color);
+                    return reinterpret_cast<LRESULT>(hBrushLabel.get());
+                }
             }
         }
         break;
@@ -302,7 +306,8 @@ bool hook_SetWindowTextW(HMODULE module) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
 // NOLINTEND(readability-function-cognitive-complexity)
 
-void static_control::show(notepad* np) noexcept {
+static_control& static_control::show(notepad* np) noexcept {
+    assert(glm::all(glm::notEqual(this->size, pos(0))));
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
     wnd_.reset(CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
@@ -310,20 +315,23 @@ void static_control::show(notepad* np) noexcept {
                               np->get_window(), nullptr,
                               ::GetModuleHandle(nullptr), nullptr),
                [](HWND w) { ::PostMessage(w, WM_CLOSE, 0, 0); });
-    ::SetLayeredWindowAttributes(wnd_.get(), np->back_color, 0, LWA_COLORKEY);
+    ::SetLayeredWindowAttributes(
+        wnd_.get(), np->get_scintilla().get_background_color(STYLE_DEFAULT), 0,
+        LWA_COLORKEY);
     ::SetWindowPos(wnd_.get(), HWND_TOP, position.x, position.y, size.x, size.y,
-                 0);
+                   0);
     static constexpr int font_size = 38;
     static const std::unique_ptr<std::remove_pointer_t<HFONT>,
                                  decltype(&::DeleteObject)>
         hFont{::CreateFontW(font_size, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
-                          ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
-                          L"Consolas"),
+                            ANSI_CHARSET, OUT_DEFAULT_PRECIS,
+                            CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                            DEFAULT_PITCH | FF_SWISS, L"Consolas"),
               &::DeleteObject};
-    ::SendMessageW(wnd_.get(), WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()),
-                 TRUE);
+    ::SendMessageW(wnd_.get(), WM_SETFONT,
+                   reinterpret_cast<WPARAM>(hFont.get()), TRUE);
     ::ShowWindow(wnd_.get(), SW_SHOW);
     ::UpdateWindow(wnd_.get());
     ::InvalidateRect(wnd_.get(), nullptr, TRUE);
+    return *this;
 }

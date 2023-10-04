@@ -6,13 +6,11 @@
 #include "engine/notepad.h"
 
 scintilla::~scintilla() = default;
-HWND scintilla::create_native_window(DWORD dwExStyle,
-                                     LPCWSTR lpWindowName,
-                                     DWORD dwStyle, int X,
-                                     int Y, int nWidth,
-                                     int nHeight, HWND hWndParent,
-                                     HMENU hMenu, HINSTANCE hInstance,
-                                     LPVOID lpParam, uint8_t start_options) {
+HWND scintilla::create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
+                                     DWORD dwStyle, int X, int Y, int nWidth,
+                                     int nHeight, HWND hWndParent, HMENU hMenu,
+                                     HINSTANCE hInstance, LPVOID lpParam,
+                                     uint8_t start_options) {
     edit_window_ =
         CreateWindowExW(dwExStyle, L"Scintilla", lpWindowName, dwStyle, X, Y,
                         nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
@@ -59,20 +57,18 @@ uint32_t scintilla::get_window_width() const noexcept {
 }
 
 void scintilla::set_back_color(int32_t style, COLORREF c) const noexcept {
-    PostMessage(get_native_window(), SCI_STYLESETBACK, style,
-                c);
+    PostMessage(get_native_window(), SCI_STYLESETBACK, style, c);
 }
 
 void scintilla::force_set_back_color(int32_t style, COLORREF c) const noexcept {
     dcall2(SCI_STYLESETBACK, style, c);
 }
 
-void scintilla::set_all_text_color(int32_t style, COLORREF c) const noexcept {
-    PostMessage(get_native_window(), SCI_STYLESETFORE, style,
-                c);
+void scintilla::set_text_color(int32_t style, COLORREF c) const noexcept {
+    PostMessage(get_native_window(), SCI_STYLESETFORE, style, c);
 }
 
-void scintilla::force_set_all_text_color(int32_t style, COLORREF c) const noexcept {
+void scintilla::force_set_text_color(int32_t style, COLORREF c) const noexcept {
     dcall2(SCI_STYLESETFORE, style, c);
 }
 

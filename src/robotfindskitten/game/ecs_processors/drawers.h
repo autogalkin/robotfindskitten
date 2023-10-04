@@ -28,7 +28,6 @@ public:
         for(const auto view = reg.view<loc, translation, sprite,
                                        on_change_direction, draw_direction>();
             const auto entity: view) {
-            auto& current = view.get<loc>(entity);
             auto& trans = view.get<translation>(entity);
 
             if(auto& dir = view.get<draw_direction>(entity);

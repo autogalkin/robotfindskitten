@@ -28,26 +28,31 @@
 #include "config.h"
 // clang-format on
 
-static inline constexpr std::pair<int, int> PRINTABLE_RANGE{32, 127};
+static inline constexpr std::pair<int, int> PRINTABLE_RANGE{
+    static_cast<int>(' '), static_cast<int>('~')};
 static inline constexpr int COLOR_COUNT = 255;
-static inline constexpr int MY_STYLE_START = 100;
-static const auto ALL_COLORS = []() {
+static inline constexpr int MY_STYLE_START = 33;
+
+inline std::array<decltype(RGB(0, 0, 0)),
+                  PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>
+generate_colors() {
     std::random_device rd{};
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distr(0, COLOR_COUNT);
-    auto arr = std::array<decltype(RGB(0, 0, 0)), 127 - 31>();
+    auto arr = std::array<decltype(RGB(0, 0, 0)),
+                          PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>();
     for(auto& i: arr) {
         i = RGB(distr(gen), distr(gen), distr(gen));
     }
     return arr;
-}();
-
-inline constexpr bool is_valid(char c) noexcept {
-    return PRINTABLE_RANGE.first <= static_cast<int>(c)
-           && static_cast<int>(c) < PRINTABLE_RANGE.second;
 }
+static auto ALL_COLORS = generate_colors();
+
+static_assert(ALL_COLORS.size()
+              == PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1);
+
 inline decltype(RGB(0, 0, 0)) get_color(char c) noexcept {
-    return ALL_COLORS[c - PRINTABLE_RANGE.first - 1];
+    return ALL_COLORS[c - PRINTABLE_RANGE.first];
 };
 
 #define MAX_STR_LEN 100
@@ -70,7 +75,7 @@ public:
                 } else if(ctx.ch == '#') {
                     ctx.SetState(STYLE_DEFAULT);
                 } else {
-                    ctx.SetState((ctx.ch) + my_style_start);
+                    ctx.SetState((ctx.ch) + MY_STYLE_START);
                 }
             }
             ctx.Complete();
