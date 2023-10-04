@@ -1,30 +1,23 @@
-﻿
-#include <boost/lockfree/spsc_queue.hpp>
+﻿#include "engine/notepad.h"
+
 #include <memory>
 #include <optional>
-#include <type_traits>
-
-// clang-format off
-#include "Richedit.h"
-#include <winuser.h>
-#include <Windows.h>
-#include "CommCtrl.h"
-// clang-format on
 #include <algorithm>
-#include <locale>
-#include <shared_mutex>
 #include <mutex>
 #include <cstdint>
 #include <thread>
 
-#include "engine/buffer.h"
+// clang-format off
+#include <Windows.h>
+#include "CommCtrl.h"
+// clang-format on
+
+#include <boost/lockfree/spsc_queue.hpp>
+
 #include "engine/details/base_types.hpp"
 #include "engine/details/nonconstructors.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/details/iat_hook.h"
-
-#include "engine/notepad.h"
-#include "engine/world.h"
 #include "engine/time.h"
 
 std::shared_ptr<std::atomic_bool> shutdown_token =
@@ -113,8 +106,8 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
             RECT rect = {NULL};
             GetWindowRect(np.scintilla_->edit_window_, &rect);
             for(auto& w: np.static_controls) {
-                ::SetWindowPos(w, nullptr, w.position.x, w.position.y,
-                               w.size.x, w.size.y, SWP_NOACTIVATE);
+                ::SetWindowPos(w, nullptr, w.position.x, w.position.y, w.size.x,
+                               w.size.y, SWP_NOACTIVATE);
             }
         }
         break;
@@ -131,8 +124,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
                 HDC popup = reinterpret_cast<HDC>(wp);
                 auto& np = notepad::get();
                 SetTextColor(popup, w.fore_color);
-                SetLayeredWindowAttributes(w, np.back_color, 0,
-                                           LWA_COLORKEY);
+                SetLayeredWindowAttributes(w, np.back_color, 0, LWA_COLORKEY);
                 SetBkColor(popup, np.back_color);
                 return reinterpret_cast<LRESULT>(hBrushLabel.get());
             }
@@ -310,9 +302,8 @@ void static_control::show(notepad* np) noexcept {
     wnd_.reset(CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
                               "STATIC", "", dwStyle, 0, 0, size.x, size.y,
                               np->get_window(), nullptr,
-                              GetModuleHandle(nullptr), nullptr), [](HWND w){
-                                  PostMessage(w, WM_CLOSE, 0, 0);
-        });
+                              GetModuleHandle(nullptr), nullptr),
+               [](HWND w) { PostMessage(w, WM_CLOSE, 0, 0); });
     SetLayeredWindowAttributes(wnd_.get(), np->back_color, 0, LWA_COLORKEY);
     SetWindowPos(wnd_.get(), HWND_TOP, position.x, position.y, size.x, size.y,
                  0);

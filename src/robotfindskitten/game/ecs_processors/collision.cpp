@@ -1,11 +1,13 @@
 ﻿#include "game/ecs_processors/collision.h"
-#include "engine/notepad.h"
-#include <glm/common.hpp>
+
 #include <queue>
-#include "game/ecs_processors/life.h"
-#include "game/comps.h"
+
+#include "range/v3/view/iota.hpp"
+
 #include "engine/details/base_types.hpp"
+#include "game/ecs_processors/life.h"
 #include "game/ecs_processors/motion.h"
+#include "game/comps.h"
 
 namespace collision {
 

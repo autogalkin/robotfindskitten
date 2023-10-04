@@ -1,9 +1,9 @@
 ﻿#include "Windows.h"
 #include <CommCtrl.h>
 #include <Richedit.h>
+
 #include "engine/scintilla_wrapper.h"
 #include "engine/notepad.h"
-#include "engine/world.h"
 
 scintilla::~scintilla() = default;
 HWND scintilla::create_native_window(const DWORD dwExStyle,

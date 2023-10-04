@@ -1,15 +1,14 @@
 ﻿#pragma once
 
-#include "boost/container/small_vector.hpp"
-#include "engine/world.h"
-#include "range/v3/view/iota.hpp"
-#include <chrono>
-#include <entt/entity/fwd.hpp>
-#include <entt/entt.hpp>
 #include <variant>
+
+#include <boost/container/small_vector.hpp>
+#include <entt/entt.hpp>
 #include <glm/mat2x2.hpp>
 
 #include "engine/details/base_types.hpp"
+#include "engine/world.h"
+
 
 namespace collision {
 

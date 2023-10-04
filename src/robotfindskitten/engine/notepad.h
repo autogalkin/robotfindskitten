@@ -1,20 +1,16 @@
 ﻿#pragma once
 #include <optional>
-
-#include "boost/signals2.hpp"
-#include <boost/lockfree/spsc_queue.hpp>
-#include <Windows.h>
 #include <memory>
 #include <cstdint>
-#include <string>
 #include <string_view>
-#include <thread>
-#include "engine/buffer.h"
-#include "engine/scintilla_wrapper.h"
-#include "engine/world.h"
+
+#include <Windows.h>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include "boost/signals2.hpp"
+#include <boost/lockfree/spsc_queue.hpp>
 
+#include "engine/scintilla_wrapper.h"
 #include "engine/time.h"
 #include "config.h"
 

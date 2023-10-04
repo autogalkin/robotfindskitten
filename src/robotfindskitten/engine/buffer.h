@@ -1,20 +1,12 @@
 #pragma once
-#include <cstddef>
-#include <cstdint>
+#include <string>
 #include <string_view>
-#include <type_traits>
-
-#include <memory>
+#include <mutex>
 #include <vector>
+#include <algorithm>
 
 #include "engine/details/base_types.hpp"
-#include <algorithm>
-#include <numeric>
-#include "range/v3/view/enumerate.hpp"
-#include "range/v3/view/filter.hpp"
-#include <ranges>
-#include "shared_mutex"
-#include <glm/glm.hpp>
+
 
 // the array of chars on the screen
 class back_buffer {

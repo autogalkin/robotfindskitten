@@ -9,18 +9,12 @@
 #pragma once
 #include <string_view>
 #include <string>
-#include <chrono>
 #include <cstdint>
-#include <entt/entt.hpp>
-#include <glm/ext/vector_float2.hpp>
-#include <glm/fwd.hpp>
 #include <type_traits>
-#include <utility>
-#include "engine/time.h"
-#include "Windows.h"
+#include <iterator>
 
-#include <boost/geometry.hpp>
 #include <glm/vec2.hpp>
+
 
 using npi_t = int32_t; // notepad's index size
 

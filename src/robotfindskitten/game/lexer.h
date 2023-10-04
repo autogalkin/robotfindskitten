@@ -1,11 +1,13 @@
 #pragma once
 
-#include "Windows.h"
 #include <cctype>
 #include <iostream>
+
+#include "Windows.h"
+
 // should inludes alls in this order
 // clang-format off
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include "ILexer.h"
 #include "Scintilla.h"

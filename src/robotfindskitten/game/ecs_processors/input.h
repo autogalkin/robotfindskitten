@@ -1,17 +1,17 @@
 #pragma once
-
-#include "Windows.h"
-#include "boost/signals2.hpp"
-#include "boost/container/static_vector.hpp"
+// clang-format off
 #include <iterator>
+#include <xutility>
 #include <optional>
 #include <ranges>
-#include <entt/entt.hpp>
-#include <winuser.h>
-#include <xutility>
 
-#include "engine/details/base_types.hpp"
-#include "engine/notepad.h"
+#include "Windows.h"
+#include <winuser.h>
+#include "boost/signals2.hpp"
+#include <entt/entt.hpp>
+
+#include "engine/world.h"
+// clang-format on
 
 namespace input {
 using key_size = WPARAM;
@@ -32,7 +32,7 @@ struct key_state {
     // NOLINTNEXTLINE(google-explicit-constructor)
     key_state(input::key k): key(k) {}
     input::key key;
-    int8_t press_count = 0;
+    uint16_t press_count = 0;
 };
 
 using state_t = std::vector<key_state>;

@@ -1,9 +1,7 @@
 ﻿#pragma once
-#include <__msvc_chrono.hpp>
 #include <chrono>
 #include <cstdint>
 #include <type_traits>
-#include <iostream>
 
 namespace timings {
 using namespace std::chrono_literals;

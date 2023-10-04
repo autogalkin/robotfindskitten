@@ -1,20 +1,20 @@
 ﻿#pragma once
 
+#include <algorithm>
 #include <optional>
-#include <utility>
+#include <memory>
+#include <string>
+
 #include "Scintilla.h"
-#include "boost/signals2/signal.hpp"
+#include "ILexer.h"
 // clang-format off
 #include <Richedit.h>
 #include <Windows.h>
 #include <CommCtrl.h>
 // clang-format on
-#include <algorithm>
-#include <memory>
-#include <string>
+
 #include "engine/details/base_types.hpp"
 #include "engine/details/nonconstructors.h"
-#include "ILexer.h"
 
 template<typename T>
 concept is_container_of_chars = requires(T t) {

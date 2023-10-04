@@ -1,26 +1,25 @@
 #pragma once
 #include <array>
-
-#include <Windows.h>
 #include <chrono>
 #include <string>
 #include <string_view>
 #include <random>
+
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 
+#include <Windows.h>
+
 #include "engine/buffer.h"
 #include "engine/details/base_types.hpp"
-
 #include "engine/time.h"
-#include "factories.h"
+#include "game/factories.h"
 #include "game/ecs_processors/collision.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input.h"
 #include "game/ecs_processors/motion.h"
 #include "game/ecs_processors/life.h"
 #include "engine/scintilla_wrapper.h"
-#include "game/factories.h"
 #include "engine/notepad.h"
 #include "engine/world.h"
 #include "game/lexer.h"

@@ -1,22 +1,24 @@
 ﻿#pragma once
 
-#include "engine/details/base_types.hpp"
-#include "ecs_processors/collision.h"
-#include "game/ecs_processors/drawers.h"
-#include "game/ecs_processors/motion.h"
-#include "libs/easing/easing.h"
-#include "game/ecs_processors/collision.h"
-#include "game/ecs_processors/input.h"
-#include "game/ecs_processors/life.h"
-#include "glm/gtx/easing.hpp"
-#include "engine/notepad.h"
-#include "engine/time.h"
-#include "game/lexer.h"
-#include "game/comps.h"
 #include <utility>
-#include <winuser.h>
+
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include "glm/gtx/easing.hpp"
+
+#include "Windows.h"
+#include <winuser.h>
+
+#include "engine/details/base_types.hpp"
+#include "game/ecs_processors/collision.h"
+#include "game/ecs_processors/drawers.h"
+#include "game/ecs_processors/motion.h"
+#include "game/ecs_processors/input.h"
+#include "game/ecs_processors/life.h"
+#include "game/lexer.h"
+#include "game/comps.h"
+#include "engine/notepad.h"
+#include "engine/time.h"
 
 struct character;
 
@@ -52,7 +54,10 @@ inline void emplace_simple_death(entt::registry& reg, const entt::entity e) {
                timeline::direction /**/) { r_.get<translation>(e_).mark(); });
     });
 }
-
+namespace projectile1 {
+using rng_type = std::mt19937;
+static rng_type rng{};
+} // namespace projectile1
 struct projectile {
     static collision::responce on_collide(entt::registry& r,
                                           collision::self self,
@@ -81,41 +86,35 @@ struct projectile {
 
         reg.emplace<life::lifetime>(e, life_time);
 
-                // NOLINTBEGIN(readability-magic-numbers)
+        // NOLINTBEGIN(readability-magic-numbers)
+        static std::uniform_int_distribution<projectile1::rng_type::result_type>
+            fall_dist(3, 7);
         reg.emplace<timeline::what_do>(
-            e, [duration = life_time/timings::dt,
-                call = true, i =-1*life_time/timings::dt/3](entt::registry& reg_, const entt::entity e_,
-                                    timeline::direction) mutable {
+            e, [total_iterations = static_cast<double>((life_time / timings::dt)) * 1.,
+                current_iteration = 0., start_y = start.y,
+                changing_y = fall_dist(projectile1::rng),
+                call = true](entt::registry& reg_, const entt::entity e_,
+                             timeline::direction) mutable {
                 using namespace std::chrono_literals;
-                i +=1;
                 auto& tr = reg_.get<translation>(e_).pin().y;
-                //static constexpr std::pair ease_range{0., 0.1};
                 // NOLINTBEGIN( bugprone-narrowing-conversions)
-                auto value =  glm::bounceEaseInOut(glm::clamp(
-                                       remap(std::max(0LL, i), {0, duration}, {0., 1.}), 0., 1.));
-                std::cout << "values" << "\n";
-                std::cout << 'v' << value << "\n";
-                std::cout << 'i' << i << "\n";
-                tr = value;
-                std::cout << 't' << tr << "\n";
-                // tr = easing::easeinrange(
-                //     duration
-                //         - std::chrono::duration<double>(
-                //               reg_.get<life::lifetime>(e_).duration)
-                //               .count(),
-                //     // TODO(Igor) почему i = 0.1 Но прибавляется строка
-                //     ease_range, duration, &easing::easeInExpo);
-                // // TODO(Igor) why scale
-                // static constexpr int scale = 10;
-                if(i > 100 && call) {
+                auto l = reg_.get<loc>(e_);
+                double y = changing_y
+                               * glm::backEaseIn(
+                                   std::min(total_iterations, current_iteration)
+                                   / total_iterations)
+                           + start_y;
+                tr = glm::round(y - l.y);
+                if(current_iteration / total_iterations > 0.6 && call) {
                     reg_.emplace<previous_sprite>(
                         e_,
                         std::exchange(
                             reg_.get<sprite>(e_),
                             sprite(sprite::unchecked_construct_tag{}, "_")));
                     call = false;
-                // NOLINTEND( bugprone-narrowing-conversions)
+                    // NOLINTEND( bugprone-narrowing-conversions)
                 }
+                current_iteration += 1.;
                 // NOLINTEND(readability-magic-numbers)
             });
 
@@ -197,10 +196,13 @@ struct gun {
         const loc spawn_translation =
             dir == draw_direction::right ? loc(sh.bounds()[X], 0) : loc(-1, 0);
         static constexpr float projectile_start_force = 15.;
+        static constexpr pos random_end_y{3, 5};
+        static std::uniform_int_distribution<projectile1::rng_type::result_type>
+            life_dist(random_end_y.x, random_end_y.y);
         projectile::make(
             reg, proj, l + spawn_translation,
             velocity(projectile_start_force * static_cast<float>(dir), 0),
-            std::chrono::seconds{4});
+            std::chrono::seconds{life_dist(projectile1::rng)});
     }
 };
 
@@ -257,6 +259,7 @@ struct character {
                               const input::state_t& state,
                               const timings::duration /*dt*/) {
                 static constexpr int every_key = 5;
+
                 if(auto key = input::has_key(state, input::key::space);
                    key && !(key->press_count % every_key)) {
                     gun::fire(reg_, chrcter);
@@ -287,12 +290,13 @@ struct character {
                                        const input::state_t& state,
                                        const timings::duration /*dt*/) {
         auto& vel = reg.get<velocity>(e);
-        static constexpr glm::vec2 acceleration_range{0.8, 1.1};
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters,
         auto upd = [](double& vel, int value, int pressed_count) mutable {
-            vel += value
-                   * easing::easeInExpo(glm::mix(acceleration_range.x,
-                                                 acceleration_range.y,
-                                                 pressed_count / 100.));
+            static constexpr double pressed_count_end = 7.;
+            vel = value
+                  * glm::sineEaseIn(std::min(pressed_count_end,
+                                             static_cast<double>(pressed_count))
+                                    / pressed_count_end);
         };
         for(auto k: state) {
             switch(k.key) {
