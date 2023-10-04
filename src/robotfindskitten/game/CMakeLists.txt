@@ -1,5 +1,7 @@
 set(GAME_SOURCES game/ecs_processors/collision.cpp
-                 game/ecs_processors/motion.cpp)
+                 game/ecs_processors/motion.cpp
+                 game/factories.cpp
+                 )
 set(GAME_HEADERS
     game/ecs_processors/collision.h
     game/ecs_processors/drawers.h

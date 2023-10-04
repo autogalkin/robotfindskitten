@@ -9,6 +9,26 @@
 #include "game/ecs_processors/motion.h"
 #include "game/comps.h"
 
+namespace pos_declaration {
+/*
+   s         X(index in line)
+   +------+-->
+   |      |
+   |      |
+   |      |
+   +------+
+   |      e
+   v
+   Y (line)
+*/
+
+inline static constexpr size_t S = 0;
+inline static constexpr size_t E = 1;
+inline static constexpr size_t X = 0;
+inline static constexpr size_t Y = 1;
+} // namespace pos_declaration
+
+
 namespace collision {
 
 [[nodiscard]] bool intersect(const box a, const box b) {

@@ -28,25 +28,6 @@ using loc = vec<double>;
 // notepad's col-row position
 using pos = vec<npi_t>;
 
-namespace pos_declaration {
-/*
-   s         X(index in line)
-   +------+-->
-   |      |
-   |      |
-   |      |
-   +------+
-   |      e
-   v
-   Y (line)
-*/
-
-inline static constexpr size_t S = 0;
-inline static constexpr size_t E = 1;
-inline static constexpr size_t X = 0;
-inline static constexpr size_t Y = 1;
-} // namespace pos_declaration
-
 class sprite {
     uint16_t width_;
     // expect CharT null terminator;

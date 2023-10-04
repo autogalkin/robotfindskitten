@@ -72,7 +72,7 @@ public:
         this->fore_color = color;
         return *this;
     }
-    void show(notepad* np)noexcept;
+    static_control&  show(notepad* np)noexcept;
 
     [[nodiscard]] id_t get_id() const noexcept {
         return id_;
@@ -85,7 +85,7 @@ public:
     }
     pos size;
     pos position;
-    std::string_view text;
+    std::string text;
     COLORREF fore_color = RGB(0, 0, 0);
 };
 
@@ -157,9 +157,10 @@ public:
     static bool push_command(command_t&& cmd) {
         return notepad::get().commands_.push(cmd);
     };
-
+    [[nodiscard]] scintilla& get_scintilla() {
+        return *scintilla_;
+    };
     std::vector<static_control> static_controls;
-    COLORREF back_color = RGB(255, 255, 255);
 
 
 private:

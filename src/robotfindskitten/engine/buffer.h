@@ -29,8 +29,8 @@ public:
           z_buf_(static_cast<size_t>(size.x * size.y)) {
         set_lines();
     }
-    void draw(const pos& pivot, sprite_view sh, int32_t depth);
-    void erase(const pos& pivot, sprite_view sh, int32_t depth);
+    void draw(pos pivot, sprite_view sh, int32_t depth);
+    void erase(pos pivot, sprite_view sh, int32_t depth);
     void clear() {
         std::lock_guard<std::mutex> lock(mutex_);
         std::fill(buf_.begin(), buf_.end(), ' ');
@@ -40,6 +40,7 @@ public:
 
     template<typename Visitor>
         requires std::is_invocable_v<Visitor,
+                                    // Need for Scintilla call, ensure \0
                                      const std::basic_string<char_size>&>
     void view(Visitor&& visitor) const {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -49,15 +50,15 @@ public:
 private:
     // visitor traverse all sprite matrix
     template<typename Visitor>
-        requires std::is_invocable_v<Visitor, const pos, char_size>
+        requires std::is_invocable_v<Visitor, pos, char_size>
     void traverse_sprite_positions(pos pivot, sprite_view sp,
                                    Visitor&& visitor) const;
 };
 
 template<typename Visitor>
-    requires std::is_invocable_v<Visitor, const pos, char_size>
-void back_buffer::traverse_sprite_positions(const pos sprite_pivot,
-                                            const sprite_view sp,
+    requires std::is_invocable_v<Visitor, pos, char_size>
+void back_buffer::traverse_sprite_positions(pos sprite_pivot,
+                                            sprite_view sp,
                                             Visitor&& visitor) const {
     for(size_t i = 0; i < sp.data().size(); i++) {
         if(pos p = sprite_pivot + pos(i % sp.width(), i / sp.width());

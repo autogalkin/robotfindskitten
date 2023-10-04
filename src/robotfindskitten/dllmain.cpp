@@ -60,7 +60,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
                 static auto log_console = console::allocate();
 #endif // NDEBUG
                 printf("Notepad is loaded and initialized. Start a game\n");
-                game::start(GAME_AREA, shutdown);
+                game::start(GAME_AREA, std::move(shutdown));
             });
 
         np.connect_to_notepad(
