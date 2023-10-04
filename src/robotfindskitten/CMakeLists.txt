@@ -153,8 +153,6 @@ set(THIRD_PARTY_LIBRARIES
     EnTT::EnTT
     )
 
-add_subdirectory(libs/easing)
-
 list(
     APPEND
     ROBOTFINDSKITTEN_ALL_TARGETS
