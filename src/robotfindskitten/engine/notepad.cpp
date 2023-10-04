@@ -64,10 +64,9 @@ void notepad::start_game() {
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr})]() {
             (*on_open)(shutdown_token);
         }));
-    RECT rect = {NULL};
-    ::GetWindowRect(main_window_, &rect);
     ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0,
                    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    ::InvalidateRect(scintilla_->edit_window_, nullptr, TRUE);
 }
 // NOLINTEND(bugprone-unchecked-optional-access)
 
