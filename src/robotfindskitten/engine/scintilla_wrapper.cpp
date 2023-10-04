@@ -6,11 +6,11 @@
 #include "engine/notepad.h"
 
 scintilla::~scintilla() = default;
-HWND scintilla::create_native_window(const DWORD dwExStyle,
-                                     const LPCWSTR lpWindowName,
-                                     const DWORD dwStyle, const int X,
-                                     const int Y, const int nWidth,
-                                     const int nHeight, HWND hWndParent,
+HWND scintilla::create_native_window(DWORD dwExStyle,
+                                     LPCWSTR lpWindowName,
+                                     DWORD dwStyle, int X,
+                                     int Y, int nWidth,
+                                     int nHeight, HWND hWndParent,
                                      HMENU hMenu, HINSTANCE hInstance,
                                      LPVOID lpParam, uint8_t start_options) {
     edit_window_ =
@@ -25,7 +25,6 @@ HWND scintilla::create_native_window(const DWORD dwExStyle,
     dcall2(SCI_STYLESETITALIC, STYLE_DEFAULT, 1); // italic
     static constexpr int FONT_SIZE = 16;
     dcall2(SCI_STYLESETSIZE, STYLE_DEFAULT, FONT_SIZE); // pt size
-    // dcall2(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT,1);
     dcall1(SCI_SETHSCROLLBAR, 0);
     dcall1(SCI_SETVSCROLLBAR, 0);
 
@@ -50,14 +49,8 @@ void scintilla::init_direct_access_to_scintilla() {
     direct_function_ =
         reinterpret_cast<npi_t(__cdecl*)(sptr_t, int, uptr_t, sptr_t)>(
             GetProcAddress(native_dll_.get(), "Scintilla_DirectFunction"));
-    // direct_function_ = reinterpret_cast<npi_t (__cdecl *)(sptr_t, int,
-    // uptr_t, sptr_t)>(SendMessage(get_native_window(),SCI_GETDIRECTFUNCTION,
-    // 0, 0));
     direct_wnd_ptr_ =
         SendMessage(get_native_window(), SCI_GETDIRECTPOINTER, 0, 0);
-    // thread_safe_function_ =  reinterpret_cast<int64_t (__cdecl *)(sptr_t,
-    // int, uptr_t, sptr_t)>(&SendMessageW); //
-    // NOLINT(clang-diagnostic-cast-function-type)
 }
 
 uint32_t scintilla::get_window_width() const noexcept {
@@ -65,50 +58,22 @@ uint32_t scintilla::get_window_width() const noexcept {
     return r.right - r.left;
 }
 
-void scintilla::set_background_color(const COLORREF c) const noexcept {
-    PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_DEFAULT,
-                c); // set back-color of window
-    PostMessage(get_native_window(), SCI_STYLESETBACK, STYLE_LINENUMBER,
-                c); // set back-color of margin
-    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_DEFAULT,
-                c); // char back
-    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_ANSI, c); //
-    PostMessage(get_native_window(), SCI_STYLESETBACK, SC_CHARSET_SYMBOL, c); //
-    PostMessage(get_native_window(), SCI_STYLESETBACK, 0, c); //
+void scintilla::set_back_color(int32_t style, COLORREF c) const noexcept {
+    PostMessage(get_native_window(), SCI_STYLESETBACK, style,
+                c);
 }
 
-void scintilla::force_set_background_color(const COLORREF c) const noexcept {
-    // TODO(Igor): selection color if selection enabled
-    // if(notepad::opts::hide_selection & start_options){
-    dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK, c);
-
-    // dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
-    // dcall2(SCI_STYLESETBACK, STYLE_LINENUMBER, c);
-    // dcall2(SCI_STYLESETBACK, SC_CHARSET_DEFAULT, c);
-    // dcall2(SCI_STYLESETBACK, SC_CHARSET_ANSI, c);
-    dcall2(SCI_STYLESETBACK, STYLE_DEFAULT, c);
-    dcall2(SCI_STYLESETBACK, 0, c);
+void scintilla::force_set_back_color(int32_t style, COLORREF c) const noexcept {
+    dcall2(SCI_STYLESETBACK, style, c);
 }
 
-void scintilla::set_all_text_color(const COLORREF c) const noexcept {
-    PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_DEFAULT,
-                c); // set back-color of window
-    PostMessage(get_native_window(), SCI_STYLESETFORE, STYLE_LINENUMBER,
-                c); // set back-color of margin
-    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_DEFAULT,
-                c); // char back
-    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_ANSI, c);
-    PostMessage(get_native_window(), SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
-    PostMessage(get_native_window(), SCI_STYLESETFORE, 0, c);
+void scintilla::set_all_text_color(int32_t style, COLORREF c) const noexcept {
+    PostMessage(get_native_window(), SCI_STYLESETFORE, style,
+                c);
 }
 
-void scintilla::force_set_all_text_color(const COLORREF c) const noexcept {
-    dcall2(SCI_STYLESETFORE, STYLE_DEFAULT, c);
-    dcall2(SCI_STYLESETFORE, STYLE_LINENUMBER, c);
-    dcall2(SCI_STYLESETFORE, SC_CHARSET_DEFAULT, c);
-    dcall2(SCI_STYLESETFORE, SC_CHARSET_ANSI, c);
-    dcall2(SCI_STYLESETFORE, SC_CHARSET_SYMBOL, c);
-    dcall2(SCI_STYLESETFORE, 0, c);
+void scintilla::force_set_all_text_color(int32_t style, COLORREF c) const noexcept {
+    dcall2(SCI_STYLESETFORE, style, c);
 }
 
 template<is_container_of_chars T>

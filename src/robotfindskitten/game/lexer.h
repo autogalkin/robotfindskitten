@@ -28,13 +28,13 @@
 #include "config.h"
 // clang-format on
 
-static inline constexpr std::pair<int, int> printable_range{32, 127};
-static inline constexpr int color_count = 255;
-static inline constexpr int my_style_start = 100;
+static inline constexpr std::pair<int, int> PRINTABLE_RANGE{32, 127};
+static inline constexpr int COLOR_COUNT = 255;
+static inline constexpr int MY_STYLE_START = 100;
 static const auto ALL_COLORS = []() {
     std::random_device rd{};
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distr(0, color_count);
+    std::uniform_int_distribution<> distr(0, COLOR_COUNT);
     auto arr = std::array<decltype(RGB(0, 0, 0)), 127 - 31>();
     for(auto& i: arr) {
         i = RGB(distr(gen), distr(gen), distr(gen));
@@ -43,11 +43,11 @@ static const auto ALL_COLORS = []() {
 }();
 
 inline constexpr bool is_valid(char c) noexcept {
-    return printable_range.first <= static_cast<int>(c)
-           && static_cast<int>(c) < printable_range.second;
+    return PRINTABLE_RANGE.first <= static_cast<int>(c)
+           && static_cast<int>(c) < PRINTABLE_RANGE.second;
 }
 inline decltype(RGB(0, 0, 0)) get_color(char c) noexcept {
-    return ALL_COLORS[c - printable_range.first - 1];
+    return ALL_COLORS[c - PRINTABLE_RANGE.first - 1];
 };
 
 #define MAX_STR_LEN 100
