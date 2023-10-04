@@ -13,6 +13,7 @@
 // clang-format on
 
 #include <boost/lockfree/spsc_queue.hpp>
+#include <winuser.h>
 
 #include "engine/details/base_types.hpp"
 #include "engine/details/nonconstructors.h"
@@ -306,23 +307,24 @@ void static_control::show(notepad* np) noexcept {
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
     wnd_.reset(CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                              "STATIC", "", dwStyle, 0, 0, size.x, size.y,
+                              "STATIC", " ", dwStyle, 0, 0, size.x, size.y,
                               np->get_window(), nullptr,
-                              GetModuleHandle(nullptr), nullptr),
-               [](HWND w) { PostMessage(w, WM_CLOSE, 0, 0); });
-    SetLayeredWindowAttributes(wnd_.get(), np->back_color, 0, LWA_COLORKEY);
-    SetWindowPos(wnd_.get(), HWND_TOP, position.x, position.y, size.x, size.y,
+                              ::GetModuleHandle(nullptr), nullptr),
+               [](HWND w) { ::PostMessage(w, WM_CLOSE, 0, 0); });
+    ::SetLayeredWindowAttributes(wnd_.get(), np->back_color, 0, LWA_COLORKEY);
+    ::SetWindowPos(wnd_.get(), HWND_TOP, position.x, position.y, size.x, size.y,
                  0);
     static constexpr int font_size = 38;
     static const std::unique_ptr<std::remove_pointer_t<HFONT>,
                                  decltype(&::DeleteObject)>
-        hFont{CreateFontW(font_size, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
+        hFont{::CreateFontW(font_size, 0, 0, 0, FW_DONTCARE, TRUE, FALSE, FALSE,
                           ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                           DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS,
                           L"Consolas"),
               &::DeleteObject};
-    SendMessageW(wnd_.get(), WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()),
+    ::SendMessageW(wnd_.get(), WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()),
                  TRUE);
-    ShowWindow(wnd_.get(), SW_SHOW);
-    UpdateWindow(wnd_.get());
+    ::ShowWindow(wnd_.get(), SW_SHOW);
+    ::UpdateWindow(wnd_.get());
+    ::InvalidateRect(wnd_.get(), nullptr, TRUE);
 }
