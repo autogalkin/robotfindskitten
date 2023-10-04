@@ -30,7 +30,7 @@ namespace game {
 static std::array messages = std::to_array<std::string_view>(ALL_GAME_MESSAGES);
 using rng_type = std::mt19937;
 static std::uniform_int_distribution<rng_type::result_type>
-    dist(0, messages.size() - 1);
+    dist(0, static_cast<int>(messages.size() - 1));
 static rng_type rng{};
 
 static lexer game_lexer{};
@@ -59,7 +59,6 @@ inline void start(pos game_area,
     }
 };
 inline void run(pos game_area, back_buffer& game_buffer) {
-
     world w{};
     auto& exec = w.procs;
     exec.emplace_back(input::processor{});
@@ -171,8 +170,8 @@ inline void run(pos game_area, back_buffer& game_buffer) {
         gun::make(reg, e, gun_pos, gun_mesh);
 #endif
     });
-    w.spawn_actor([char_pos = all[character_i],
-                   game_area](entt::registry& reg, const entt::entity ent) {
+    w.spawn_actor([char_pos = all[character_i]
+                   ](entt::registry& reg, const entt::entity ent) {
         reg.emplace<sprite>(ent,
                             sprite(sprite::unchecked_construct_tag{}, "#"));
 
@@ -203,7 +202,9 @@ inline void run(pos game_area, back_buffer& game_buffer) {
         fixed_time_step.sleep();
         fps_count.fps([](auto fps) {
             notepad::push_command([fps](notepad* np, scintilla*) {
-                np->window_title.game_thread_fps = fps;
+                np->window_title.game_thread_fps =
+                    static_cast<decltype(np->window_title.game_thread_fps)>(
+                        fps);
             });
         });
         // TODO(Igor): real alpha

@@ -7,10 +7,10 @@
  */
 
 #pragma once
+#include <type_traits>
 #include <string_view>
 #include <string>
 #include <cstdint>
-#include <type_traits>
 #include <iterator>
 
 #include <glm/vec2.hpp>
@@ -62,7 +62,7 @@ public:
     explicit sprite() = delete;
     sprite(unchecked_construct_tag /*tag*/,
            const std::basic_string<char_size>& str)
-        : width_(str.size()), data_(str) {}
+        : width_(static_cast<uint16_t>(str.size())), data_(str) {}
     sprite(should_normalize_tag /*tag*/,
            const std::basic_string<char_size>& str) {
         *this = normilize_from_string(str);
@@ -84,7 +84,7 @@ class sprite_view {
 
 public:
     // NOLINTNEXTLINE(google-explicit-constructor)
-    sprite_view(const sprite& s): data_(s.data()), width_(s.width()) {}
+    sprite_view(const sprite& s): width_(s.width()), data_(s.data()) {}
 
     [[nodiscard]] uint16_t width() const noexcept {
         return width_;
@@ -115,7 +115,7 @@ inline sprite sprite::normilize_from_string(std::string s) {
         ++lines;
         size_t new_len = std::distance(start, it);
         if(new_len > max_len) {
-            max_len = new_len;
+            max_len = static_cast<uint16_t>(new_len);
         }
         start = ++it;
     });

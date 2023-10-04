@@ -37,14 +37,16 @@ public:
 };
 
 notepad::notepad()
-    : scintilla_(std::nullopt), main_window_(), original_proc_(0),
-      on_open_(std::make_unique<open_signal_t>()), fixed_time_step_(),
-      fps_count_() {}
+    : main_window_(), fixed_time_step_(), fps_count_(),
+      on_open_(std::make_unique<open_signal_t>()), original_proc_(0),
+      scintilla_(std::nullopt) {}
 
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
 void notepad::tick_render() {
-    fps_count_.fps(
-        [](auto fps) { notepad::get().window_title.render_thread_fps = fps; });
+    fps_count_.fps([](auto fps) {
+        notepad::get().window_title.render_thread_fps = static_cast<
+            decltype(notepad::get().window_title.render_thread_fps)>(fps);
+    });
     // execute all commands from the Game thread
     commands_.consume_all([this](auto f) {
         if(f) {
@@ -58,8 +60,9 @@ void notepad::tick_render() {
 void notepad::start_game() {
     static const thread_guard game_thread = thread_guard(std::thread(
         [on_open = std::exchange(
-             on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
-         &cmds = commands_]() { (*on_open)(shutdown_token); }));
+             on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr})]() {
+            (*on_open)(shutdown_token);
+        }));
     RECT rect = {NULL};
     ::GetWindowRect(main_window_, &rect);
     ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0,
@@ -161,12 +164,15 @@ bool hook_GetMessageW(const HMODULE module) {
                         np.scintilla_->scroll(
                             scroll_delta > 0
                                 ? -3
-                                : (np.scintilla_->get_horizontal_scroll_offset()
-                                                   / char_width
-                                               + (np.scintilla_
-                                                      ->get_window_width()
-                                                  / char_width)
-                                           < np.scintilla_->get_line_lenght(0)
+                                : (static_cast<npi_t>(
+                                       np.scintilla_
+                                               ->get_horizontal_scroll_offset()
+                                           / char_width
+                                       + (np.scintilla_->get_window_width()
+                                          / char_width))
+                                           < static_cast<npi_t>(
+                                               np.scintilla_->get_line_lenght(
+                                                   0))
                                        ? 3
                                        : 0),
                             0);
