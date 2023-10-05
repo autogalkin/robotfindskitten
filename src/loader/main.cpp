@@ -11,14 +11,14 @@
 
 class dll_injection_error final: public std::runtime_error {
 public:
-    explicit dll_injection_error(std::string message): runtime_error(message) {}
+    explicit dll_injection_error(const std::string& message): runtime_error(message) {}
 };
 [[noreturn]] void error(const char* message) {
     throw dll_injection_error(
         std::format("[!] Err `{}` = {}\n", GetLastError(), message));
 }
 
-int main(int argc, char* argv[]) {
+int main(int  /*argc*/, char*  /*argv*/[]) {
     try {
         std::unique_ptr<PROCESS_INFORMATION,
                         void (*)(const PROCESS_INFORMATION*)>
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
                 std::format("{}\\notepad.exe", std::getenv("windir"));
             STARTUPINFOA startup_info{};
             startup_info.cb = sizeof(STARTUPINFO);
-            if(!CreateProcess(cmd.data(), // lpApplicationName
+            if(!CreateProcessA(cmd.c_str(), // lpApplicationName
                               nullptr, // lpCommandLine
                               nullptr, nullptr, FALSE, CREATE_SUSPENDED,
                               nullptr, nullptr, &startup_info,
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
         std::cout << "`Notepad process id is "
                   << GetProcessId(proc_info->hProcess) << std::endl;
 
-        const auto kernel32_handle = GetModuleHandleA("kernel32.dll");
+        auto *const kernel32_handle = GetModuleHandleA("kernel32.dll");
         if(!kernel32_handle) {
             error("Get kernel32");
         }
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 
                 VirtualAllocEx(proc_info->hProcess, nullptr, MAX_PATH,
                                MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE),
-                [&proc_info](const LPVOID addr) {
+                [&proc_info](LPVOID addr) {
                     VirtualFreeEx(proc_info->hProcess, addr, 0, MEM_RELEASE);
                 }};
 
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
             error("Failed to write to remote buffer");
         }
 
-        const auto remote_thread = CreateRemoteThread(
+        auto *const remote_thread = CreateRemoteThread(
             proc_info->hProcess, nullptr, 0,
             reinterpret_cast<LPTHREAD_START_ROUTINE>(
                 LoadLibraryA_addr) // NOLINT(clang-diagnostic-cast-function-type)

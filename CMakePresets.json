@@ -33,7 +33,7 @@
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_LINK_FLAGS": "/DEBUG:FULL",
-                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /fsanitize=address /Od $env{MSVC_FLAGS} $env{UUID_LINK}"
+                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od $env{MSVC_FLAGS} $env{UUID_LINK}"
             },
             "architecture": {
                 "value": "x64",

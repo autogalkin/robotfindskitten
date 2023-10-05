@@ -52,7 +52,7 @@ build-all:
 #run debug build game
 [windows]
 run-debug:
-    .\out\bin\x64-debug\loader.exe 
+    {{vcvarsall}} && .\out\bin\x64-debug\loader.exe 
 
 #build and run with x64-debug preset
 [windows]
