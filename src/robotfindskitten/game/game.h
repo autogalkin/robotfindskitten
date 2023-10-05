@@ -9,6 +9,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 
 #include <Windows.h>
+#include <entt/entity/fwd.hpp>
 
 #include "engine/buffer.h"
 #include "engine/details/base_types.hpp"
@@ -153,20 +154,6 @@ inline void run(pos game_area, back_buffer& game_buffer) {
         });
     }
 
-    game_over::game_status_flag game_flag = game_over::game_status_flag::unset;
-    w.spawn_actor([kitten_pos = all[kitten_i], kitten_mesh = dist_ch(gen),
-                   &game_flag](entt::registry& reg, const entt::entity e) {
-#ifndef NDEBUG
-        static constexpr auto debug_kitten_pos = pos{10, 30};
-        kitten::make(reg, e, debug_kitten_pos,
-                     sprite(sprite::unchecked_construct_tag{}, "Q"), game_flag);
-#else
-        std::string s{' '};
-        s[0] = static_cast<char>(kitten_mesh);
-        kitten::make(reg, e, kitten_pos,
-                     sprite(sprite::unchecked_construct_tag{}, s), game_flag);
-#endif
-    });
     w.spawn_actor([gun_pos = all[gun_i], gun_mesh = dist_ch(gen)](
                       entt::registry& reg, const entt::entity e) {
 #ifndef NDEBUG
@@ -180,8 +167,10 @@ inline void run(pos game_area, back_buffer& game_buffer) {
                   sprite(sprite::unchecked_construct_tag{}, s));
 #endif
     });
-    w.spawn_actor([char_pos = all[character_i]](entt::registry& reg,
+    entt::entity char_id;
+    w.spawn_actor([&char_id, char_pos = all[character_i]](entt::registry& reg,
                                                 const entt::entity ent) {
+        char_id = ent;
         reg.emplace<sprite>(ent,
                             sprite(sprite::unchecked_construct_tag{}, "#"));
 
@@ -203,6 +192,20 @@ inline void run(pos game_area, back_buffer& game_buffer) {
         auto& [input_callback] =
             reg.emplace<input::processor::down_signal>(ent);
         input_callback.connect(&character::process_movement_input<>);
+    });
+    game_over::game_status_flag game_flag = game_over::game_status_flag::unset;
+    w.spawn_actor([char_id, kitten_pos = all[kitten_i], kitten_mesh = dist_ch(gen),
+                   &game_flag](entt::registry& reg, const entt::entity e) {
+#ifndef NDEBUG
+        static constexpr auto debug_kitten_pos = pos{10, 30};
+        kitten::make(reg, e, debug_kitten_pos,
+                     sprite(sprite::unchecked_construct_tag{}, "Q"), game_flag,  char_id);
+#else
+        std::string s{' '};
+        s[0] = static_cast<char>(kitten_mesh);
+        kitten::make(reg, e, kitten_pos,
+                     sprite(sprite::unchecked_construct_tag{}, s), game_flag,  char_id);
+#endif
     });
 
     timings::fixed_time_step fixed_time_step{};

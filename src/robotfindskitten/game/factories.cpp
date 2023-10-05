@@ -376,13 +376,14 @@ void create_input_wait(entt::registry& reg, game_status_flag status,
 namespace kitten {
 collision::responce on_collide(entt::registry& reg, collision::self self,
                                collision::collider collider,
-                               game_over::game_status_flag& game_over_flag) {
+                               game_over::game_status_flag& game_over_flag, entt::entity character_entity) {
     using namespace std::chrono_literals;
     static constexpr auto end_anim_duration = 5s;
     if(reg.all_of<projectile::projectile_tag>(collider)) {
         factories::emplace_simple_death_anim(reg, self);
         reg.emplace<life::begin_die>(self);
         reg.emplace<life::begin_die>(collider);
+        reg.emplace<life::begin_die>(character_entity);
         auto char_wnd = game_over::make_character();
         auto ch_uuid = char_wnd.get_id();
         static constexpr pos dead_kitten_start_pos{300, 0};
@@ -441,15 +442,15 @@ collision::responce on_collide(entt::registry& reg, collision::self self,
     return collision::responce::ignore;
 };
 void make(entt::registry& reg, entt::entity e, loc loc, sprite sp,
-          game_over::game_status_flag& game_over_flag) {
+          game_over::game_status_flag& game_over_flag, entt::entity character_entity) {
     reg.emplace<kitten_tag>(e);
     factories::make_base_renderable(reg, e, loc, 1, std::move(sp));
     reg.emplace<collision::agent>(e);
     reg.emplace<collision::on_collide>(
-        e, collision::on_collide{[&game_over_flag](
+        e, collision::on_collide{[&game_over_flag, character_entity](
                                      entt::registry& reg, collision::self self,
                                      collision::collider collider) {
-            return kitten::on_collide(reg, self, collider, game_over_flag);
+            return kitten::on_collide(reg, self, collider, game_over_flag, character_entity);
         }});
 }
 } // namespace kitten
