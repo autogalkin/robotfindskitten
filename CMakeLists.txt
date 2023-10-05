@@ -18,8 +18,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS
     ON
     CACHE INTERNAL "")
-# force msvc to use utf-8
-add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 
 configure_file(${CMAKE_SOURCE_DIR}/src/config.h.in config.h @ONLY)
@@ -36,11 +34,9 @@ add_subdirectory(src/robotfindskitten)
 
 
 
-if( ROBOTFINDSKITTEN_BUILD_TESTS )
-    find_package(GTest CONFIG REQUIRED)
-	enable_testing()
-    add_subdirectory(tests)
-endif()
+find_package(GTest CONFIG REQUIRED)
+enable_testing()
+add_subdirectory(tests)
 
 
 add_custom_target(

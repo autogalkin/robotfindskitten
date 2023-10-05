@@ -21,7 +21,7 @@
             },
             "environment": {
                 "UUID_LINK": "-D_WIN32_WINNT=0x0601 -DBOOST_UUID_FORCE_AUTO_LINK",
-                "MSVC_FLAGS": "/nologo /W3 /EHsc /D_CRT_SECURE_NO_WARNINGS"
+                "MSVC_FLAGS": "/nologo /utf-8 /W3 /EHsc /D_CRT_SECURE_NO_WARNINGS"
             }
         },
         {
