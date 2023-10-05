@@ -1,7 +1,8 @@
 ﻿#include "game/ecs_processors/motion.h"
 #include "engine/world.h"
 
-void non_uniform_motion::execute(entt::registry& reg, timings::duration  /*dt*/) {
+void non_uniform_motion::execute(entt::registry& reg,
+                                 timings::duration /*dt*/) {
     for(const auto view =
             reg.view<velocity, translation, const non_uniform_movement_tag>();
         const auto entity: view) {
@@ -9,8 +10,8 @@ void non_uniform_motion::execute(entt::registry& reg, timings::duration  /*dt*/)
         auto& trans = view.get<translation>(entity);
 
         using namespace std::literals;
-        //double alpha = std::chrono::duration<double>(dt / 1s).count();
-        double alpha = 1./60.; // NOLINT(readability-magic-numbers)
+        // double alpha = std::chrono::duration<double>(dt / 1s).count();
+        double alpha = 1. / 60.; // NOLINT(readability-magic-numbers)
         loc friction = -(vel * friction_factor);
         vel += friction * loc(alpha);
         // alpha = lag accum / dt

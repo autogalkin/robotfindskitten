@@ -57,8 +57,7 @@ public:
         dcall2(SCI_SETILEXER, 0, reinterpret_cast<sptr_t>(lexer));
     }
 
-    void scroll(npi_t columns_to_scroll,
-                npi_t lines_to_scroll) const noexcept {
+    void scroll(npi_t columns_to_scroll, npi_t lines_to_scroll) const noexcept {
         dcall2(SCI_LINESCROLL, columns_to_scroll, lines_to_scroll);
     }
 
@@ -173,19 +172,23 @@ public:
     std::pair<npi_t, npi_t> get_selection_text(T& out) const noexcept;
 
     // look dev
-    void set_back_color(int32_t style, COLORREF c) const noexcept; // post message
-    void force_set_back_color(int32_t style, COLORREF c) const noexcept; // send message
+    void set_back_color(int32_t style,
+                        COLORREF c) const noexcept; // post message
+    void force_set_back_color(int32_t style,
+                              COLORREF c) const noexcept; // send message
     [[nodiscard]] COLORREF get_background_color(int32_t style) const noexcept {
         return static_cast<COLORREF>(dcall1(SCI_STYLEGETBACK, style));
     }
     [[nodiscard]] COLORREF get_text_color(int32_t style) const noexcept {
         return static_cast<COLORREF>(dcall1(SCI_STYLEGETFORE, style));
     }
-    void clear_all_styles() const noexcept{
+    void clear_all_styles() const noexcept {
         dcall0(SCI_STYLECLEARALL);
     }
-    void set_text_color(int32_t style, COLORREF c) const noexcept; // post message
-    void force_set_text_color(int32_t style, COLORREF c) const noexcept; // send message
+    void set_text_color(int32_t style,
+                        COLORREF c) const noexcept; // post message
+    void force_set_text_color(int32_t style,
+                              COLORREF c) const noexcept; // send message
     void show_spaces(bool enable) const noexcept;
     void show_eol(bool enable) const noexcept {
         PostMessage(get_native_window(), SCI_SETVIEWEOL, enable, 0);
@@ -214,7 +217,7 @@ private:
     npi_t dcall0(int message) const {
         return direct_function_(direct_wnd_ptr_, message, 0, 0);
     }
-    npi_t dcall1(int message,uptr_t w) const {
+    npi_t dcall1(int message, uptr_t w) const {
         return direct_function_(direct_wnd_ptr_, message, w, 0);
     }
     npi_t dcall1_l(int message, sptr_t l) const {

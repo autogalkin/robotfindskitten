@@ -9,7 +9,6 @@
 #include "engine/details/base_types.hpp"
 #include "engine/world.h"
 
-
 namespace collision {
 
 using box = glm::mat<2, 2, npi_t>;
@@ -185,36 +184,37 @@ private:
     index index_in_quad_tree = invalid_index;
 };
 
-struct collider{
+struct collider {
     entt::entity ent;
     explicit collider(const entt::entity& e): ent(e) {}
-    explicit  collider(entt::entity&& e): ent(e) {}
+    explicit collider(entt::entity&& e): ent(e) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
-    operator entt::entity() const noexcept { return ent;}
+    operator entt::entity() const noexcept {
+        return ent;
+    }
 };
-struct self{
+struct self {
     entt::entity ent;
-    explicit  self(const entt::entity& e): ent(e) {}
-    explicit  self(entt::entity&& e): ent(e) {}
+    explicit self(const entt::entity& e): ent(e) {}
+    explicit self(entt::entity&& e): ent(e) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
-    operator entt::entity() const noexcept { return ent;}
+    operator entt::entity() const noexcept {
+        return ent;
+    }
 };
 
 struct on_collide {
-    static responce block_always(entt::registry& /*unused*/,
-                                 self /*unused*/,
+    static responce block_always(entt::registry& /*unused*/, self /*unused*/,
                                  collider /*unused*/) {
         return responce::block;
     }
-    static responce ignore_always(entt::registry& /*unused*/,
-                                  self /*unused*/,
+    static responce ignore_always(entt::registry& /*unused*/, self /*unused*/,
                                   collider /*unused*/) {
         return responce::ignore;
     }
 
-    std::function<responce(entt::registry&, self s,
-                           collider cl)>
-        call{&collision::on_collide::block_always};
+    std::function<responce(entt::registry&, self s, collider cl)> call{
+        &collision::on_collide::block_always};
 };
 
 class query: ecs_proc_tag {

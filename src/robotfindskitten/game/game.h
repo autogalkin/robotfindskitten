@@ -40,9 +40,8 @@ inline void define_all_styles(scintilla* sc) {
 }
 inline void run(pos game_area, back_buffer& game_buffer);
 inline void start(pos game_area, std::shared_ptr<std::atomic_bool>&& shutdown) {
-    notepad::push_command([](notepad*, scintilla* sc) {
-        sc->set_lexer(&GAME_LEXER);
-    });
+    notepad::push_command(
+        [](notepad*, scintilla* sc) { sc->set_lexer(&GAME_LEXER); });
     back_buffer game_buffer{game_area};
     while(!shutdown->load()) {
         run(game_area, game_buffer);
@@ -109,7 +108,7 @@ inline void run(pos game_area, back_buffer& game_buffer) {
                 np->static_controls.emplace_back(std::move(msg_w));
             });
     }
-    std::uniform_int_distribution<> dist_ch(PRINTABLE_RANGE.first+1,
+    std::uniform_int_distribution<> dist_ch(PRINTABLE_RANGE.first + 1,
                                             PRINTABLE_RANGE.second);
     for(size_t i = 0; i < all.size() - 3; i++) {
         auto item = all[i];
@@ -181,8 +180,8 @@ inline void run(pos game_area, back_buffer& game_buffer) {
                   sprite(sprite::unchecked_construct_tag{}, s));
 #endif
     });
-    w.spawn_actor([char_pos = all[character_i]
-                   ](entt::registry& reg, const entt::entity ent) {
+    w.spawn_actor([char_pos = all[character_i]](entt::registry& reg,
+                                                const entt::entity ent) {
         reg.emplace<sprite>(ent,
                             sprite(sprite::unchecked_construct_tag{}, "#"));
 

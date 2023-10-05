@@ -549,10 +549,13 @@ void make(entt::registry& reg, entt::entity e) {
     });
     std::unique_lock lk(m);
     cv.wait(lk, [&ready] { return ready; });
-    
-    timer::make(reg, e,[back_color](entt::registry& reg, entt::entity timer) {
-                    run_cycle(reg, timer, color_range{RGB(0, 0, 0), back_color });
-                }, time_between_cycle);
+
+    timer::make(
+        reg, e,
+        [back_color](entt::registry& reg, entt::entity timer) {
+            run_cycle(reg, timer, color_range{RGB(0, 0, 0), back_color});
+        },
+        time_between_cycle);
     reg.emplace<timeline::eval_direction>(e, timeline::direction::reverse);
 }
 } // namespace atmosphere

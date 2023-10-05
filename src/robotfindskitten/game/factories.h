@@ -134,7 +134,7 @@ collision::responce on_collide(entt::registry& reg, collision::self self,
                                game_over::game_status_flag& game_over_flag);
 
 void make(entt::registry& reg, entt::entity e, loc loc, sprite sp,
-                 game_over::game_status_flag& game_over_flag);
+          game_over::game_status_flag& game_over_flag);
 
 } // namespace kitten
 

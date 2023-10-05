@@ -50,7 +50,7 @@ struct static_control {
 
 private:
     window_t wnd_ = {nullptr};
-    id_t id_      = make_id();
+    id_t id_ = make_id();
 
 public:
     static id_t make_id() noexcept {
@@ -72,7 +72,7 @@ public:
         this->fore_color = color;
         return *this;
     }
-    static_control&  show(notepad* np)noexcept;
+    static_control& show(notepad* np) noexcept;
 
     [[nodiscard]] id_t get_id() const noexcept {
         return id_;
@@ -161,7 +161,6 @@ public:
         return *scintilla_;
     };
     std::vector<static_control> static_controls;
-
 
 private:
     static notepad& get() {

@@ -15,7 +15,6 @@
 
 #include <glm/vec2.hpp>
 
-
 using npi_t = int32_t; // notepad's index size
 
 using char_size = char;

@@ -7,7 +7,6 @@
 
 #include "engine/details/base_types.hpp"
 
-
 // the array of chars on the screen
 class back_buffer {
     size_t width_;
@@ -40,7 +39,7 @@ public:
 
     template<typename Visitor>
         requires std::is_invocable_v<Visitor,
-                                    // Need for Scintilla call, ensure \0
+                                     // Need for Scintilla call, ensure \0
                                      const std::basic_string<char_size>&>
     void view(Visitor&& visitor) const {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -57,8 +56,7 @@ private:
 
 template<typename Visitor>
     requires std::is_invocable_v<Visitor, pos, char_size>
-void back_buffer::traverse_sprite_positions(pos sprite_pivot,
-                                            sprite_view sp,
+void back_buffer::traverse_sprite_positions(pos sprite_pivot, sprite_view sp,
                                             Visitor&& visitor) const {
     for(size_t i = 0; i < sp.data().size(); i++) {
         if(pos p = sprite_pivot + pos(i % sp.width(), i / sp.width());

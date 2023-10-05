@@ -54,14 +54,13 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
             | notepad::opts::show_spaces;
 
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-        np.on_open()->get().connect(
-            [](auto shutdown) {
+        np.on_open()->get().connect([](auto shutdown) {
 #ifndef NDEBUG
-                static auto log_console = console::allocate();
+            static auto log_console = console::allocate();
 #endif // NDEBUG
-                printf("Notepad is loaded and initialized. Start a game\n");
-                game::start(GAME_AREA, std::move(shutdown));
-            });
+            printf("Notepad is loaded and initialized. Start a game\n");
+            game::start(GAME_AREA, std::move(shutdown));
+        });
 
         np.connect_to_notepad(
             np_module, start_options); // start initialization and a game loop
