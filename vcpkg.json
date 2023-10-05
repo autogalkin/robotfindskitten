@@ -5,7 +5,6 @@
       "gtest",
       "boost",
       "glm",
-      "range-v3",
       "entt"
     ]
   }

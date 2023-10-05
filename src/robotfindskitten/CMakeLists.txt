@@ -19,10 +19,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(lexilla scintilla)
 
-option(REBUILD_SCINTILLA
-    "Rebuild Scintilla (Need if patch changed), \
-    Disabled for improve compilation speed"
-    OFF)
 
 # patch scintilla source code
 set(SCI_PATCH_FILE
@@ -34,11 +30,8 @@ set(LEX_OUT_FILE "${lexilla_SOURCE_DIR}/bin/Lexilla.dll")
 set(SCI_PACHED_STAMP
 "${CMAKE_CURRENT_BINARY_DIR}/scintilla_already_patched.stamp")
 
-if(NOT EXISTS "${SCI_OUT_FILE}")
-    set(REBUILD_SCINTILLA ON)
-endif()
-if(REBUILD_SCINTILLA)
-    add_custom_command(
+
+add_custom_command(
         OUTPUT ${SCI_PACHED_STAMP}
         COMMAND ${CMAKE_COMMAND} -E copy "${SCI_ORIG_FILE}"
                 "${SCI_TEMP_FILE}"
@@ -50,70 +43,72 @@ if(REBUILD_SCINTILLA)
         COMMENT "Replace Scintilla source code files with patched files"
     )
 
-    # find make
-    find_program(IS_NMAKE_EXISTS nmake)
-    if(IS_NMAKE_EXISTS)
-        set(SCI_BUILD_COMMAND nmake -f scintilla.mak)
-    else()
-        message("Nmake not found, try to find Make and GCC")
-        find_program(
+# find make
+find_program(IS_NMAKE_EXISTS nmake)
+if(IS_NMAKE_EXISTS)
+    set(SCI_BUILD_COMMAND nmake -f scintilla.mak)
+else()
+    message("Nmake not found, try to find Make and GCC")
+    find_program(
         IS_MAKE_EXISTS
         make
         mingw32-make)
-        find_program(
+    find_program(
         IS_GCC_EXISTS
         gcc
         g++)
-        if(IS_MAKE_EXISTS AND IS_GCC_EXISTS)
-            set(SCI_BUILD_COMMAND make)
-        else()
-            if(NOT IS_MAKE_EXISTS)
-                message(SEND_ERROR "Make not found")
-            endif()
-            if(NOT IS_GCC_EXISTS)
-                message(SEND_ERROR "GCC not found")
-            endif()
-            message(FATAL_ERROR "Unable to compile Scintilla..")
-
+    if(IS_MAKE_EXISTS AND IS_GCC_EXISTS)
+        set(SCI_BUILD_COMMAND make)
+    else()
+        if(NOT IS_MAKE_EXISTS)
+            message(SEND_ERROR "Make not found")
         endif()
-    endif()
+        if(NOT IS_GCC_EXISTS)
+            message(SEND_ERROR "GCC not found")
+        endif()
+        message(FATAL_ERROR "Unable to compile Scintilla..")
 
-    # run scintilla makefile
-    add_custom_target(
-        scintilla ALL
+    endif()
+endif()
+
+# Run scintilla makefile
+add_custom_target(
+        scintilla
         COMMAND ${SCI_BUILD_COMMAND}
         WORKING_DIRECTORY "${scintilla_SOURCE_DIR}/win32"
         DEPENDS "${SCI_PACHED_STAMP}"
         COMMENT "Build Scintilla with original Makefile")
+if(NOT EXISTS "${SCI_OUT_FILE}")
+    set_target_properties(scintilla PROPERTIES EXCLUDE_FROM_ALL OFF)
+else()
+    set_target_properties(scintilla PROPERTIES EXCLUDE_FROM_ALL ON)
+endif()
 
-    # revert patch after build Scintilla
-    add_custom_target(
+# Revert the patch after building Scintilla
+add_custom_target(
         revert_scintilla_patch
         COMMAND ${CMAKE_COMMAND} -E copy "${NPGAME_SCI_TEMP_FILE}"
                 "${SCI_ORIG_FILE}"
         COMMAND ${CMAKE_COMMAND} -E remove "${NPGAME_SCI_TEMP_FILE}"
-        COMMENT "Revert Scintilla patches"
+        COMMENT "Revert the patch from Scintilla"
     )
+add_dependencies(revert_scintilla_patch scintilla)
 
-    add_dependencies(revert_scintilla_patch scintilla)
-    install(
+install(
         FILES "${SCI_OUT_FILE}"
         CONFIGURATIONS Debug
-        DESTINATION .)
+        DESTINATION . )
 
-    install(
+install(
         FILES "${SCI_OUT_FILE}"
         CONFIGURATIONS Release
-        DESTINATION .)
+        DESTINATION . )
 
-endif()
+#endif()
 
 # build robotfindskitten.dll
 
-find_package(
-    range-v3
-    CONFIG
-    REQUIRED)
+
 find_package(
     glm
     CONFIG
@@ -132,6 +127,9 @@ include(game/CMakeLists.txt)
 
 add_library(engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 add_library(game STATIC ${GAME_SOURCES} ${GAME_HEADERS})
+
+
+
 file(READ "${CMAKE_CURRENT_LIST_DIR}/game/assets/messages.txt" MESSAGES_FILE_CONTENT)
 string(REPLACE "\n" ";" MESSAGES_LIST ${MESSAGES_FILE_CONTENT})
 list(FILTER MESSAGES_LIST EXCLUDE REGEX "^$" )
@@ -156,7 +154,7 @@ set_target_properties(
                    CXX_STANDARD_REQUIRED ON
                    LINKER_LANGUAGE CXX)
 target_compile_definitions(lexlib PUBLIC # windows.h
-                                                 NOMINMAX WIN32_LEAN_AND_MEAN)
+                                NOMINMAX WIN32_LEAN_AND_MEAN)
 target_include_directories(lexlib PRIVATE
 "${scintilla_SOURCE_DIR}/include"
 "${lexilla_SOURCE_DIR}/lexlib"
@@ -166,7 +164,6 @@ target_include_directories(lexlib PRIVATE
 
 set(THIRD_PARTY_LIBRARIES
     ${Boost_LIBRARIES}
-    range-v3::range-v3
     glm::glm
     EnTT::EnTT
     )
@@ -184,7 +181,7 @@ foreach(_target IN LISTS ROBOTFINDSKITTEN_ALL_TARGETS)
                    CXX_STANDARD_REQUIRED ON
                    LINKER_LANGUAGE CXX)
     target_compile_definitions(${_target} PRIVATE # windows.h
-                                                 NOMINMAX WIN32_LEAN_AND_MEAN)
+                            NOMINMAX WIN32_LEAN_AND_MEAN)
     target_include_directories(
         ${_target}
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}

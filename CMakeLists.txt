@@ -37,11 +37,9 @@ add_subdirectory(src/robotfindskitten)
 
 
 if( ROBOTFINDSKITTEN_BUILD_TESTS )
-	#enable_testing()
-    #find_package(GTest CONFIG REQUIRED)
-    #include(CTest)
-    #include(GoogleTest)
-    #add_subdirectory(tests)
+    find_package(GTest CONFIG REQUIRED)
+	enable_testing()
+    add_subdirectory(tests)
 endif()
 
 

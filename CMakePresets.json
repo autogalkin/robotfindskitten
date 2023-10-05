@@ -33,8 +33,7 @@
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_LINK_FLAGS": "/DEBUG:FULL",
-                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od $env{MSVC_FLAGS} $env{UUID_LINK}",
-                "ROBOTFINDSKITTEN_BUILD_TESTS": true
+                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od $env{MSVC_FLAGS} $env{UUID_LINK}"
             },
             "architecture": {
                 "value": "x64",
@@ -69,5 +68,15 @@
             "displayName": "Build x64-release.",
             "description": "Build x64-release."
         }
+    ],
+    "testPresets": [
+        {
+            "name": "x64",
+            "displayName": "Test x64.",
+            "description": "Run tests for x64.",
+            "configurePreset": "x64-debug"
+        }
+
+
     ]
 }

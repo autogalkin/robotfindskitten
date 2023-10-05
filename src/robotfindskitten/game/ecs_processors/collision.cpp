@@ -2,8 +2,6 @@
 
 #include <queue>
 
-#include "range/v3/view/iota.hpp"
-
 #include "engine/details/base_types.hpp"
 #include "game/ecs_processors/life.h"
 #include "game/ecs_processors/motion.h"
@@ -27,7 +25,6 @@ inline static constexpr size_t E = 1;
 inline static constexpr size_t X = 0;
 inline static constexpr size_t Y = 1;
 } // namespace pos_declaration
-
 
 namespace collision {
 
@@ -149,11 +146,10 @@ void quad_tree::cleanup() {
         const size_t node_index = to_process.back();
         to_process.pop_back();
         quadnode& node = nodes_[node_index];
-
         // Loop through the children.
         int num_empty_leaves = 0;
-        for(const size_t child_index:
-            ranges::views::iota(node.first_child, node.first_child + 4)) {
+        for(size_t child_index = node.first_child;
+            child_index < node.first_child + 4; child_index++) {
             const quadnode& child = nodes_[child_index];
             // Increment empty leaf count if the child is an empty leaf.
             if(child.count_entities == 0) {
@@ -343,8 +339,8 @@ void query::execute(entt::registry& reg, timings::duration /*dt*/) {
                 for(const auto collide: collides) {
                     if(const auto cl = tree_->get_entity(collide).id;
                        cl != entity) {
-                        const auto cl_resp =
-                            view.get<on_collide>(cl).call(reg, self(cl), collider(entity));
+                        const auto cl_resp = view.get<on_collide>(cl).call(
+                            reg, self(cl), collider(entity));
                         if(const auto resp = view.get<on_collide>(entity).call(
                                reg, self(entity), collider(cl));
                            cl_resp == responce::block

@@ -23,7 +23,7 @@ configure-x64-debug:
 
 configure-x64-release:
     (where /q  cl  ||  IF ERRORLEVEL 1 \
-       C:\"Program Files (x86)"\"Microsoft Visual Studio"\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat x86_amd64) > NUL  \
+       C:\"Program Files (x86)"\"Microsoft Visual Studio"\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat x86_amd64) > NUL \
     &&  cmake . --preset x64-release
 
 run-debug:
@@ -39,3 +39,25 @@ lldb:
 
 lldb-notepad:
     lldb -n notepad.exe
+
+
+build-scintilla-debug:
+    (where /q  cl  ||  IF ERRORLEVEL 1 \
+       C:\"Program Files (x86)"\"Microsoft Visual Studio"\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat x86_amd64) > NUL \
+    &&  cmake --build . --target scintilla --preset x64-debug 
+
+build-scintilla-release:
+    (where /q  cl  ||  IF ERRORLEVEL 1 \
+       C:\"Program Files (x86)"\"Microsoft Visual Studio"\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat x86_amd64) > NUL \
+    &&  cmake --build . --target scintilla --preset x64-debug 
+
+test:
+    (where /q  cl  ||  IF ERRORLEVEL 1 \
+       C:\"Program Files (x86)"\"Microsoft Visual Studio"\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat x86_amd64) > NUL \
+    &&  cmake --build . --target test --preset x64-debug 
+
+build-all:
+    (where /q  cl  ||  IF ERRORLEVEL 1 \
+       C:\"Program Files (x86)"\"Microsoft Visual Studio"\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat x86_amd64) > NUL \
+    &&  cmake --build . --target all install --preset x64-debug 
+    
