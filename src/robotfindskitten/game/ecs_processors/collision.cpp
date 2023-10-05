@@ -148,7 +148,7 @@ void quad_tree::cleanup() {
         quadnode& node = nodes_[node_index];
         // Loop through the children.
         int num_empty_leaves = 0;
-        for(size_t child_index = node.first_child;
+        for(int64_t child_index = node.first_child;
             child_index < node.first_child + 4; child_index++) {
             const quadnode& child = nodes_[child_index];
             // Increment empty leaf count if the child is an empty leaf.
