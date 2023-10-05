@@ -52,7 +52,7 @@ build-all:
 #run debug build game
 [windows]
 run-debug:
-    {{vcvarsall}} && .\out\bin\x64-debug\loader.exe 
+    {{vcvarsall}} && cd .\out\bin\x64-debug && loader.exe 
 
 #build and run with x64-debug preset
 [windows]
@@ -61,7 +61,7 @@ build-run-debug: build-x64-debug && run-debug
 #run release build game
 [windows]
 run-release:
-    .\out\bin\x64-debug\loader.exe 
+    {{vcvarsall}} && cd .\out\bin\x64-release && loader.exe 
 
 #run lldb with .llfb script for stop at injection
 [windows]

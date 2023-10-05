@@ -128,6 +128,7 @@ include(game/CMakeLists.txt)
 add_library(engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 add_library(game STATIC ${GAME_SOURCES} ${GAME_HEADERS})
 
+
 file(READ "${CMAKE_CURRENT_LIST_DIR}/game/assets/messages.txt" MESSAGES_FILE_CONTENT)
 string(REPLACE "\n" ";" MESSAGES_LIST ${MESSAGES_FILE_CONTENT})
 list(FILTER MESSAGES_LIST EXCLUDE REGEX "^$" )
