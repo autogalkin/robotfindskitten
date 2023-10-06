@@ -1,4 +1,10 @@
-﻿#pragma once
+﻿/**
+ * @file
+ * @brief Control Notepad.exe
+ *
+ */
+
+#pragma once
 #include <optional>
 #include <memory>
 #include <cstdint>
@@ -14,24 +20,74 @@
 #include "engine/time.h"
 #include "config.h"
 
-// custom WindowProc
 // NOLINTBEGIN(readability-redundant-declaration)
+
+/**
+ * @brief Custom Windows Proc
+ *
+ * Replace original Notepad.exe proc with this function
+ * and filter windows messages and perform robotfindskitten logic:
+ *  - Initialize a game after notepad will be ready
+ *  - handle WM_SIZE and redraw all spawned Static Controls
+ */
 static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp,
                                       LPARAM lp);
 
-// Capture and block keyboard and mouse inputs
+/**
+ * @brief A Hook for GetMessageW
+ *
+ * Modify Notepad.exe application loop: replace GetMessageW, which
+ * waits messages with PeekMessageW which just poll and continue. it allows
+ * run Notepad.exe as a game without waits every new message. And
+ * send NULL to the original loop
+ * Also performs:
+ *  - Handle input
+ *  - Block keyboard and mouse inputs for Notepad.exe
+ *  - Scroll Skintilla on mouse wheel
+ *  - Tick a render loop
+ */
 bool hook_GetMessageW(HMODULE module);
-// Capture opened files
+
+/**
+ * @brief Hook for SendMessageW
+ */
 bool hook_SendMessageW(HMODULE module);
-// Capture window handles
+
+/**
+ * @brief Hook for CreateWindowExW
+ *
+ *  - Capture window handles.
+ *  - Destroy unnesessary windows: main menu and status line
+ *  - Create Scintilla Edit Control
+ *  - Replace original EditControl with Scintilla
+ *  - Start a game after all windows are created
+ */
 bool hook_CreateWindowExW(HMODULE module);
-// Block window title updates
+
+/**
+ * @brief Hook for SetWindowTextW
+ *
+ * Prevent Notepad.exe window title updating
+ *
+ */
 bool hook_SetWindowTextW(HMODULE module);
+
 // NOLINTEND(readability-redundant-declaration)
 
+/**
+ * @class title_line
+ * @brief Manage title line with changing values
+ */
 struct title_line {
     uint32_t game_thread_fps;
     uint32_t render_thread_fps;
+    /**
+     * @brief Construct a title line
+     *
+     * Format options into string
+     *
+     * @return std::wstring for Win32 API SetWindowTextW
+     */
     [[nodiscard]] std::wstring make() {
         return std::format(buf_, game_thread_fps, render_thread_fps);
     };
@@ -41,6 +97,14 @@ private:
         PROJECT_NAME L", fps: game_thread {:02} | render_thread {:02}";
 };
 
+/**
+ * @class static_control
+ * @brief Wrapper for Win32 API Text Static Control
+ *
+ * Hold some data for render a static control: text, color, size..
+ * class notepad use array of static_control to batch render all together
+ *
+ */
 struct static_control {
     using id_t = boost::uuids::uuid;
     // std::shared_ptr because boost::lockfree::spsc_queue no supported emplace
@@ -49,37 +113,92 @@ struct static_control {
     using window_t = std::shared_ptr<std::remove_pointer_t<HWND>>;
 
 private:
+    static id_t make_id() noexcept {
+        return boost::uuids::random_generator()();
+    }
     window_t wnd_ = {nullptr};
     id_t id_ = make_id();
 
 public:
-    static id_t make_id() noexcept {
-        return boost::uuids::random_generator()();
-    }
+    // ┌──────────────────────────────────────────────────────────┐
+    // │  Builder functions                                       │
+    // └──────────────────────────────────────────────────────────┘
+    /**
+     * @brief Set Static Control window position
+     *
+     * For use in SetWindowPos 
+     *
+     * @param where position in pixels
+     * @return self for other builder functions
+     */
     static_control& with_position(pos where) noexcept {
         this->position = where;
         return *this;
     }
+    /**
+     * @brief Set Static Control window size
+     *
+     * @param size in pixels
+     * @return self for other builder functions
+     */
     static_control& with_size(pos size) noexcept {
         this->size = size;
         return *this;
     }
+    /**
+     * @brief Set Static Control window text
+     *
+     * @param text [TODO:parameter]
+     * @return  self for other builder functions
+     */
     static_control& with_text(std::string_view text) noexcept {
         this->text = text;
         return *this;
     }
+    /**
+     * @brief Set Static Control color
+     *
+     * @param color foreground color
+     * @return  self for other builder functions
+     */
     static_control& with_text_color(COLORREF color) noexcept {
         this->fore_color = color;
         return *this;
     }
+    /**
+     * @brief [TODO:description]
+     *
+     * @param np [TODO:parameter]
+     * @return  reference to self
+     */
     static_control& show(notepad* np) noexcept;
 
-    [[nodiscard]] id_t get_id() const noexcept {
-        return id_;
-    }
+
+    // ┌──────────────────────────────────────────────────────────┐
+    // │  Static Control functions                                │
+    // └──────────────────────────────────────────────────────────┘
+    /**
+     * @brief Inplicit convert into Win32 window descriptor
+     *
+     * @return window descriptor
+     */
     operator HWND() { // NOLINT(google-explicit-constructor)
         return wnd_.get();
     }
+    /**
+     * @brief Get current window uuid
+     *
+     * @return unique id of this window
+     */
+    [[nodiscard]] id_t get_id() const noexcept {
+        return id_;
+    }
+
+    /**
+     * @brief Get current window Win32 API HWND
+     *
+     * @return HWND of this window
+     */
     [[nodiscard]] HWND get_wnd() const noexcept {
         return wnd_.get();
     }
@@ -89,12 +208,15 @@ public:
     COLORREF fore_color = RGB(0, 0, 0);
 };
 
-static_control
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-show_static_control(HWND parent_window, COLORREF back_color_alpha,
-                    COLORREF fore_color, pos size, pos position);
-
 // A static Singelton for notepad.exe wrapper
+/**
+ * @class notepad
+ * @brief A global Singelton that has been load into Notepad.exe by DLL
+ * injection
+ *
+ * Provides all infrastructure between the game and Notepad.exe
+ *
+ */
 class notepad {
     friend LRESULT CALLBACK hook_wnd_proc(HWND, UINT, WPARAM, LPARAM);
     friend bool hook_GetMessageW(HMODULE);
@@ -106,10 +228,14 @@ class notepad {
                                  LPVOID lp_reserved);
 
 public:
+    /**
+     * @class opts
+     * @brief Some startup options for notepad
+     *
+     */
     struct opts {
         uint8_t all = static_cast<uint8_t>(values::empty);
-        // Not enum class
-        enum values : uint8_t {
+        enum values : uint8_t { // Not enum class
             // clang-format off
             empty          = 0x0,
             kill_focus     = 0x1 << 0,
@@ -131,36 +257,78 @@ public:
         command_t, boost::lockfree::capacity<command_queue_capacity>>;
     using open_signal_t = boost::signals2::signal<void(
         std::shared_ptr<std::atomic_bool> shutdown_signal)>;
+
+    title_line window_title{};
+    std::vector<static_control> static_controls;
+
+    /**
+     * @brief Get signal to connect for event that fired on, when all notepad
+     * ready for start a game 
+     *
+     * @return a signal
+     */
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
     on_open() {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
                         : std::nullopt;
     }
-    title_line window_title{};
 
-    void connect_to_notepad(const HMODULE module /* notepad.exe module*/,
-                            const opts start_options = notepad::opts::empty) {
+    /**
+     * @brief Initial function to call on start, setup all hooks, 
+     * Must call only once
+     *
+     * @param module Notepad.exe application module
+     * @param start_options startup options
+     */
+    void connect_to_notepad(
+        const HMODULE module /* notepad.exe module*/,
+        const opts start_options = notepad::opts::empty) const noexcept {
         options_ = start_options;
-        hook_CreateWindowExW(module);
-        hook_SendMessageW(module);
-        hook_GetMessageW(module);
-        hook_SetWindowTextW(module);
+        static std::once_flag once;
+        std::call_once(once, [] {
+            hook_CreateWindowExW(module);
+            hook_SendMessageW(module);
+            hook_GetMessageW(module);
+            hook_SetWindowTextW(module); 
+        }); 
     }
-    [[nodiscard]] HWND get_window() const {
+    /**
+     * @brief Get Notepad.exe Main Window descriptor
+     *
+     * @return HWND descriptor
+     */
+    [[nodiscard]] HWND get_window() const noexcept {
         return main_window_;
     }
 
-    void set_window_title(const std::wstring_view title) const {
+    /**
+     * @brief Set Notepad.exe window title
+     *
+     * @param title text to set
+     */
+    void set_window_title(const std::wstring_view title) const noexcept {
         SetWindowTextW(main_window_, title.data());
     }
-    // TODO(Igor): maybe a ecs processor which will push all commands together?
-    static bool push_command(command_t&& cmd) {
+
+    /**
+     * @brief Add a render command to notepad command queue
+     *
+     * Execute a function with Notepad and Scintilla from the game thread
+     *
+     * @param cmd function to execute in the notepad thread
+     * @return Success
+     */
+    static bool push_command(command_t&& cmd) const noexcept {
         return notepad::get().commands_.push(cmd);
     };
-    [[nodiscard]] scintilla& get_scintilla() {
+    /**
+     * @brief Get Scintilla Wrapper
+     *
+     * @return scintilla wrapper class
+     */
+    [[nodiscard]] scintilla& get_scintilla() const noexcept {
         return *scintilla_;
     };
-    std::vector<static_control> static_controls;
 
 private:
     static notepad& get() {
@@ -179,6 +347,7 @@ private:
     timings::fps_count fps_count_;
     // Live only on startup
     std::unique_ptr<open_signal_t> on_open_;
-    LONG_PTR original_proc_; // notepad.exe window proc
+    // notepad.exe window proc
+    LONG_PTR original_proc_;
     std::optional<scintilla> scintilla_;
 };
