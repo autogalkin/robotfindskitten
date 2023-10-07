@@ -20,14 +20,14 @@ inline static constexpr int end_of_list = -1;
 inline static constexpr int is_branch = -1;
 inline static constexpr int invalid_index = -1;
 
-static constexpr int oblect_pool_initial_capacity = 128;
+static constexpr int free_list_initial_capacity = 128;
 template<typename T>
-class object_pool {
+class free_list {
 public:
     using next_free_index = index;
     using data_type =
         boost::container::small_vector<std::variant<T, next_free_index>,
-                                       oblect_pool_initial_capacity>;
+                                       free_list_initial_capacity>;
     index insert(const T& elt) {
         if(first_free_ != end_of_list) {
             const index ind = first_free_;
@@ -111,8 +111,8 @@ private:
         index i = 0;
         int depth = 0;
     };
-    object_pool<quad_entity> entities_;
-    object_pool<entity_quad_node> entity_nodes_;
+    free_list<quad_entity> entities_;
+    free_list<entity_quad_node> entity_nodes_;
     // Stores all the nodes in the quadtree. The first node in this sequence is
     // always the root. boost::container::small_vector<quadnode, 128>
     std::vector<quadnode> nodes_;
@@ -131,7 +131,7 @@ public:
         : root_rect_(root_rect), free_node_(end_of_list), max_depth(max_depth) {
         constexpr quadnode root_node = {.first_child = end_of_list,
                                         .count_entities = 0};
-        nodes_.reserve(oblect_pool_initial_capacity);
+        nodes_.reserve(free_list_initial_capacity);
         nodes_.push_back(root_node);
     }
 
