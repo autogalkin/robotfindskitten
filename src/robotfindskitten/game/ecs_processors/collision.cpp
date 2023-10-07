@@ -3,9 +3,10 @@
 #include <queue>
 
 #include "engine/details/base_types.hpp"
+#include "game/comps.h"
 #include "game/ecs_processors/life.h"
 #include "game/ecs_processors/motion.h"
-#include "game/comps.h"
+
 
 namespace pos_declaration {
 /*

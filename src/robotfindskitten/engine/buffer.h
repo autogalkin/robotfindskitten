@@ -4,11 +4,11 @@
  */
 
 #pragma once
+#include <algorithm>
+#include <mutex>
 #include <string>
 #include <string_view>
-#include <mutex>
 #include <vector>
-#include <algorithm>
 
 #include "engine/details/base_types.hpp"
 
@@ -71,7 +71,7 @@ public:
      *
      * Thread-Safe read-only access to the buffer
      *
-     * @tparam Visitor Predicate to accept 
+     * @tparam Visitor Predicate to accept
      * a buffer content void(std::basic_string<char_size>& str)
      * @param visitor Visitor instance
      */

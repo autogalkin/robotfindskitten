@@ -1,6 +1,6 @@
 #include <array>
-#include <utility>
 #include <condition_variable>
+#include <utility>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -8,9 +8,8 @@
 #include "Windows.h"
 #include <winuser.h>
 
-#include "game/factories.h"
-
 #include "engine/notepad.h"
+#include "game/factories.h"
 #include "game/lexer.h"
 
 namespace factories {
@@ -35,7 +34,7 @@ void emplace_simple_death_anim(entt::registry& reg, const entt::entity e) {
 namespace projectile {
 namespace {
 using rng_type = std::mt19937;
-rng_type rng{};
+const rng_type rng{};
 } // namespace
 collision::responce on_collide(entt::registry& r, collision::self self,
                                collision::collider other) {
@@ -92,7 +91,7 @@ void make(entt::registry& reg, entt::entity e, loc start, velocity dir,
                 // NOLINTEND( bugprone-narrowing-conversions)
             }
             current_iteration += 1.;
-            // NOLINTEND(readability-magic-numbers)
+        // NOLINTEND(readability-magic-numbers)
         });
 
     reg.emplace<timeline::eval_direction>(e, timeline::direction::forward);
@@ -238,14 +237,12 @@ void push_controls(std::array<static_control, 2>&& ctrls) {
             }
             for(auto& i: ctrls) {
                 // TODO(Igor): Shrink size
-                i // {r.right-r.left, r.bottom-r.top}
-                    .show(np);
+                //i // {r.right-r.left, r.bottom-r.top}
                 // FIXME(Igor): implicit
                 if(i.fore_color == RGB(0, 0, 0)) {
                     i.fore_color = sct->get_text_color(STYLE_DEFAULT);
                 }
-                np->static_controls.emplace_back(std::move(i));
-                SetWindowText(i, i.text.data());
+                np->show_static_control(std::move(i));
             }
         });
 }
@@ -364,10 +361,9 @@ void create_input_wait(entt::registry& reg, game_status_flag status,
                         .with_position(msg_pos)
                         .with_size(w_size)
                         .with_text("Press any key to Restart")
-                        .with_text_color(sct->get_text_color(STYLE_DEFAULT))
-                        .show(np);
+                        .with_text_color(sct->get_text_color(STYLE_DEFAULT));
         SetWindowText(ctrl, ctrl.text.data());
-        np->static_controls.emplace_back(std::move(ctrl));
+        np->show_static_control(std::move(ctrl));
     });
 }
 
@@ -392,7 +388,7 @@ collision::responce on_collide(entt::registry& reg, collision::self self,
             static_control{}
                 .with_position(dead_kitten_start_pos)
                 .with_text("___")
-                .with_text_color(ALL_COLORS['_' - PRINTABLE_RANGE.first - 1])
+                //.with_text_color(ALL_COLORS['_' - PRINTABLE_RANGE.first - 1])
                 .with_size(w_size);
         auto k_uuid = kitten.get_id();
         game_over::push_controls(
@@ -420,8 +416,8 @@ collision::responce on_collide(entt::registry& reg, collision::self self,
         auto kitten_wnd =
             static_control{}
                 .with_position(kitten_start_pos)
-                .with_text_color(
-                    ALL_COLORS[sprt.data()[0] - PRINTABLE_RANGE.first - 1])
+                //.with_text_color(
+                //    ALL_COLORS[sprt.data()[0] - PRINTABLE_RANGE.first - 1])
                 .with_text(sprt.data())
                 .with_size(kitten_size);
 
@@ -501,8 +497,9 @@ void update_cycle(entt::registry& reg, entt::entity e, timeline::direction d) {
                 sct->force_set_back_color(i, new_back_color);
                 sct->force_set_text_color(i, new_front_color);
             }
+            // FIXME(Igor): All styles constant
             int style = MY_STYLE_START + PRINTABLE_RANGE.first;
-            for(size_t i = 0; i < ALL_COLORS.size(); i++, style++) {
+            for(size_t i = 0; i < PRINTABLE_RANGE.second - PRINTABLE_RANGE.first; i++, style++) {
                 sct->force_set_back_color(style, new_back_color);
             }
         });
@@ -536,7 +533,7 @@ void make(entt::registry& reg, entt::entity e) {
     std::mutex m;
     std::condition_variable cv;
     COLORREF back_color = RGB(255, 0, 0);
-    COLORREF fore_color;
+    COLORREF fore_color = 0;
     bool ready = false;
     notepad::push_command([&back_color, &fore_color, &ready, &m,
                            &cv](notepad* /*np*/, scintilla* sct) {

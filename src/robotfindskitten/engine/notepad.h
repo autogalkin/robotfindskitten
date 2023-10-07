@@ -5,20 +5,20 @@
  */
 
 #pragma once
-#include <optional>
-#include <memory>
 #include <cstdint>
+#include <memory>
+#include <optional>
 #include <string_view>
 
+#include "boost/signals2.hpp"
 #include <Windows.h>
+#include <boost/lockfree/spsc_queue.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
-#include "boost/signals2.hpp"
-#include <boost/lockfree/spsc_queue.hpp>
 
+#include "config.h"
 #include "engine/scintilla_wrapper.h"
 #include "engine/time.h"
-#include "config.h"
 
 // NOLINTBEGIN(readability-redundant-declaration)
 
@@ -106,6 +106,7 @@ private:
  *
  */
 struct static_control {
+    friend notepad;
     using id_t = boost::uuids::uuid;
     // std::shared_ptr because boost::lockfree::spsc_queue no supported emplace
     // See '#31 Support moveable objects and allow emplacing (Pull request)'
@@ -123,10 +124,11 @@ public:
     // ┌──────────────────────────────────────────────────────────┐
     // │  Builder functions                                       │
     // └──────────────────────────────────────────────────────────┘
+
     /**
      * @brief Set Static Control window position
      *
-     * For use in SetWindowPos 
+     * For use in SetWindowPos
      *
      * @param where position in pixels
      * @return self for other builder functions
@@ -165,14 +167,6 @@ public:
         this->fore_color = color;
         return *this;
     }
-    /**
-     * @brief [TODO:description]
-     *
-     * @param np [TODO:parameter]
-     * @return  reference to self
-     */
-    static_control& show(notepad* np) noexcept;
-
 
     // ┌──────────────────────────────────────────────────────────┐
     // │  Static Control functions                                │
@@ -263,7 +257,7 @@ public:
 
     /**
      * @brief Get signal to connect for event that fired on, when all notepad
-     * ready for start a game 
+     * ready for start a game
      *
      * @return a signal
      */
@@ -274,7 +268,7 @@ public:
     }
 
     /**
-     * @brief Initial function to call on start, setup all hooks, 
+     * @brief Initial function to call on start, setup all hooks,
      * Must call only once
      *
      * @param module Notepad.exe application module
@@ -282,15 +276,15 @@ public:
      */
     void connect_to_notepad(
         const HMODULE module /* notepad.exe module*/,
-        const opts start_options = notepad::opts::empty) const noexcept {
+        const opts start_options = notepad::opts::empty) noexcept {
         options_ = start_options;
         static std::once_flag once;
-        std::call_once(once, [] {
+        std::call_once(once, [module] {
             hook_CreateWindowExW(module);
             hook_SendMessageW(module);
             hook_GetMessageW(module);
-            hook_SetWindowTextW(module); 
-        }); 
+            hook_SetWindowTextW(module);
+        });
     }
     /**
      * @brief Get Notepad.exe Main Window descriptor
@@ -318,7 +312,7 @@ public:
      * @param cmd function to execute in the notepad thread
      * @return Success
      */
-    static bool push_command(command_t&& cmd) const noexcept {
+    static bool push_command(command_t&& cmd) noexcept {
         return notepad::get().commands_.push(cmd);
     };
     /**
@@ -326,9 +320,17 @@ public:
      *
      * @return scintilla wrapper class
      */
-    [[nodiscard]] scintilla& get_scintilla() const noexcept {
+    [[nodiscard]] scintilla& get_scintilla() noexcept {
         return *scintilla_;
     };
+
+    /**
+     * @brief [TODO:description]
+     *
+     * @param np [TODO:parameter]
+     * @return  reference to self
+     */
+    void show_static_control(static_control&& ctrl) noexcept;
 
 private:
     static notepad& get() {

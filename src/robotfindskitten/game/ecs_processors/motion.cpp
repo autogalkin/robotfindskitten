@@ -1,5 +1,4 @@
 ﻿#include "game/ecs_processors/motion.h"
-#include "engine/world.h"
 
 void non_uniform_motion::execute(entt::registry& reg,
                                  timings::duration /*dt*/) {

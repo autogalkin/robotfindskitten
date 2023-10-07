@@ -1,7 +1,8 @@
 ﻿#pragma once
 
-#include "Windows.h"
 #include <string_view>
+
+#include "Windows.h"
 
 namespace iat_hook {
 
@@ -70,14 +71,15 @@ bool hook_import(HMODULE module, module_name mn, function_name fn,
             base_addr + import_descr->FirstThunk);
         auto* original_thunk = reinterpret_cast<PIMAGE_THUNK_DATA>(
             base_addr + import_descr->OriginalFirstThunk);
-        for(; thunk->u1.Function != 0; thunk++, original_thunk++) {
+        for(; thunk->u1.Function != 0;
+            std::advance(thunk, 1), std::advance(original_thunk, 1)) {
             // Skip other functions
             if(thunk->u1.Function != reinterpret_cast<uintptr_t>(original)) {
                 continue;
             }
 
             // Patch the function pointer
-            DWORD old_protection;
+            DWORD old_protection = 0;
             VirtualProtect(thunk, sizeof(PIMAGE_THUNK_DATA), PAGE_READWRITE,
                            &old_protection);
             thunk->u1.Function = reinterpret_cast<uintptr_t>(hook);

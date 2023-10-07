@@ -1,8 +1,10 @@
 #pragma once
 
-// NOLINTBEGIN(cppcoreguidelines-special-member-functions)
 class noncopyable {
 public:
+    noncopyable(noncopyable&&) = default;
+    noncopyable& operator=(noncopyable&&) = default;
+
     noncopyable(const noncopyable&) = delete;
     noncopyable& operator=(const noncopyable&) = delete;
 
@@ -13,6 +15,9 @@ protected:
 
 class nonmoveable {
 public:
+    nonmoveable(const nonmoveable&) = default;
+    nonmoveable& operator=(const nonmoveable&) = default;
+
     nonmoveable(nonmoveable&&) = delete;
     nonmoveable& operator=(nonmoveable&&) = delete;
 
@@ -20,4 +25,3 @@ protected:
     nonmoveable() = default;
     ~nonmoveable() = default;
 };
-// NOLINTEND(cppcoreguidelines-special-member-functions)

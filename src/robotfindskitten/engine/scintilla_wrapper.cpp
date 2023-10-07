@@ -2,10 +2,9 @@
 #include <CommCtrl.h>
 #include <Richedit.h>
 
+#include "engine/notepad.h";
 #include "engine/scintilla_wrapper.h"
-#include "engine/notepad.h"
 
-scintilla::~scintilla() = default;
 HWND scintilla::create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
                                      DWORD dwStyle, int X, int Y, int nWidth,
                                      int nHeight, HWND hWndParent, HMENU hMenu,

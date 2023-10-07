@@ -7,9 +7,10 @@
 #include "engine/buffer.h"
 #include "engine/details/base_types.hpp"
 #include "engine/world.h"
-#include "game/ecs_processors/motion.h"
-#include "game/ecs_processors/life.h"
 #include "game/comps.h"
+#include "game/ecs_processors/life.h"
+#include "game/ecs_processors/motion.h"
+
 
 enum class draw_direction {
     left = -1,

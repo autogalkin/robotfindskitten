@@ -1,9 +1,10 @@
 #pragma once
 #include <array>
 #include <chrono>
+#include <random>
+#include <span>
 #include <string>
 #include <string_view>
-#include <random>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -13,34 +14,59 @@
 
 #include "engine/buffer.h"
 #include "engine/details/base_types.hpp"
+#include "engine/notepad.h"
+#include "engine/scintilla_wrapper.h"
 #include "engine/time.h"
-#include "game/factories.h"
+#include "engine/world.h"
 #include "game/ecs_processors/collision.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input.h"
-#include "game/ecs_processors/motion.h"
 #include "game/ecs_processors/life.h"
-#include "engine/scintilla_wrapper.h"
-#include "engine/notepad.h"
-#include "engine/world.h"
+#include "game/ecs_processors/motion.h"
+#include "game/factories.h"
 #include "game/lexer.h"
 #include "messages.h"
 
 namespace game {
 
-static std::array MESSAGES = std::to_array<std::string_view>(ALL_GAME_MESSAGES);
-static lexer GAME_LEXER{};
+static inline constexpr int COLOR_COUNT = 255;
 
-inline void define_all_styles(scintilla* sc) {
+using color_t = decltype(RGB(0, 0, 0));
+using all_colors_t =
+    std::array<color_t, PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>;
+
+inline all_colors_t generate_colors() {
+    std::random_device rd{};
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr(0, COLOR_COUNT);
+    auto arr = std::array<decltype(RGB(0, 0, 0)),
+                          PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>();
+    for(auto& i: arr) {
+        i = RGB(distr(gen), distr(gen), distr(gen));
+    }
+    return arr;
+}
+/*
+inline decltype(RGB(0, 0, 0)) get_color(char c) noexcept {
+    return ALL_COLORS.at(c - PRINTABLE_RANGE.first);
+};
+*/
+
+static const std::array MESSAGES =
+    std::to_array<std::string_view>(ALL_GAME_MESSAGES);
+
+inline void define_all_styles(scintilla* sc,
+                              std::span<const color_t> all_colors) {
     int style = MY_STYLE_START + PRINTABLE_RANGE.first;
     sc->clear_all_styles();
-    for(auto i: ALL_COLORS) {
+    for(auto i: all_colors) {
         sc->set_text_color(style, i);
         style++;
     }
 }
 inline void run(pos game_area, back_buffer& game_buffer);
 inline void start(pos game_area, std::shared_ptr<std::atomic_bool>&& shutdown) {
+    static lexer GAME_LEXER{};
     notepad::push_command(
         [](notepad*, scintilla* sc) { sc->set_lexer(&GAME_LEXER); });
     back_buffer game_buffer{game_area};
@@ -51,9 +77,9 @@ inline void start(pos game_area, std::shared_ptr<std::atomic_bool>&& shutdown) {
     }
 };
 inline void run(pos game_area, back_buffer& game_buffer) {
-    notepad::push_command([](notepad*, scintilla* sc) {
-        ALL_COLORS = generate_colors();
-        define_all_styles(sc);
+    const all_colors_t ALL_COLORS = generate_colors();
+    notepad::push_command([&ALL_COLORS](notepad*, scintilla* sc) {
+        define_all_styles(sc, ALL_COLORS);
     });
     world w{};
     auto& exec = w.procs;
@@ -91,7 +117,7 @@ inline void run(pos game_area, back_buffer& game_buffer) {
             } while(
                 std::ranges::any_of(all.begin(), all.begin() + i,
                                     [p](auto other) { return p == other; }));
-            all[i] = p;
+            all.at(i) = p;
         }
     }
     static_control::id_t w_uuid;
@@ -104,15 +130,14 @@ inline void run(pos game_area, back_buffer& game_buffer) {
                 static constexpr int wnd_x = 20;
                 msg_w.with_size(pos(sc->get_window_width(), height))
                     .with_position(pos(wnd_x, 0))
-                    .with_text_color(sc->get_text_color(STYLE_DEFAULT))
-                    .show(np);
-                np->static_controls.emplace_back(std::move(msg_w));
+                    .with_text_color(sc->get_text_color(STYLE_DEFAULT));
+                np->show_static_control(std::move(msg_w));
             });
     }
     std::uniform_int_distribution<> dist_ch(PRINTABLE_RANGE.first + 1,
                                             PRINTABLE_RANGE.second);
     for(size_t i = 0; i < all.size() - 3; i++) {
-        auto item = all[i];
+        auto item = all.at(i);
         w.spawn_actor([&](entt::registry& reg, const entt::entity ent) {
             std::string s{' '};
             do {
@@ -135,8 +160,8 @@ inline void run(pos game_area, back_buffer& game_buffer) {
                             static_cast<int>(ascii_mesh) + l.y + l.x));
                         size_t rand_msg = dist(rng);
                         notepad::push_command(
-                            [w_uuid, msg = MESSAGES[rand_msg]](notepad* np,
-                                                               scintilla*) {
+                            [w_uuid, msg = MESSAGES.at(rand_msg)](notepad* np,
+                                                                  scintilla*) {
                                 auto w = std::ranges::find_if(
                                     np->static_controls, [w_uuid](auto& w) {
                                         return w.get_id() == w_uuid;
@@ -167,9 +192,9 @@ inline void run(pos game_area, back_buffer& game_buffer) {
                   sprite(sprite::unchecked_construct_tag{}, s));
 #endif
     });
-    entt::entity char_id;
-    w.spawn_actor([&char_id, char_pos = all[character_i]](entt::registry& reg,
-                                                const entt::entity ent) {
+    entt::entity char_id{};
+    w.spawn_actor([&char_id, char_pos = all[character_i]](
+                      entt::registry& reg, const entt::entity ent) {
         char_id = ent;
         reg.emplace<sprite>(ent,
                             sprite(sprite::unchecked_construct_tag{}, "#"));
@@ -194,17 +219,20 @@ inline void run(pos game_area, back_buffer& game_buffer) {
         input_callback.connect(&character::process_movement_input<>);
     });
     game_over::game_status_flag game_flag = game_over::game_status_flag::unset;
-    w.spawn_actor([char_id, kitten_pos = all[kitten_i], kitten_mesh = dist_ch(gen),
+    w.spawn_actor([char_id, kitten_pos = all[kitten_i],
+                   kitten_mesh = dist_ch(gen),
                    &game_flag](entt::registry& reg, const entt::entity e) {
 #ifndef NDEBUG
         static constexpr auto debug_kitten_pos = pos{10, 30};
         kitten::make(reg, e, debug_kitten_pos,
-                     sprite(sprite::unchecked_construct_tag{}, "Q"), game_flag,  char_id);
+                     sprite(sprite::unchecked_construct_tag{}, "Q"), game_flag,
+                     char_id);
 #else
         std::string s{' '};
         s[0] = static_cast<char>(kitten_mesh);
         kitten::make(reg, e, kitten_pos,
-                     sprite(sprite::unchecked_construct_tag{}, s), game_flag,  char_id);
+                     sprite(sprite::unchecked_construct_tag{}, s), game_flag,
+                     char_id);
 #endif
     });
 

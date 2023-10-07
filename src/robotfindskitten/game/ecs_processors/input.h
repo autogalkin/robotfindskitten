@@ -1,12 +1,13 @@
 #pragma once
 // clang-format off
 #include <iterator>
-#include <xutility>
 #include <optional>
 #include <ranges>
+#include <xutility>
 
 #include "Windows.h"
 #include <winuser.h>
+
 #include "boost/signals2.hpp"
 #include <entt/entt.hpp>
 
@@ -37,8 +38,8 @@ struct key_state {
 
 using state_t = std::vector<key_state>;
 
-[[nodiscard]] static std::optional<key_state> has_key(const state_t& state,
-                                                      input::key key) {
+[[maybe_unused]] [[nodiscard]] static std::optional<key_state>
+has_key(const state_t& state, input::key key) {
     auto it = std::ranges::find_if(state,
                                    [key](key_state k) { return k.key == key; });
     return it == state.end() ? std::nullopt : std::make_optional(*it);

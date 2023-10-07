@@ -7,8 +7,8 @@
 
 
 #include <algorithm>
-#include <optional>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "Scintilla.h"
@@ -76,7 +76,6 @@ public:
     // Only the hook_CreateWindowExW can create this class
     explicit scintilla(construct_key<scintilla> /*access in friends*/) noexcept
         : native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {}
-
 
     /**
      * @brief Getter for Scintilla HWND window
@@ -323,7 +322,6 @@ public:
         return static_cast<int>(dcall0(SCI_GETZOOM));
     }
 
-    ~scintilla();
 
     HWND create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
                               DWORD dwStyle, int X, int Y, int nWidth,

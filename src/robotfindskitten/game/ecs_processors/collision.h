@@ -221,7 +221,7 @@ class query: ecs_proc_tag {
 public:
     explicit query(world& w, pos game_area);
 
-    virtual void execute(entt::registry& reg, timings::duration delta);
+    void execute(entt::registry& reg, timings::duration delta);
 
 private:
     // mark entity to remove from tree and insert again

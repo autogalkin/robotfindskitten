@@ -1,14 +1,16 @@
 #pragma once
 
+#include <array>
 #include <cctype>
+#include <cstdint>
 #include <iostream>
+#include <random>
+#include <string>
 
 #include "Windows.h"
 
 // should inludes alls in this order
 // clang-format off
-#include <cstdint>
-#include <string>
 #include "ILexer.h"
 #include "Scintilla.h"
 #include "SciLexer.h"
@@ -23,41 +25,15 @@
 #include "LexerBase.h"
 #include "DefaultLexer.h"
 
-#include <random>
-#include <array>
+
 #include "config.h"
 // clang-format on
 
+
+static inline constexpr int MY_STYLE_START = 33;
 static inline constexpr std::pair<int, int> PRINTABLE_RANGE{
     static_cast<int>(' '), static_cast<int>('~')};
-static inline constexpr int COLOR_COUNT = 255;
-static inline constexpr int MY_STYLE_START = 33;
 
-inline std::array<decltype(RGB(0, 0, 0)),
-                  PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>
-generate_colors() {
-    std::random_device rd{};
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distr(0, COLOR_COUNT);
-    auto arr = std::array<decltype(RGB(0, 0, 0)),
-                          PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>();
-    for(auto& i: arr) {
-        i = RGB(distr(gen), distr(gen), distr(gen));
-    }
-    return arr;
-}
-static auto ALL_COLORS = generate_colors();
-
-static_assert(ALL_COLORS.size()
-              == PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1);
-
-inline decltype(RGB(0, 0, 0)) get_color(char c) noexcept {
-    return ALL_COLORS[c - PRINTABLE_RANGE.first];
-};
-
-#define MAX_STR_LEN 100
-
-// clang-format on
 class lexer: public Lexilla::DefaultLexer {
 public:
     lexer(): DefaultLexer(PROJECT_NAME, static_cast<int>('#')) {}

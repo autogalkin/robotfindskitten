@@ -8,6 +8,7 @@
 
 extern constexpr pos GAME_AREA = {150, 100};
 
+//NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 class console final: public noncopyable, public nonmoveable {
 public:
     static console allocate();
@@ -21,8 +22,8 @@ private:
 
 inline console console::allocate() {
     AllocConsole();
-    FILE* fdummy;
-    auto err = freopen_s(&fdummy, "CONOUT$", "w", stdout);
+    FILE* fdummy = nullptr;
+    [[maybe_unused]] auto err = freopen_s(&fdummy, "CONOUT$", "w", stdout);
     err = freopen_s(&fdummy, "CONOUT$", "w", stderr);
     std::cout.clear();
     std::clog.clear();
@@ -58,7 +59,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
 #ifndef NDEBUG
             static auto log_console = console::allocate();
 #endif // NDEBUG
-            printf("Notepad is loaded and initialized. Start a game\n");
+            std::cout << ("Notepad is loaded and initialized. Start a game\n");
             game::start(GAME_AREA, std::move(shutdown));
         });
 

@@ -7,11 +7,11 @@
  */
 
 #pragma once
-#include <type_traits>
-#include <string_view>
-#include <string>
 #include <cstdint>
 #include <iterator>
+#include <string>
+#include <string_view>
+#include <type_traits>
 
 #include <glm/vec2.hpp>
 
@@ -28,7 +28,7 @@ using loc = vec<double>;
 using pos = vec<npi_t>;
 
 class sprite {
-    uint16_t width_;
+    uint16_t width_{};
     // expect CharT null terminator;
     std::basic_string<char_size> data_;
     [[nodiscard]] static sprite normilize_from_string(std::string s);

@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#include <boost/type_erasure/relaxed.hpp>
 #include <boost/type_erasure/operators.hpp>
+#include <boost/type_erasure/relaxed.hpp>
 #include <entt/entt.hpp>
 
 #include "engine/time.h"

@@ -1,10 +1,10 @@
 ﻿#include "engine/notepad.h"
 
-#include <memory>
-#include <optional>
 #include <algorithm>
-#include <mutex>
 #include <cstdint>
+#include <memory>
+#include <mutex>
+#include <optional>
 #include <thread>
 
 // clang-format off
@@ -17,19 +17,23 @@
 #include <winuser.h>
 
 #include "engine/details/base_types.hpp"
-#include "engine/details/nonconstructors.h"
-#include "engine/scintilla_wrapper.h"
 #include "engine/details/iat_hook.h"
+#include "engine/scintilla_wrapper.h"
 #include "engine/time.h"
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::shared_ptr<std::atomic_bool> shutdown_token =
     std::make_shared<std::atomic_bool>(false);
 
-class thread_guard: public noncopyable {
+class thread_guard {
     std::thread t;
 
 public:
-    explicit thread_guard(std::thread&& t_): t(std::move(t_)) {}
+    thread_guard(const thread_guard&) = delete;
+    thread_guard& operator=(const thread_guard&) = delete;
+    thread_guard(thread_guard&&) = default;
+    thread_guard& operator=(thread_guard&&) = default;
+    explicit thread_guard(std::thread t_): t(std::move(t_)) {}
     ~thread_guard() {
         ::shutdown_token->store(true);
         if(t.joinable()) {
@@ -260,7 +264,7 @@ bool hook_CreateWindowExW(HMODULE module) {
            LPVOID lpParam) -> HWND {
             // here creates class 'Notepad' and 'Edit'; can change creation
             // params here
-            HWND out_hwnd;
+            HWND out_hwnd = nullptr;
 
             auto& np = notepad::get();
             if(!lstrcmpW(lpClassName,
@@ -306,19 +310,20 @@ bool hook_SetWindowTextW(HMODULE module) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
 // NOLINTEND(readability-function-cognitive-complexity)
 
-static_control& static_control::show(notepad* np) noexcept {
-    assert(glm::all(glm::notEqual(this->size, pos(0))));
+void notepad::show_static_control(static_control&& ctrl) noexcept {
+    assert(glm::all(glm::notEqual(ctrl.size, pos(0))));
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-    wnd_.reset(CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                              "STATIC", " ", dwStyle, 0, 0, size.x, size.y,
-                              np->get_window(), nullptr,
+    ctrl.wnd_.reset(CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+                              "STATIC", " ", dwStyle, 0, 0,  ctrl.size.x,  ctrl.size.y,
+                              get_window(), nullptr,
                               ::GetModuleHandle(nullptr), nullptr),
                [](HWND w) { ::PostMessage(w, WM_CLOSE, 0, 0); });
-    ::SetLayeredWindowAttributes(
-        wnd_.get(), np->get_scintilla().get_background_color(STYLE_DEFAULT), 0,
+    ::SetLayeredWindowAttributes( 
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+         ctrl.wnd_.get(), scintilla_->get_background_color(STYLE_DEFAULT), 0,
         LWA_COLORKEY);
-    ::SetWindowPos(wnd_.get(), HWND_TOP, position.x, position.y, size.x, size.y,
+    ::SetWindowPos( ctrl.wnd_.get(), HWND_TOP,  ctrl.position.x,  ctrl.position.y,  ctrl.size.x,  ctrl.size.y,
                    0);
     static constexpr int font_size = 38;
     static const std::unique_ptr<std::remove_pointer_t<HFONT>,
@@ -328,10 +333,10 @@ static_control& static_control::show(notepad* np) noexcept {
                             CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
                             DEFAULT_PITCH | FF_SWISS, L"Consolas"),
               &::DeleteObject};
-    ::SendMessageW(wnd_.get(), WM_SETFONT,
+    ::SendMessageW( ctrl.wnd_.get(), WM_SETFONT,
                    reinterpret_cast<WPARAM>(hFont.get()), TRUE);
-    ::ShowWindow(wnd_.get(), SW_SHOW);
-    ::UpdateWindow(wnd_.get());
-    ::InvalidateRect(wnd_.get(), nullptr, TRUE);
-    return *this;
+    ::ShowWindow( ctrl.wnd_.get(), SW_SHOW);
+    ::UpdateWindow( ctrl.wnd_.get());
+    ::InvalidateRect( ctrl.wnd_.get(), nullptr, TRUE);
+    static_controls.emplace_back(std::move(ctrl));
 }
