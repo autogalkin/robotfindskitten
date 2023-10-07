@@ -1,4 +1,7 @@
-﻿#pragma once
+#pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_MOTION_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_MOTION_H
+
 #include "engine/details/base_types.hpp"
 #include "engine/time.h"
 #include "engine/world.h"
@@ -22,3 +25,5 @@ struct non_uniform_motion: ecs_proc_tag {
 struct uniform_motion: ecs_proc_tag {
     void execute(entt::registry& reg, timings::duration dt);
 };
+
+#endif

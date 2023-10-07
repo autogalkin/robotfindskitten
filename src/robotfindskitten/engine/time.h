@@ -1,9 +1,12 @@
-﻿/**
+/**
  * @file
  * @brief Managing game time
  */
 
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_TIME_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_TIME_H
+
 #include <chrono>
 #include <cstdint>
 #include <type_traits>
@@ -20,8 +23,6 @@ static auto constexpr dt = std::chrono::duration<int64_t, std::ratio<1, 60>>{1};
 using duration = decltype(clock::duration{} + dt);
 // clock time point
 using point = std::chrono::time_point<clock, duration>;
-
-
 
 /**
  * @class fixed_time_step
@@ -90,3 +91,5 @@ public:
 };
 
 } // namespace timings
+
+#endif

@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_COLLISION_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_COLLISION_H
 
 #include <variant>
 
@@ -232,3 +234,5 @@ private:
 };
 
 } // namespace collision
+
+#endif

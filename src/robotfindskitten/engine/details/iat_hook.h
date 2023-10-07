@@ -1,4 +1,7 @@
-﻿#pragma once
+
+#pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_IAT_HOOK_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_IAT_HOOK_H
 
 #include <string_view>
 
@@ -90,3 +93,5 @@ bool hook_import(HMODULE module, module_name mn, function_name fn,
     return true;
 }
 }; // namespace iat_hook
+
+#endif

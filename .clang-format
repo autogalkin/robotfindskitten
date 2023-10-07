@@ -5,6 +5,7 @@ TabWidth: 4
 ColumnLimit: 80
 IndentWidth: 4
 UseTab: Never
+IndentPPDirectives: None
 Language: Cpp
 Standard: Latest
 AlignTrailingComments: Never
@@ -33,7 +34,6 @@ IncludeCategories:
     Priority: 6
   - Regex: '.*'
     Priority: 6
-IndentPPDirectives: AfterHash
 KeepEmptyLinesAtTheStartOfBlocks: false
 SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: false

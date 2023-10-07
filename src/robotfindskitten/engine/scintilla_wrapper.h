@@ -4,7 +4,8 @@
  */
 
 #pragma once
-
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_SCINTILLA_WRAPPER_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_SCINTILLA_WRAPPER_H
 
 #include <algorithm>
 #include <memory>
@@ -52,13 +53,13 @@ class construct_key<scintilla> {
 // this is the EDIT Control window of the notepad
 /**
  * @class scintilla
- * @brief this is wrapper for Scintilla Edit Control 
+ * @brief this is wrapper for Scintilla Edit Control
  * window of the game in notepad, replacement for a standart Edit Control.
  *
  * It allow colorize word, set back and front colors, font,
  * fast push new text, scroll left and down
  *
- * A Project builds with patched Scintilla version, where we disable 
+ * A Project builds with patched Scintilla version, where we disable
  *  - EnsureCaretVisible for prevent unnesessary scrolls and flickering
  *
  */
@@ -72,7 +73,6 @@ class scintilla
     friend class notepad;
 
 public:
-
     // Only the hook_CreateWindowExW can create this class
     explicit scintilla(construct_key<scintilla> /*access in friends*/) noexcept
         : native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {}
@@ -87,7 +87,8 @@ public:
     }
 
     /**
-     * @brief Set lexer in Scintilla to colorize all document with our custom rules
+     * @brief Set lexer in Scintilla to colorize all document with our custom
+     * rules
      *
      * @param lexer Scintilla::ILexer5 child class
      */
@@ -95,20 +96,20 @@ public:
         dcall2(SCI_SETILEXER, 0, reinterpret_cast<sptr_t>(lexer));
     }
 
-
     /**
      * @brief Scroll Document
      *
-     * @param columns_to_scroll how much characters to scroll +1 : right, -1: left
-     * @param lines_to_scroll how much lines to scroll +1 : right, -1: left 
+     * @param columns_to_scroll how much characters to scroll +1 : right, -1:
+     * left
+     * @param lines_to_scroll how much lines to scroll +1 : right, -1: left
      */
     void scroll(npi_t columns_to_scroll, npi_t lines_to_scroll) const noexcept {
         dcall2(SCI_LINESCROLL, columns_to_scroll, lines_to_scroll);
     }
 
- // ┌──────────────────────────────────────────────────────────┐
- // │  Caret manipulations                                     │
- // └──────────────────────────────────────────────────────────┘
+    // ┌──────────────────────────────────────────────────────────┐
+    // │  Caret manipulations                                     │
+    // └──────────────────────────────────────────────────────────┘
     /**
      * @brief [TODO:description]
      *
@@ -133,9 +134,9 @@ public:
     void caret_to_end() const noexcept {
         set_caret_index(get_all_text_length());
     }
- // ┌──────────────────────────────────────────────────────────┐
- // │ Text insertion                                           │
- // └──────────────────────────────────────────────────────────┘
+    // ┌──────────────────────────────────────────────────────────┐
+    // │ Text insertion                                           │
+    // └──────────────────────────────────────────────────────────┘
     /**
      * @brief [TODO:description]
      *
@@ -155,21 +156,19 @@ public:
         dcall2(SCI_INSERTTEXT, index, reinterpret_cast<sptr_t>(s.data()));
     }
 
-     /**
-      * @brief [TODO:description]
-      *
-      * @param new_text [TODO:parameter]
-      */
-     void set_new_all_text(const std::string& new_text) const noexcept {
+    /**
+     * @brief [TODO:description]
+     *
+     * @param new_text [TODO:parameter]
+     */
+    void set_new_all_text(const std::string& new_text) const noexcept {
         dcall1_l(SCI_SETTEXT, reinterpret_cast<sptr_t>(new_text.c_str()));
         dcall0(SCI_EMPTYUNDOBUFFER);
-    }   
+    }
 
-
- // ┌──────────────────────────────────────────────────────────┐
- // │  Selection                                               │
- // └──────────────────────────────────────────────────────────┘
-
+    // ┌──────────────────────────────────────────────────────────┐
+    // │  Selection                                               │
+    // └──────────────────────────────────────────────────────────┘
 
     void set_selection(const npi_t start, const npi_t end) const noexcept {
         dcall2(SCI_SETSEL, start, end);
@@ -192,11 +191,9 @@ public:
         dcall1_l(SCI_REPLACESEL, reinterpret_cast<sptr_t>(new_str.c_str()));
     }
 
-
- // ┌──────────────────────────────────────────────────────────┐
- // │ Getters for Scintilla attributes                         │
- // └──────────────────────────────────────────────────────────┘
- 
+    // ┌──────────────────────────────────────────────────────────┐
+    // │ Getters for Scintilla attributes                         │
+    // └──────────────────────────────────────────────────────────┘
 
     /**
      * @brief [TODO:description]
@@ -228,17 +225,14 @@ public:
         return dcall1(SCI_POSITIONFROMLINE, line_number);
     }
 
-
     [[nodiscard]] npi_t
     get_last_char_index_in_line(npi_t line_number) const noexcept {
         return dcall1(SCI_GETLINEENDPOSITION, line_number);
     }
 
-
     [[nodiscard]] npi_t get_line_lenght(npi_t line_index) const noexcept {
         return dcall1(SCI_LINELENGTH, line_index);
     }
-
 
     [[nodiscard]] npi_t
     get_line_index(const npi_t any_char_index_in_expected_line) const noexcept {
@@ -322,7 +316,6 @@ public:
         return static_cast<int>(dcall0(SCI_GETZOOM));
     }
 
-
     HWND create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
                               DWORD dwStyle, int X, int Y, int nWidth,
                               int nHeight, HWND hWndParent, HMENU hMenu,
@@ -352,3 +345,5 @@ private:
     sptr_t direct_wnd_ptr_{0};
     npi_t (*direct_function_)(sptr_t, int, uptr_t, sptr_t){nullptr};
 };
+
+#endif

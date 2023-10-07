@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_LIFE_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_LIFE_H
 
 #include "engine/world.h"
 #include "engine/time.h"
@@ -71,3 +73,5 @@ struct killer: ecs_proc_tag {
     }
 };
 } // namespace life
+
+#endif

@@ -2,7 +2,7 @@
 #include <CommCtrl.h>
 #include <Richedit.h>
 
-#include "engine/notepad.h";
+#include "engine/notepad.h"
 #include "engine/scintilla_wrapper.h"
 
 HWND scintilla::create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,

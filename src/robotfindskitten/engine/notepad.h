@@ -5,6 +5,9 @@
  */
 
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
+
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -353,3 +356,5 @@ private:
     LONG_PTR original_proc_;
     std::optional<scintilla> scintilla_;
 };
+
+#endif

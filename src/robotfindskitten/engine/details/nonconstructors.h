@@ -1,4 +1,6 @@
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_NONCONSTRUCTORS_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_NONCONSTRUCTORS_H
 
 class noncopyable {
 public:
@@ -25,3 +27,5 @@ protected:
     nonmoveable() = default;
     ~nonmoveable() = default;
 };
+
+#endif

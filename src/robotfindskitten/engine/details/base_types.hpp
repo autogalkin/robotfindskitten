@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file
  * @brief The Project type system.
  *
@@ -7,6 +7,9 @@
  */
 
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_BASE_TYPES_HPP
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_BASE_TYPES_HPP
+
 #include <cstdint>
 #include <iterator>
 #include <string>
@@ -150,3 +153,5 @@ public:
         changed_ = true;
     }
 };
+
+#endif

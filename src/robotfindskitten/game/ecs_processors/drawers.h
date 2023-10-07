@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_DRAWERS_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_DRAWERS_H
 
 #include <mutex>
 
@@ -112,3 +114,5 @@ private:
         }
     }
 };
+
+#endif

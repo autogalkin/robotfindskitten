@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
 
 #include "glm/gtx/easing.hpp"
 
@@ -10,7 +12,6 @@
 #include "game/ecs_processors/input.h"
 #include "game/ecs_processors/life.h"
 #include "game/ecs_processors/motion.h"
-
 
 namespace factories {
 struct actor_tag {};
@@ -152,3 +153,5 @@ void run_cycle(entt::registry& reg, entt::entity timer);
 void make(entt::registry& reg, entt::entity e);
 
 } // namespace atmosphere
+
+#endif

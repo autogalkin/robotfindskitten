@@ -1,4 +1,6 @@
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_LEXER_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_LEXER_H
 
 #include <array>
 #include <cctype>
@@ -29,9 +31,8 @@
 #include "config.h"
 // clang-format on
 
-
 static inline constexpr int MY_STYLE_START = 33;
-static inline constexpr std::pair<int, int> PRINTABLE_RANGE{
+[[maybe_unused]] static inline constexpr std::pair<int, int> PRINTABLE_RANGE{
     static_cast<int>(' '), static_cast<int>('~')};
 
 class lexer: public Lexilla::DefaultLexer {
@@ -72,3 +73,5 @@ public:
         return "";
     };
 };
+
+#endif

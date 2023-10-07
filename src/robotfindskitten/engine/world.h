@@ -1,9 +1,11 @@
-﻿/**
+/**
  * @file
  * @brief Define ECS processor interface and ECS processors storage
  */
 
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_WORLD_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_WORLD_H
 
 #include <vector>
 
@@ -40,7 +42,6 @@ struct concept_interface<is_ecs_proc<C>, Base, T>: Base {
 using ecs_proc_base = bte::any<
     boost::mpl::vector<bte::constructible<bte::_self(bte::_self&&)>,
                        bte::destructible<>, bte::relaxed, is_ecs_proc<>>>;
-
 
 /**
  * @class ecs_proc_tag
@@ -93,3 +94,5 @@ public:
         for_add_components(reg_, entity);
     }
 };
+
+#endif

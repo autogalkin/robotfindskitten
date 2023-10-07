@@ -1,4 +1,7 @@
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_INPUT_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_INPUT_H
+
 // clang-format off
 #include <iterator>
 #include <optional>
@@ -78,3 +81,5 @@ struct processor: ecs_proc_tag {
     }
 };
 } // namespace input
+
+#endif

@@ -1,4 +1,7 @@
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_GAME_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_GAME_H
+
 #include <array>
 #include <chrono>
 #include <random>
@@ -262,3 +265,5 @@ inline void run(pos game_area, back_buffer& game_buffer) {
     }
 };
 } // namespace game
+
+#endif

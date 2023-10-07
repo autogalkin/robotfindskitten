@@ -8,7 +8,7 @@
 
 extern constexpr pos GAME_AREA = {150, 100};
 
-//NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 class console final: public noncopyable, public nonmoveable {
 public:
     static console allocate();

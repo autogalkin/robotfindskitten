@@ -4,6 +4,9 @@
  */
 
 #pragma once
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_BUFFER_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_BUFFER_H
+
 #include <algorithm>
 #include <mutex>
 #include <string>
@@ -104,3 +107,5 @@ void back_buffer::traverse_sprite_positions(pos sprite_pivot, sprite_view sp,
         }
     }
 }
+
+#endif
