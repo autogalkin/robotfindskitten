@@ -34,7 +34,7 @@ void emplace_simple_death_anim(entt::registry& reg, const entt::entity e) {
 namespace projectile {
 namespace {
 using rng_type = std::mt19937;
-const rng_type rng{};
+rng_type rng{}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 } // namespace
 collision::responce on_collide(entt::registry& r, collision::self self,
                                collision::collider other) {
