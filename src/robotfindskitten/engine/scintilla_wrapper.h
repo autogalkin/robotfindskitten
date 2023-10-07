@@ -1,4 +1,10 @@
-﻿#pragma once
+﻿/**
+ * @file
+ * @brief Scintilla API wrapper
+ */
+
+#pragma once
+
 
 #include <algorithm>
 #include <optional>
@@ -21,6 +27,9 @@ concept is_container_of_chars = requires(T t) {
     { t.data() } -> std::convertible_to<char*>;
 };
 
+/**
+ * @brief Key that prevent to construct a class outside class T
+ */
 template<typename T>
 class construct_key {
     explicit construct_key() = default;
@@ -29,12 +38,30 @@ class construct_key {
 };
 
 class scintilla;
+
+/**
+ * @brief Specialization of construct_key for scintilla
+ *
+ * Allow to create a scintilla in scintilla and in hook_CreateWindowExW
+ */
 template<>
 class construct_key<scintilla> {
     friend bool hook_CreateWindowExW(HMODULE);
 };
 
 // this is the EDIT Control window of the notepad
+/**
+ * @class scintilla
+ * @brief this is wrapper for Scintilla Edit Control 
+ * window of the game in notepad, replacement for a standart Edit Control.
+ *
+ * It allow colorize word, set back and front colors, font,
+ * fast push new text, scroll left and down
+ *
+ * A Project builds with patched Scintilla version, where we disable 
+ *  - EnsureCaretVisible for prevent unnesessary scrolls and flickering
+ *
+ */
 class scintilla
     : public noncopyable,
       public nonmoveable // Deleted so scintilla objects can not be copied.
@@ -45,81 +72,175 @@ class scintilla
     friend class notepad;
 
 public:
-    // Only the hook_CreateWindowExW can create the engine
+
+    // Only the hook_CreateWindowExW can create this class
     explicit scintilla(construct_key<scintilla> /*access in friends*/) noexcept
         : native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {}
 
+
+    /**
+     * @brief Getter for Scintilla HWND window
+     *
+     * @return HWND of Scintilla Edit Control
+     */
     [[nodiscard]] HWND get_native_window() const noexcept {
         return edit_window_;
     }
 
+    /**
+     * @brief Set lexer in Scintilla to colorize all document with our custom rules
+     *
+     * @param lexer Scintilla::ILexer5 child class
+     */
     void set_lexer(Scintilla::ILexer5* lexer) const noexcept {
         dcall2(SCI_SETILEXER, 0, reinterpret_cast<sptr_t>(lexer));
     }
 
+
+    /**
+     * @brief Scroll Document
+     *
+     * @param columns_to_scroll how much characters to scroll +1 : right, -1: left
+     * @param lines_to_scroll how much lines to scroll +1 : right, -1: left 
+     */
     void scroll(npi_t columns_to_scroll, npi_t lines_to_scroll) const noexcept {
         dcall2(SCI_LINESCROLL, columns_to_scroll, lines_to_scroll);
     }
 
-    // caret
+ // ┌──────────────────────────────────────────────────────────┐
+ // │  Caret manipulations                                     │
+ // └──────────────────────────────────────────────────────────┘
+    /**
+     * @brief [TODO:description]
+     *
+     * @return [TODO:return]
+     */
     [[nodiscard]] npi_t get_caret_index() const noexcept {
         return dcall0(SCI_GETCURRENTPOS);
     }
+
+    /**
+     * @brief [TODO:description]
+     *
+     * @return [TODO:return]
+     */
     [[nodiscard]] npi_t get_caret_index_in_line() const noexcept;
     void set_caret_index(const npi_t index) const noexcept {
         dcall1(SCI_GOTOPOS, index);
     }
+    /**
+     * @brief [TODO:description]
+     */
     void caret_to_end() const noexcept {
         set_caret_index(get_all_text_length());
     }
+ // ┌──────────────────────────────────────────────────────────┐
+ // │ Text insertion                                           │
+ // └──────────────────────────────────────────────────────────┘
+    /**
+     * @brief [TODO:description]
+     *
+     * @param s [TODO:parameter]
+     */
     void append_at_caret_position(const std::string& s) const noexcept {
         dcall2(SCI_ADDTEXT, s.size(), reinterpret_cast<sptr_t>(s.data()));
     }
 
+    /**
+     * @brief [TODO:description]
+     *
+     * @param index [TODO:parameter]
+     * @param s [TODO:parameter]
+     */
     void insert_text(const npi_t index, const std::string& s) const noexcept {
         dcall2(SCI_INSERTTEXT, index, reinterpret_cast<sptr_t>(s.data()));
     }
 
-    // selection
+     /**
+      * @brief [TODO:description]
+      *
+      * @param new_text [TODO:parameter]
+      */
+     void set_new_all_text(const std::string& new_text) const noexcept {
+        dcall1_l(SCI_SETTEXT, reinterpret_cast<sptr_t>(new_text.c_str()));
+        dcall0(SCI_EMPTYUNDOBUFFER);
+    }   
+
+
+ // ┌──────────────────────────────────────────────────────────┐
+ // │  Selection                                               │
+ // └──────────────────────────────────────────────────────────┘
+
+
     void set_selection(const npi_t start, const npi_t end) const noexcept {
         dcall2(SCI_SETSEL, start, end);
     }
+
     void clear_selection(const npi_t caret_pos) const noexcept {
         dcall1(SCI_SETEMPTYSELECTION, caret_pos);
     }
+
     void select_text_end() const noexcept {
         set_selection(-1, -1);
     }
+
     [[nodiscard]] std::pair<npi_t, npi_t> get_selection_range() const noexcept {
         return std::make_pair(dcall0(SCI_GETSELECTIONSTART),
                               dcall0(SCI_GETSELECTIONEND));
     }
+
     void replace_selection(const std::string& new_str) const noexcept {
         dcall1_l(SCI_REPLACESEL, reinterpret_cast<sptr_t>(new_str.c_str()));
     }
-    void set_new_all_text(const std::string& new_text) const noexcept {
-        dcall1_l(SCI_SETTEXT, reinterpret_cast<sptr_t>(new_text.c_str()));
-        dcall0(SCI_EMPTYUNDOBUFFER);
-    }
 
-    // getters
+
+ // ┌──────────────────────────────────────────────────────────┐
+ // │ Getters for Scintilla attributes                         │
+ // └──────────────────────────────────────────────────────────┘
+ 
+
+    /**
+     * @brief [TODO:description]
+     *
+     * @return [TODO:return]
+     */
     [[nodiscard]] npi_t get_horizontal_scroll_offset() const noexcept {
         return dcall0(SCI_GETXOFFSET);
     }
+
+    /**
+     * @brief [TODO:description]
+     *
+     * @param index [TODO:parameter]
+     * @return [TODO:return]
+     */
     [[nodiscard]] char get_char_at_index(npi_t index) const noexcept {
         return static_cast<char>(dcall1(SCI_GETCHARAT, index));
     }
+
+    /**
+     * @brief [TODO:description]
+     *
+     * @param line_number [TODO:parameter]
+     * @return [TODO:return]
+     */
     [[nodiscard]] npi_t
     get_first_char_index_in_line(npi_t line_number) const noexcept {
         return dcall1(SCI_POSITIONFROMLINE, line_number);
     }
+
+
     [[nodiscard]] npi_t
     get_last_char_index_in_line(npi_t line_number) const noexcept {
         return dcall1(SCI_GETLINEENDPOSITION, line_number);
     }
+
+
     [[nodiscard]] npi_t get_line_lenght(npi_t line_index) const noexcept {
         return dcall1(SCI_LINELENGTH, line_index);
     }
+
+
     [[nodiscard]] npi_t
     get_line_index(const npi_t any_char_index_in_expected_line) const noexcept {
         return dcall1(SCI_LINEFROMPOSITION, any_char_index_in_expected_line);

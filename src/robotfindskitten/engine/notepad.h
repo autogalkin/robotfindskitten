@@ -347,7 +347,7 @@ private:
     timings::fps_count fps_count_;
     // Live only on startup
     std::unique_ptr<open_signal_t> on_open_;
-    // notepad.exe window proc
+    // Notepad.exe window proc
     LONG_PTR original_proc_;
     std::optional<scintilla> scintilla_;
 };

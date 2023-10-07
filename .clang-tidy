@@ -11,6 +11,8 @@ Checks: >
   readability-*,
   clang-analyzer-*,
 
+  llvm-header-guard,
+
   -modernize-use-trailing-return-type,
   -readability-implicit-bool-conversion,
   -readability-identifier-length,

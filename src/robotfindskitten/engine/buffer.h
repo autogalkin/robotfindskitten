@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Render into BackBuffer
+ */
+
 #pragma once
 #include <string>
 #include <string_view>
@@ -7,7 +12,10 @@
 
 #include "engine/details/base_types.hpp"
 
-// the array of chars on the screen
+/**
+ * @class back_buffer
+ * @brief An array of chars on the screen
+ */
 class back_buffer {
     size_t width_;
     // ensure null-terminated
@@ -21,6 +29,8 @@ class back_buffer {
     }
 
 public:
+    // FIXME(Igor): Make private. This used in public in drawer ecs processor
+    // for bloc render thread between draw and erase functions
     mutable std::mutex mutex_;
     explicit back_buffer(pos size)
         : width_(size.x), buf_(std::basic_string<char_size>(
@@ -28,8 +38,27 @@ public:
           z_buf_(static_cast<size_t>(size.x * size.y)) {
         set_lines();
     }
+    /**
+     * @brief Draw a sprite into the buffer
+     *
+     * @param pivot a sprite start position
+     * @param sh a sprite to render
+     * @param depth a sprite z_depth
+     */
     void draw(pos pivot, sprite_view sh, int32_t depth);
+    /**
+     * @brief Erase sprite from the byffer
+     *
+     * @param pivot a sprite start position
+     * @param sh a sprite to erase
+     * @param depth a sprite z_depth
+     */
     void erase(pos pivot, sprite_view sh, int32_t depth);
+    /**
+     * @brief clear all buffer to initial state
+     *
+     * Keep spaces and \n
+     */
     void clear() {
         std::lock_guard<std::mutex> lock(mutex_);
         std::fill(buf_.begin(), buf_.end(), ' ');
@@ -37,9 +66,18 @@ public:
         std::fill(z_buf_.begin(), z_buf_.end(), 0);
     };
 
+    /**
+     * @brief View buffer content
+     *
+     * Thread-Safe read-only access to the buffer
+     *
+     * @tparam Visitor Predicate to accept 
+     * a buffer content void(std::basic_string<char_size>& str)
+     * @param visitor Visitor instance
+     */
     template<typename Visitor>
         requires std::is_invocable_v<Visitor,
-                                     // Need for Scintilla call, ensure \0
+                                     // Need for Scintilla api call, ensure \0
                                      const std::basic_string<char_size>&>
     void view(Visitor&& visitor) const {
         std::lock_guard<std::mutex> lock(mutex_);
