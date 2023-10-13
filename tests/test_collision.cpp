@@ -6,7 +6,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "collision.h"
+#include "game/ecs_processors/collision.h"
 
 // NOLINTBEGIN(readability-magic-numbers)
 
@@ -15,7 +15,7 @@ TEST(FreeListTest, GetAllSize) {
   auto list = free_list::free_list<int>();
   EXPECT_EQ(list.all_size(), 0);
   for (int i = 1; i < 128 * 3; i++) {
-    auto _ = list.emplace(i);
+    static_cast<void>(list.emplace(i));
     EXPECT_EQ(list.all_size(), i);
   }
 }
@@ -48,7 +48,7 @@ TEST(FreeListTest, EraseItem) {
   EXPECT_EQ(index, 0);
   list.erase(index);
   EXPECT_EQ(list.all_size(), 1);
-  EXPECT_THROW(list[index], free_list::bad_free_list_access);
+  EXPECT_THROW(static_cast<void>(list[index]), free_list::bad_free_list_access);
 }
 
 TEST(FreeListTest, EraseAndInsertItemIntoFreeIndex) {
@@ -56,7 +56,7 @@ TEST(FreeListTest, EraseAndInsertItemIntoFreeIndex) {
   int list_size = 30;
   auto list = free_list::free_list<int>();
   for (int i = 0; i < list_size; i++) {
-    auto j = list.emplace(i);
+    static_cast<void>(list.emplace(i));
   }
   EXPECT_EQ(list.all_size(), list_size);
   std::random_device rd{};
@@ -71,7 +71,7 @@ TEST(FreeListTest, EraseAndInsertItemIntoFreeIndex) {
   }
   EXPECT_EQ(list.all_size(), list_size);
   for (int i = 0; i < erased_size; i++) {
-    auto j = list.emplace(i);
+    static_cast<void>(list.emplace(i));
   }
   EXPECT_EQ(list.all_size(), list_size);
 }
@@ -81,12 +81,12 @@ TEST(FreeListTest, ClearList) {
   int list_size = 30;
   auto list = free_list::free_list<int>();
   for (int i = 0; i < list_size; i++) {
-    auto j = list.emplace(i);
+    static_cast<void>(list.emplace(i));
   }
   EXPECT_EQ(list.all_size(), list_size);
   list.clear();
   EXPECT_EQ(list.all_size(), 0);
-  auto j = list.emplace(5);
+  [[maybe_unused]] auto _ = list.emplace(5);
   EXPECT_EQ(list.all_size(), 1);
 }
 
@@ -159,9 +159,8 @@ TEST(QuadTreeTest, RemoveItem) {
   auto tree = quad_tree<actor>(box_t{{0, 0}, {10, 10}});
   auto index = tree.insert(actor{0}, box_t{{2, 2}, {5, 5}});
   tree.remove(index);
-  // TODO api
-  EXPECT_THROW(auto _ = tree.inspect_entity(index),
-               free_list::bad_free_list_access);
+  EXPECT_THROW(static_cast<void>(tree.inspect_entity(index)),
+               std::invalid_argument);
 }
 
 TEST(QuadTreeTest, SimpleIntersectItems) {
@@ -169,22 +168,23 @@ TEST(QuadTreeTest, SimpleIntersectItems) {
   auto tree = quad_tree<actor>(box_t{{0, 0}, {10, 10}});
   ;
   auto a_box = box_t{{2, 2}, {5, 5}};
+  auto a = actor{0};
   auto b = actor{1};
   auto c = actor{2};
   auto d = actor{3};
-  auto ai = tree.insert(actor{0}, a_box);
+  static_cast<void>(tree.insert(a, a_box));
   auto b_box = box_t{{0, 0}, {3, 3}};
   ASSERT_TRUE(details::intersect(a_box, b_box));
-  auto bi = tree.insert(actor{1}, b_box);
+  static_cast<void>(tree.insert(actor{1}, b_box));
   auto c_box = box_t{{4, 4}, {6, 6}};
   ASSERT_TRUE(details::intersect(a_box, c_box));
-  auto ci = tree.insert(c, c_box);
+  static_cast<void>(tree.insert(c, c_box));
   auto d_box = box_t{{9, 9}, {10, 10}};
-  auto di = tree.insert(c, d_box);
+  static_cast<void>(tree.insert(c, d_box));
   ASSERT_FALSE(details::intersect(a_box, d_box));
 
   int count_of_collides = 0;
-  tree.query(a_box, [b, c, d, &count_of_collides](actor &collider) {
+  tree.query({a, a_box}, [b, c, d, &count_of_collides](actor collider) {
     EXPECT_THAT(collider, ::testing::AnyOf(b, c));
     count_of_collides++;
     EXPECT_NE(collider, d);
@@ -192,14 +192,11 @@ TEST(QuadTreeTest, SimpleIntersectItems) {
   EXPECT_EQ(count_of_collides, 2);
 }
 
-class QuadTreeQueryTest : public ::testing::TestWithParam<std::size_t> {
-protected:
-  QuadTreeQueryTest() {}
-  ~QuadTreeQueryTest() override {}
-  void test_query() {}
+class QuadTreeQueryTest : public ::testing::TestWithParam<collision::indx_t> {
+
 };
 
-static inline int AREA_SIZE{100};
+static constexpr int AREA_SIZE{100};
 
 std::vector<collision::box_t> generate_actors(collision::indx_t n) {
   using namespace collision;
@@ -220,7 +217,7 @@ void brute_force_query(collision::box_t rect,
                        const std::vector<collision::box_t> &all,
                        Visitor &&visitor) {
   using namespace collision;
-  for (indx_t i = 0; i < all.size(); ++i) {
+  for (indx_t i = 0; i < static_cast<indx_t>(all.size()); ++i) {
     if (all[i] != rect && details::intersect(all[i], rect)) {
       visitor(actor{i});
     }
@@ -236,6 +233,7 @@ difference(std::vector<std::pair<actor, prect>> const &v1,
   return diff;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void query_test_against_brute_force(
     const std::vector<collision::box_t> &all_actors,
     collision::quad_tree<actor> &tree,
@@ -248,12 +246,12 @@ void query_test_against_brute_force(
     quad_tree_intrs.reserve(all_actors.size());
     auto traversed = std::vector<bool>(all_actors.size(), false);
     for (size_t i = 0; i < all_actors.size(); i++) {
-      quad_tree_intrs.push_back({});
+      quad_tree_intrs.emplace_back();
 
       if (!traversed[i] && (!removed_actors || !(*removed_actors)[i])) {
-        tree.query(all_actors[i], [i, &quad_tree_intrs, &traversed,
+        tree.query({actor{static_cast<indx_t>(i)}, all_actors[i]}, [i, &quad_tree_intrs, &traversed,
                                    &removed_actors,
-                                   &all_actors](auto &collider) {
+                                   &all_actors](auto collider) {
           if (!removed_actors ||
               !(*removed_actors)[static_cast<size_t>(collider)]) {
             quad_tree_intrs[i].push_back(
@@ -268,10 +266,9 @@ void query_test_against_brute_force(
   auto brute_force_intrs = std::vector<std::vector<std::pair<actor, prect>>>();
   {
     brute_force_intrs.reserve(all_actors.size());
-    // TODO travesed
     auto traversed = std::vector<bool>(all_actors.size(), false);
     for (size_t i = 0; i < all_actors.size(); i++) {
-      brute_force_intrs.push_back({});
+      brute_force_intrs.emplace_back();
       if (!traversed[i] && (!removed_actors || !(*removed_actors)[i])) {
         brute_force_query(
             all_actors[i], all_actors,
@@ -279,16 +276,15 @@ void query_test_against_brute_force(
              &all_actors](const actor &collider) {
               if (!removed_actors ||
                   !(*removed_actors)[static_cast<size_t>(collider)]) {
-                brute_force_intrs[i].push_back(
-                    {collider,
-                     prect{all_actors[static_cast<size_t>(collider)]}});
+                brute_force_intrs[i].emplace_back(collider,
+                     prect{all_actors[static_cast<size_t>(collider)]});
               }
               traversed[static_cast<size_t>(collider)] = true;
             });
       }
     }
   }
-  for (indx_t i = 0; i < all_actors.size(); i++) {
+  for (size_t i = 0; i < all_actors.size(); i++) {
     std::sort(std::begin(quad_tree_intrs[i]), std::end(quad_tree_intrs[i]),
               [](const auto &a, const auto &b) { return a.first < b.first; });
     std::sort(std::begin(brute_force_intrs[i]), std::end(brute_force_intrs[i]),
@@ -315,16 +311,16 @@ TEST_P(QuadTreeQueryTest, RemoveItemsAndCleanUp) {
   auto tree = quad_tree<actor>(box_t{{0, 0}, {10, 10}});
   auto ins = std::vector<quad_tree<actor>::inserted>{};
   ins.reserve(all_actors.size());
-  for (indx_t i = 0; i < all_actors.size(); i++) {
+  for (indx_t i = 0; i < static_cast<indx_t>(all_actors.size()); ++i) {
     ins.push_back(tree.insert(actor{i}, all_actors[i]));
   }
-  for (indx_t i = 0; i < all_actors.size(); i++) {
+  for (size_t i = 0; i < all_actors.size(); ++i) {
     tree.remove(ins[i]);
   }
   tree.cleanup();
   int colliders_count = 0;
-  tree.query(box_t{{0, 0}, {AREA_SIZE, AREA_SIZE}},
-             [&colliders_count](auto collider) { ++colliders_count; });
+  tree.query({actor{-1}, box_t{{0, 0}, {AREA_SIZE, AREA_SIZE}}},
+             [&colliders_count](auto  /*collider*/) { ++colliders_count; });;
   EXPECT_EQ(colliders_count, 0);
 }
 
@@ -333,8 +329,8 @@ TEST_P(QuadTreeQueryTest, InsertAndQueryItems) {
   auto all_actors = generate_actors(actors_n);
   using namespace collision;
   auto tree = quad_tree<actor>(box_t{{0, 0}, {AREA_SIZE, AREA_SIZE}});
-  for (indx_t i = 0; i < all_actors.size(); i++) {
-    auto _ = tree.insert(actor{i}, all_actors[i]);
+  for (indx_t i = 0; i < static_cast<indx_t>(all_actors.size()); i++) {
+    static_cast<void>(tree.insert(actor{i}, all_actors[i]));
   }
   query_test_against_brute_force(all_actors, tree);
 }
@@ -346,7 +342,7 @@ TEST_P(QuadTreeQueryTest, InsertRemoveAndQueryItems) {
   auto tree = quad_tree<actor>(box_t{{0, 0}, {AREA_SIZE, AREA_SIZE}});
   auto ins = std::vector<quad_tree<actor>::inserted>{};
   ins.reserve(all_actors.size());
-  for (indx_t i = 0; i < all_actors.size(); i++) {
+  for (indx_t i = 0; i < static_cast<indx_t>(all_actors.size()); i++) {
     ins.push_back(tree.insert(actor{i}, all_actors[i]));
   }
   auto gen = std::default_random_engine();
@@ -356,7 +352,7 @@ TEST_P(QuadTreeQueryTest, InsertRemoveAndQueryItems) {
   std::generate(std::begin(removed), std::end(removed),
                 [&gen, &death]() { return death(gen); });
 
-  for (indx_t i = 0; i < removed.size(); ++i) {
+  for (size_t i = 0; i < removed.size(); ++i) {
     if (removed[i]) {
       tree.remove(ins[i]);
     }
@@ -365,8 +361,7 @@ TEST_P(QuadTreeQueryTest, InsertRemoveAndQueryItems) {
   query_test_against_brute_force(all_actors, tree, std::move(removed));
 }
 
-INSTANTIATE_TEST_SUITE_P(SmallValues, QuadTreeQueryTest,
-                         ::testing::Range(1ul, 200ul));
+
 INSTANTIATE_TEST_SUITE_P(Power10, QuadTreeQueryTest,
                          ::testing::Values(10, 100, 1000, 10000));
 

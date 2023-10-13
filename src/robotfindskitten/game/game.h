@@ -21,7 +21,7 @@
 #include "engine/scintilla_wrapper.h"
 #include "engine/time.h"
 #include "engine/world.h"
-#include "game/ecs_processors/collision.h"
+#include "game/ecs_processors/collision_query.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input.h"
 #include "game/ecs_processors/life.h"

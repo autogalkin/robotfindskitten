@@ -42,7 +42,7 @@ build-scintilla:
 #perform all tests
 [windows]
 test:
-    {{vcvarsall}} &&  cmake --build . --target test --preset x64-debug 
+    {{vcvarsall}} &&  cmake --build --preset x64-debug --target test
 
 #build game and scintilla and perform all tests
 [windows]
