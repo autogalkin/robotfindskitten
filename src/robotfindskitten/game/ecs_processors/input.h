@@ -8,10 +8,10 @@
 #include <ranges>
 #include <xutility>
 
-#include "Windows.h"
+#include <Windows.h>
 #include <winuser.h>
 
-#include "boost/signals2.hpp"
+#include <boost/signals2.hpp>
 #include <entt/entt.hpp>
 
 #include "engine/world.h"

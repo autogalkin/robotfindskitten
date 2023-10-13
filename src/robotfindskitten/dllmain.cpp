@@ -10,7 +10,7 @@
 static constexpr pos GAME_AREA = {150, 100};
 
 namespace console {
-inline std::unique_ptr<void, void (*)()> allocate() {
+inline std::unique_ptr<void, void (*)(void*)> allocate() {
     AllocConsole();
     FILE* fdummy = nullptr;
     [[maybe_unused]] auto err = freopen_s(&fdummy, "CONOUT$", "w", stdout);
@@ -24,7 +24,7 @@ inline std::unique_ptr<void, void (*)()> allocate() {
     SetStdHandle(STD_ERROR_HANDLE, hConOut);
     std::wcout.clear();
     std::wclog.clear();
-    return {nullptr, []() { FreeConsole(); }};
+    return {nullptr, [](void*) { FreeConsole(); }};
 }
 } // namespace console
 

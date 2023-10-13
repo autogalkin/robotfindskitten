@@ -2,7 +2,7 @@
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
 
-#include "glm/gtx/easing.hpp"
+#include <glm/gtx/easing.hpp>
 
 #include "engine/details/base_types.hpp"
 #include "engine/time.h"

@@ -13,7 +13,7 @@
 #include <optional>
 #include <string_view>
 
-#include "boost/signals2.hpp"
+#include <boost/signals2.hpp>
 #include <Windows.h>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <boost/uuid/uuid.hpp>

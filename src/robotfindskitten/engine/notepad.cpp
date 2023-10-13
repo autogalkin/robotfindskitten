@@ -9,7 +9,7 @@
 
 // clang-format off
 #include <Windows.h>
-#include "CommCtrl.h"
+#include <CommCtrl.h>
 // clang-format on
 
 #include <boost/lockfree/spsc_queue.hpp>

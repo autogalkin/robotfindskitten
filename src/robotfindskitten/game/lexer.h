@@ -9,13 +9,13 @@
 #include <random>
 #include <string>
 
-#include "Windows.h"
+#include <Windows.h>
 
 // should inludes alls in this order
 // clang-format off
-#include "ILexer.h"
-#include "Scintilla.h"
-#include "SciLexer.h"
+#include <ILexer.h>
+#include <Scintilla.h>
+#include <SciLexer.h>
 // Lexilla.h should not be included here as it declares statically linked functions without the __declspec( dllexport )
 #include "WordList.h"
 #include "PropSetSimple.h"

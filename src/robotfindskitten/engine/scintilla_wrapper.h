@@ -12,8 +12,8 @@
 #include <optional>
 #include <string>
 
-#include "Scintilla.h"
-#include "ILexer.h"
+#include <Scintilla.h>
+#include <ILexer.h>
 // clang-format off
 #include <Richedit.h>
 #include <Windows.h>

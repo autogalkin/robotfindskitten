@@ -11,6 +11,7 @@
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include <Windows.h>
 #include <entt/entity/fwd.hpp>
@@ -49,11 +50,6 @@ inline all_colors_t generate_colors() {
     }
     return arr;
 }
-/*
-inline decltype(RGB(0, 0, 0)) get_color(char c) noexcept {
-    return ALL_COLORS.at(c - PRINTABLE_RANGE.first);
-};
-*/
 
 static const std::array MESSAGES =
     std::to_array<std::string_view>(ALL_GAME_MESSAGES);
@@ -102,13 +98,11 @@ inline void run(pos game_area, back_buffer& game_buffer) {
     });
 
     constexpr int ITEMS_COUNT = 200;
-    constexpr int character_i = 199;
-    constexpr int kitten_i = 198;
-    constexpr int gun_i = 197;
 
     using rng_type = std::mt19937;
 
-    std::array<pos, ITEMS_COUNT> all{};
+    std::unordered_set<pos> all{};
+    all.reserve(ITEMS_COUNT);
     rng_type gen(std::random_device{}());
     {
         std::uniform_int_distribution<> dist_x(0, game_area.x - 1 - 1);
@@ -117,10 +111,8 @@ inline void run(pos game_area, back_buffer& game_buffer) {
             pos p;
             do {
                 p = pos{dist_x(gen), dist_y(gen)};
-            } while(
-                std::ranges::any_of(all.begin(), all.begin() + i,
-                                    [p](auto other) { return p == other; }));
-            all.at(i) = p;
+            } while(all.contains(p));
+            all.insert(p);
         }
     }
     static_control::id_t w_uuid;
@@ -139,8 +131,10 @@ inline void run(pos game_area, back_buffer& game_buffer) {
     }
     std::uniform_int_distribution<> dist_ch(PRINTABLE_RANGE.first + 1,
                                             PRINTABLE_RANGE.second);
+    auto pos_iter = all.begin();
     for(size_t i = 0; i < all.size() - 3; i++) {
-        auto item = all.at(i);
+        auto item = *pos_iter;
+        std::advance(pos_iter, 1);
         w.spawn_actor([&](entt::registry& reg, const entt::entity ent) {
             std::string s{' '};
             do {
@@ -182,7 +176,7 @@ inline void run(pos game_area, back_buffer& game_buffer) {
         });
     }
 
-    w.spawn_actor([gun_pos = all[gun_i], gun_mesh = dist_ch(gen)](
+    w.spawn_actor([gun_pos = *pos_iter, gun_mesh = dist_ch(gen)](
                       entt::registry& reg, const entt::entity e) {
 #ifndef NDEBUG
         static constexpr auto debug_gun_pos = pos{14, 20};
@@ -195,8 +189,9 @@ inline void run(pos game_area, back_buffer& game_buffer) {
                   sprite(sprite::unchecked_construct_tag{}, s));
 #endif
     });
+    std::advance(pos_iter, 1);
     entt::entity char_id{};
-    w.spawn_actor([&char_id, char_pos = all[character_i]](
+    w.spawn_actor([&char_id, char_pos = *pos_iter](
                       entt::registry& reg, const entt::entity ent) {
         char_id = ent;
         reg.emplace<sprite>(ent,
@@ -221,8 +216,10 @@ inline void run(pos game_area, back_buffer& game_buffer) {
             reg.emplace<input::processor::down_signal>(ent);
         input_callback.connect(&character::process_movement_input<>);
     });
+
+    std::advance(pos_iter, 1);
     game_over::game_status_flag game_flag = game_over::game_status_flag::unset;
-    w.spawn_actor([char_id, kitten_pos = all[kitten_i],
+    w.spawn_actor([char_id, kitten_pos = *pos_iter,
                    kitten_mesh = dist_ch(gen),
                    &game_flag](entt::registry& reg, const entt::entity e) {
 #ifndef NDEBUG
