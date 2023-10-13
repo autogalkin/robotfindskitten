@@ -166,13 +166,15 @@ void fire(entt::registry& reg, const entt::entity character) {
     const auto proj = reg.create();
     const loc spawn_translation =
         dir == draw_direction::right ? loc(sh.bounds().x, 0) : loc(-1, 0);
-    static constexpr float projectile_start_force = 15.;
     static constexpr pos random_end_y{3, 5};
+    static constexpr pos random_velocity_range{15, 25};
     static std::uniform_int_distribution<projectile::rng_type::result_type>
         life_dist(random_end_y.x, random_end_y.y);
+    static std::uniform_int_distribution<projectile::rng_type::result_type>
+        velocity_dist(random_velocity_range.x,random_velocity_range.y);
     projectile::make(
         reg, proj, l + spawn_translation,
-        velocity(projectile_start_force * static_cast<float>(dir), 0),
+        velocity(velocity_dist(projectile::rng) * static_cast<double>(dir), 0),
         std::chrono::seconds{life_dist(projectile::rng)});
 }
 } // namespace gun
