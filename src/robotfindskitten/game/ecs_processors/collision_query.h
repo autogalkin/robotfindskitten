@@ -62,7 +62,7 @@ public:
 private:
     // mark entity to remove from tree and insert again
     struct need_update_entity {};
-    // NOTE: place outside of a class for store the processor in
+    // NOTE: place outside of a class to store this processor in
     // boost::any_container and not resize a padding
     std::unique_ptr<quad_tree<entt::entity>> tree_;
 };
@@ -75,7 +75,7 @@ inline query::query(world& w, const pos game_area)
 }
 
 inline void query::execute(entt::registry& reg, timings::duration /*dt*/) {
-    // insert moved actors into tree
+    // insert moved actors into the tree
     for(const auto view = reg.view<const loc, const sprite, need_update_entity,
                                    collision::agent, const visible_in_game>();
         const auto entity: view) {

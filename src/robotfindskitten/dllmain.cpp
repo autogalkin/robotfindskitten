@@ -1,26 +1,16 @@
 
 #include <Windows.h>
+#include <consoleapi.h>
 #include <cstdint>
 
 #include "engine/notepad.h"
 #include "engine/details/base_types.hpp"
 #include "game/game.h"
 
-extern constexpr pos GAME_AREA = {150, 100};
+static constexpr pos GAME_AREA = {150, 100};
 
-// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
-class console final: public noncopyable, public nonmoveable {
-public:
-    static console allocate();
-    ~console() {
-        FreeConsole();
-    }
-
-private:
-    explicit console() = default;
-};
-
-inline console console::allocate() {
+namespace console {
+inline std::unique_ptr<void, void (*)()> allocate() {
     AllocConsole();
     FILE* fdummy = nullptr;
     [[maybe_unused]] auto err = freopen_s(&fdummy, "CONOUT$", "w", stdout);
@@ -34,8 +24,9 @@ inline console console::allocate() {
     SetStdHandle(STD_ERROR_HANDLE, hConOut);
     std::wcout.clear();
     std::wclog.clear();
-    return console();
+    return {nullptr, []() { FreeConsole(); }};
 }
+} // namespace console
 
 BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
                       LPVOID /*lp_reserved*/) {
@@ -64,7 +55,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
         });
 
         np.connect_to_notepad(
-            np_module, start_options); // start initialization and a game loop
+            np_module, start_options); // start initialization and the game loop
     }
     return TRUE;
 }
