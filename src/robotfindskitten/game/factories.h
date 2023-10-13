@@ -7,7 +7,7 @@
 #include "engine/details/base_types.hpp"
 #include "engine/time.h"
 #include "game/comps.h"
-#include "game/ecs_processors/collision.h"
+#include "game/ecs_processors/collision_query.h"
 #include "game/ecs_processors/drawers.h"
 #include "game/ecs_processors/input.h"
 #include "game/ecs_processors/life.h"

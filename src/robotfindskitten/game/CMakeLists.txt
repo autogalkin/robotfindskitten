@@ -1,9 +1,10 @@
-set(GAME_SOURCES game/ecs_processors/collision.cpp
+set(GAME_SOURCES
                  game/ecs_processors/motion.cpp
                  game/factories.cpp
                  )
 set(GAME_HEADERS
     game/ecs_processors/collision.h
+    game/ecs_processors/collision_query.h
     game/ecs_processors/drawers.h
     game/ecs_processors/input.h
     game/ecs_processors/motion.h
