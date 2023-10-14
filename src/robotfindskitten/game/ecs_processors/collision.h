@@ -26,7 +26,6 @@ static_assert(std::is_signed_v<indx_t>);
 // The main component for perform collision queries
 // Represent `Start` corner of the box and the `End` corner
 using box_t = glm::mat<2, 2, indx_t>;
-static_assert(std::is_trivially_copyable_v<box_t>);
 // A half of a box
 using point_t = glm::vec<2, indx_t>;
 

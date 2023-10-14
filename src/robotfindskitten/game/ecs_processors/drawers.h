@@ -54,17 +54,18 @@ struct previous_sprite {
     sprite sp;
 };
 
+template<typename BufferType>
 class redrawer: ecs_proc_tag {
-    back_buffer& buf_;
+    BufferType& buf_;
 
 public:
-    explicit redrawer(back_buffer& buf, world& w): buf_(buf) {
+    explicit redrawer(BufferType& buf, world& w): buf_(buf) {
         w.reg_.on_construct<visible_in_game>()
             .connect<&redrawer::upd_visible>();
     }
 
     void execute(entt::registry& reg, timings::duration /*dt*/) {
-        std::lock_guard<std::mutex> lock(buf_.mutex_);
+        auto lock = buf_.lock();
         for(const auto view =
                 reg.view<const loc, const previous_sprite, const z_depth>();
             const auto entity: view) {

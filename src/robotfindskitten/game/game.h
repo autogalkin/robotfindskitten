@@ -68,14 +68,14 @@ inline void start(pos game_area, std::shared_ptr<std::atomic_bool>&& shutdown) {
     static lexer GAME_LEXER{};
     notepad::push_command(
         [](notepad*, scintilla* sc) { sc->set_lexer(&GAME_LEXER); });
-    back_buffer game_buffer{game_area};
+    auto game_buffer = back_buffer<thread_safe_trait<std::mutex>>{game_area};
     while(!shutdown->load()) {
         run(game_area, game_buffer);
         game_buffer.clear();
         // restart
     }
 };
-inline void run(pos game_area, back_buffer& game_buffer) {
+inline void run(pos game_area, back_buffer<thread_safe_trait<std::mutex>>& game_buffer) {
     const all_colors_t ALL_COLORS = generate_colors();
     notepad::push_command([&ALL_COLORS](notepad*, scintilla* sc) {
         define_all_styles(sc, ALL_COLORS);
@@ -88,7 +88,7 @@ inline void run(pos game_area, back_buffer& game_buffer) {
     exec.emplace_back(timeline::executor{});
     exec.emplace_back(rotate_animator{});
     exec.emplace_back(collision::query(w, game_area));
-    exec.emplace_back(redrawer(game_buffer, w));
+    exec.emplace_back(redrawer<decltype(game_buffer)>(game_buffer, w));
     exec.emplace_back(life::death_last_will_executor{});
     exec.emplace_back(life::killer{});
     exec.emplace_back(life::life_ticker{});

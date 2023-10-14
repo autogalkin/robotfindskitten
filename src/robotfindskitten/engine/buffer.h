@@ -15,30 +15,43 @@
 
 #include "engine/details/base_types.hpp"
 
+template<typename Mutex>
+class thread_safe_trait{
+    Mutex mutex_;
+public:
+    std::lock_guard<Mutex> lock(){
+        return std::lock_guard<Mutex> {mutex_};
+    }
+};
+class not_thread_safe_trait{
+    public:
+    int lock(){
+        return 0;
+    }
+};
+
 /**
  * @class back_buffer
  * @brief An array of chars on the screen
  */
-class back_buffer {
+template<typename Trait=not_thread_safe_trait>
+class back_buffer: public Trait {
     size_t width_;
     // ensure null-terminated
     std::basic_string<char_size> buf_;
     std::vector<int32_t> z_buf_;
     void set_lines() {
+        static constexpr int ENDL_SIZE = 1;
         for(npi_t i = 1; i < buf_.size() / width_; i++) {
-            static constexpr int ENDL_SIZE = 1;
             buf_[i * width_ - ENDL_SIZE] = '\n';
         }
     }
 
 public:
-    // FIXME(Igor): Make private. This used in public in drawer ecs processor
-    // for bloc render thread between draw and erase functions
-    mutable std::mutex mutex_;
-    explicit back_buffer(pos size)
-        : width_(size.x), buf_(std::basic_string<char_size>(
-                              static_cast<size_t>(size.x * size.y), ' ')),
-          z_buf_(static_cast<size_t>(size.x * size.y)) {
+    explicit back_buffer(pos extends)
+        : width_(extends.x), buf_(std::basic_string<char_size>(
+                              static_cast<size_t>(extends.x * extends.y), ' ')),
+          z_buf_(static_cast<size_t>(extends.x * extends.y)) {
         set_lines();
     }
     /**
@@ -63,7 +76,7 @@ public:
      * Keep spaces and \n
      */
     void clear() {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto maybe_lock = this->lock();
         std::fill(buf_.begin(), buf_.end(), ' ');
         set_lines();
         std::fill(z_buf_.begin(), z_buf_.end(), 0);
@@ -83,7 +96,7 @@ public:
                                      // Need for Scintilla api call, ensure \0
                                      const std::basic_string<char_size>&>
     void view(Visitor&& visitor) const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        auto maybe_lock = this->lock();
         visitor(buf_);
     }
 
@@ -93,6 +106,7 @@ private:
         requires std::is_invocable_v<Visitor, pos, char_size>
     void traverse_sprite_positions(pos pivot, sprite_view sp,
                                    Visitor&& visitor) const;
+
 };
 
 template<typename Visitor>
@@ -107,5 +121,6 @@ void back_buffer::traverse_sprite_positions(pos sprite_pivot, sprite_view sp,
         }
     }
 }
+
 
 #endif
