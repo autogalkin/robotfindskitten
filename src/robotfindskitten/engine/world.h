@@ -14,7 +14,6 @@
 #include <entt/entt.hpp>
 
 #include "engine/time.h"
-#include "details/nonconstructors.h"
 
 namespace bte = boost::type_erasure;
 
@@ -38,7 +37,7 @@ struct concept_interface<is_ecs_proc<C>, Base, T>: Base {
 };
 } // namespace boost::type_erasure
 
-//  ECS processor type
+//  ECS processor type for boost type erasure
 using ecs_proc_base = bte::any<
     boost::mpl::vector<bte::constructible<bte::_self(bte::_self&&)>,
                        bte::destructible<>, bte::relaxed, is_ecs_proc<>>>;
@@ -55,20 +54,16 @@ struct ecs_proc_tag {};
  * @brief ECS processors and ECS registry storage
  *
  */
-class world: public noncopyable, public nonmoveable {
-public:
-    world() = default;
-    // WARNING: insertion order is important! and
-    // boost::any_collection<ecs_processor_base> processors can not be used here
+struct world{
+    // NOTE: insertion order is important! and also we store always unique types
+    // `boost::any_collection<ecs_processor_base>` cannot be used here
     //
     // All Processors stored by insertion order, and calls
     // from 0 to n
     std::vector<ecs_proc_base> procs;
 
-    // FIXME(Igor): private?
-    //
     // Main ECS game registry
-    entt::registry reg_;
+    entt::registry registry;
 
     /**
      * @brief Execute all ecs processors in their insertion order
@@ -77,7 +72,7 @@ public:
      */
     void tick(timings::duration delta) {
         for(auto& i: procs) {
-            i.execute(reg_, delta);
+            i.execute(registry, delta);
         }
     }
 
@@ -90,8 +85,8 @@ public:
     template<typename F>
         requires std::is_invocable_v<F, entt::registry&, const entt::entity>
     void spawn_actor(F&& for_add_components) {
-        const auto entity = reg_.create();
-        for_add_components(reg_, entity);
+        const auto entity = registry.create();
+        for_add_components(registry, entity);
     }
 };
 

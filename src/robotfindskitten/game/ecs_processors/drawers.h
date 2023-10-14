@@ -64,7 +64,7 @@ class redrawer: ecs_proc_tag {
 
 public:
     explicit redrawer(BufferType& buf, world& w): buf_(buf) {
-        w.reg_.on_construct<visible_in_game>()
+        w.registry.on_construct<visible_in_game>()
             .connect<&redrawer::upd_visible>();
     }
 

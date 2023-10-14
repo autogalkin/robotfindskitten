@@ -55,7 +55,7 @@ struct on_collide {
 
 class query: ecs_proc_tag {
 public:
-    explicit query(world& w, pos game_area);
+    explicit query(entt::registry& reg, pos game_area);
 
     void execute(entt::registry& reg, timings::duration delta);
 
@@ -67,10 +67,10 @@ private:
     std::unique_ptr<quad_tree<entt::entity>> tree_;
 };
 
-inline query::query(world& w, const pos game_area)
+inline query::query(entt::registry& reg, const pos game_area)
     : tree_(std::make_unique<quad_tree<entt::entity>>(
         box_t{{0, 0}, {game_area.x, game_area.y}})) {
-    w.reg_.on_construct<collision::agent>()
+    reg.on_construct<collision::agent>()
         .connect<&entt::registry::emplace_or_replace<need_update_entity>>();
 }
 

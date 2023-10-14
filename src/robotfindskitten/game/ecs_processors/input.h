@@ -40,7 +40,7 @@ struct key_state {
 };
 
 using state_t = std::vector<key_state>;
-
+struct foo{};
 [[maybe_unused]] [[nodiscard]] static std::optional<key_state>
 has_key(const state_t& state, input::key key) {
     auto it = std::ranges::find_if(state,
@@ -75,6 +75,9 @@ struct processor: ecs_proc_tag {
         }
         for(const auto view = reg.view<const processor::down_signal>();
             const auto entity: view) {
+
+            // reg.emplace_or_replace<foo>(entity);
+            // reg.on_update<foo>().connect<auto Candidate>(Type &&value_or_instance...)
             view.get<processor::down_signal>(entity).call(reg, entity, state,
                                                           dt);
         }

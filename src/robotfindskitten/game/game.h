@@ -89,10 +89,10 @@ inline void run(pos game_area, buffer_type& game_buffer) {
     exec.emplace_back(non_uniform_motion{});
     exec.emplace_back(timeline::executor{});
     exec.emplace_back(rotate_animator{});
-    exec.emplace_back(collision::query(w, game_area));
+    exec.emplace_back(collision::query(w.registry, game_area));
     exec.emplace_back(redrawer<buffer_type>(game_buffer, w));
     exec.emplace_back(life::death_last_will_executor{});
-    exec.emplace_back(life::killer{});
+    exec.emplace_back(life::killer{w.registry});
     exec.emplace_back(life::life_ticker{});
 
     w.spawn_actor([](entt::registry& reg, const entt::entity e) {
@@ -193,8 +193,9 @@ inline void run(pos game_area, buffer_type& game_buffer) {
     });
     std::advance(pos_iter, 1);
     entt::entity char_id{};
-    w.spawn_actor([&char_id, char_pos = *pos_iter,  &game_area](
-                      entt::registry& reg, const entt::entity ent) {
+    w.spawn_actor([&char_id, char_pos = *pos_iter,
+                   game_area](entt::registry& reg, const entt::entity ent) {
+        static_cast<void>(game_area); // supress -Wunused warning
         char_id = ent;
         reg.emplace<sprite>(ent,
                             sprite(sprite::unchecked_construct_tag{}, "#"));
@@ -221,8 +222,7 @@ inline void run(pos game_area, buffer_type& game_buffer) {
 
     std::advance(pos_iter, 1);
     game_over::game_status_flag game_flag = game_over::game_status_flag::unset;
-    w.spawn_actor([char_id, kitten_pos = *pos_iter,
-                   kitten_mesh = dist_ch(gen),
+    w.spawn_actor([char_id, kitten_pos = *pos_iter, kitten_mesh = dist_ch(gen),
                    &game_flag](entt::registry& reg, const entt::entity e) {
 #ifndef NDEBUG
         static constexpr auto debug_kitten_pos = pos{10, 30};
@@ -256,9 +256,10 @@ inline void run(pos game_area, buffer_type& game_buffer) {
         notepad::push_command([&game_buffer](notepad* /*np*/, scintilla* sc) {
             // swap buffers in Scintilla
             const auto pos = sc->get_caret_index();
-            game_buffer.view([sc](const std::basic_string<char_size>& buf) {
-                sc->set_new_all_text(buf);
-            });
+            game_buffer.view(
+                [sc](const std::basic_string<buffer_type::char_size>& buf) {
+                    sc->set_new_all_text(buf);
+                });
             sc->set_caret_index(pos);
         });
     }

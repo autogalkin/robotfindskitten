@@ -65,11 +65,16 @@ struct death_last_will_executor: ecs_proc_tag {
     }
 };
 struct killer: ecs_proc_tag {
+    std::unique_ptr<entt::observer> obs_;
+    explicit killer(entt::registry& reg)
+        : obs_(std::make_unique<entt::observer>(
+        //NOLINTNEXTLINE(readability-static-accessed-through-instance)
+            reg, entt::collector.group<begin_die>())){};
     void execute(entt::registry& reg, timings::duration /*dt*/) {
-        for(const auto view = reg.view<const begin_die>();
-            const auto entity: view) {
-            reg.destroy(entity);
-        }
+        obs_->each([&reg](const auto ent) { 
+            reg.destroy(ent); 
+        });
+        obs_->clear();
     }
 };
 } // namespace life
