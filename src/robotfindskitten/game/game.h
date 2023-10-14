@@ -63,7 +63,8 @@ inline void define_all_styles(scintilla* sc,
         style++;
     }
 }
-inline void run(pos game_area, back_buffer& game_buffer);
+using buffer_type = back_buffer<thread_safe_trait<std::mutex>>;
+inline void run(pos game_area, buffer_type& game_buffer);
 inline void start(pos game_area, std::shared_ptr<std::atomic_bool>&& shutdown) {
     static lexer GAME_LEXER{};
     notepad::push_command(
@@ -71,11 +72,12 @@ inline void start(pos game_area, std::shared_ptr<std::atomic_bool>&& shutdown) {
     auto game_buffer = back_buffer<thread_safe_trait<std::mutex>>{game_area};
     while(!shutdown->load()) {
         run(game_area, game_buffer);
+        auto lock = game_buffer.lock();
         game_buffer.clear();
         // restart
     }
 };
-inline void run(pos game_area, back_buffer<thread_safe_trait<std::mutex>>& game_buffer) {
+inline void run(pos game_area, buffer_type& game_buffer) {
     const all_colors_t ALL_COLORS = generate_colors();
     notepad::push_command([&ALL_COLORS](notepad*, scintilla* sc) {
         define_all_styles(sc, ALL_COLORS);
@@ -88,7 +90,7 @@ inline void run(pos game_area, back_buffer<thread_safe_trait<std::mutex>>& game_
     exec.emplace_back(timeline::executor{});
     exec.emplace_back(rotate_animator{});
     exec.emplace_back(collision::query(w, game_area));
-    exec.emplace_back(redrawer<decltype(game_buffer)>(game_buffer, w));
+    exec.emplace_back(redrawer<buffer_type>(game_buffer, w));
     exec.emplace_back(life::death_last_will_executor{});
     exec.emplace_back(life::killer{});
     exec.emplace_back(life::life_ticker{});
@@ -133,7 +135,7 @@ inline void run(pos game_area, back_buffer<thread_safe_trait<std::mutex>>& game_
                                             PRINTABLE_RANGE.second);
     auto pos_iter = all.begin();
     for(size_t i = 0; i < all.size() - 3; i++) {
-        auto item = *pos_iter;
+        auto item_position = *pos_iter;
         std::advance(pos_iter, 1);
         w.spawn_actor([&](entt::registry& reg, const entt::entity ent) {
             std::string s{' '};
@@ -141,7 +143,7 @@ inline void run(pos game_area, back_buffer<thread_safe_trait<std::mutex>>& game_
                 s[0] = static_cast<char>(dist_ch(gen));
             } while(s[0] == '#' || s[0] == '-' || s[0] == '_');
             factories::make_base_renderable(
-                reg, ent, item, 3,
+                reg, ent, item_position, 3,
                 sprite(sprite::unchecked_construct_tag{}, s));
             reg.emplace<collision::agent>(ent);
             reg.emplace<collision::on_collide>(
@@ -191,7 +193,7 @@ inline void run(pos game_area, back_buffer<thread_safe_trait<std::mutex>>& game_
     });
     std::advance(pos_iter, 1);
     entt::entity char_id{};
-    w.spawn_actor([&char_id, char_pos = *pos_iter](
+    w.spawn_actor([&char_id, char_pos = *pos_iter,  &game_area](
                       entt::registry& reg, const entt::entity ent) {
         char_id = ent;
         reg.emplace<sprite>(ent,

@@ -13,7 +13,6 @@
 #include "game/ecs_processors/life.h"
 #include "game/ecs_processors/motion.h"
 
-
 enum class draw_direction {
     left = -1,
     right = 1,
@@ -55,8 +54,13 @@ struct previous_sprite {
 };
 
 template<typename BufferType>
+    requires requires(BufferType& b, pos p, sprite_view w, int z_depth) {
+        { b.erase(p, w, z_depth) };
+        { b.draw(p, w, z_depth) };
+        { b.lock() };
+    }
 class redrawer: ecs_proc_tag {
-    BufferType& buf_;
+    std::reference_wrapper<BufferType> buf_;
 
 public:
     explicit redrawer(BufferType& buf, world& w): buf_(buf) {
@@ -65,13 +69,14 @@ public:
     }
 
     void execute(entt::registry& reg, timings::duration /*dt*/) {
-        auto lock = buf_.lock();
+        // a mutex lock for draw and erase functions together
+        auto lock = buf_.get().lock();
         for(const auto view =
                 reg.view<const loc, const previous_sprite, const z_depth>();
             const auto entity: view) {
             const auto& [sprt] = view.get<previous_sprite>(entity);
-            buf_.erase(view.get<loc>(entity), sprt,
-                       view.get<z_depth>(entity).index);
+            buf_.get().erase(view.get<loc>(entity), sprt,
+                             view.get<z_depth>(entity).index);
             reg.remove<previous_sprite>(entity);
         }
         for(const auto view =
@@ -83,8 +88,9 @@ public:
             if(trans.is_changed()
                || glm::all(glm::greaterThanEqual(trans.get(), loc(1)))
                || is_dead) {
-                buf_.erase(view.get<loc>(entity), view.get<sprite>(entity),
-                           view.get<z_depth>(entity).index);
+                buf_.get().erase(view.get<loc>(entity),
+                                 view.get<sprite>(entity),
+                                 view.get<z_depth>(entity).index);
                 if(is_dead) {
                     reg.remove<visible_in_game>(entity);
                 }
@@ -101,7 +107,7 @@ public:
                || glm::all(glm::greaterThanEqual(trans.get(), loc(1)))) {
                 const auto& sp = view.get<sprite>(entity);
                 current += trans.get();
-                buf_.draw(current, sp, view.get<z_depth>(entity).index);
+                buf_.get().draw(current, sp, view.get<z_depth>(entity).index);
                 trans = loc(0);
                 trans.clear();
             }

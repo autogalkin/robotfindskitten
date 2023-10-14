@@ -1,5 +1,4 @@
 set(ENGINE_SOURCES
-    engine/buffer.cpp
     engine/scintilla_wrapper.cpp
     engine/notepad.cpp
     )
