@@ -220,16 +220,16 @@ collision::responce on_collide(entt::registry& reg, const collision::self self,
 
 namespace game_over {
 
-static_control make_character() {
+static_control_handler make_character() {
     static constexpr pos start_pos{20, 0};
     static constexpr pos w_size = pos(20, 100);
-    return static_control{}
+    return static_control_handler{}
         .with_position(start_pos)
         .with_text("#")
         .with_text_color(RGB(0, 0, 0))
         .with_size(w_size);
 }
-void push_controls(std::array<static_control, 2>&& ctrls) {
+void push_controls(std::array<static_control_handler, 2>&& ctrls) {
     notepad::push_command(
         [ctrls = std::move(ctrls)](notepad* np, scintilla* sct) mutable {
             // hide all other static controls
@@ -250,8 +250,8 @@ void push_controls(std::array<static_control, 2>&& ctrls) {
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-void bad_end_animation(static_control::id_t char_wnd_id,
-                       static_control::id_t kitten_wnd_id, entt::registry& reg,
+void bad_end_animation(static_control_handler::id_t char_wnd_id,
+                       static_control_handler::id_t kitten_wnd_id, entt::registry& reg,
                        entt::entity end_anim) {
     reg.emplace<timeline::eval_direction>(end_anim);
     using namespace std::chrono_literals;
@@ -294,8 +294,8 @@ void bad_end_animation(static_control::id_t char_wnd_id,
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-void good_end_animation(static_control::id_t char_wnd_id,
-                        static_control::id_t kitten_wnd_id, entt::registry& reg,
+void good_end_animation(static_control_handler::id_t char_wnd_id,
+                        static_control_handler::id_t kitten_wnd_id, entt::registry& reg,
                         entt::entity end_anim) {
     using namespace std::chrono_literals;
     reg.emplace<timeline::eval_direction>(end_anim);
@@ -359,7 +359,7 @@ void create_input_wait(entt::registry& reg, game_status_flag status,
     notepad::push_command([](notepad* np, scintilla* sct) {
         static constexpr pos msg_pos{450, 0};
         static constexpr pos w_size = pos(500, 50);
-        auto ctrl = static_control{}
+        auto ctrl = static_control_handler{}
                         .with_position(msg_pos)
                         .with_size(w_size)
                         .with_text("Press any key to Restart")
@@ -387,7 +387,7 @@ collision::responce on_collide(entt::registry& reg, collision::self self,
         static constexpr pos dead_kitten_start_pos{300, 0};
         static constexpr pos w_size = pos(150, 100);
         auto kitten =
-            static_control{}
+            static_control_handler{}
                 .with_position(dead_kitten_start_pos)
                 .with_text("___")
                 //.with_text_color(ALL_COLORS['_' - PRINTABLE_RANGE.first - 1])
@@ -416,7 +416,7 @@ collision::responce on_collide(entt::registry& reg, collision::self self,
         static constexpr pos kitten_start_pos(300 + 280, 0);
         static constexpr pos kitten_size(50, 50);
         auto kitten_wnd =
-            static_control{}
+            static_control_handler{}
                 .with_position(kitten_start_pos)
                 //.with_text_color(
                 //    ALL_COLORS[sprt.data()[0] - PRINTABLE_RANGE.first - 1])

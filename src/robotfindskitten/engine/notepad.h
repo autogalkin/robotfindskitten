@@ -81,7 +81,7 @@ bool hook_SetWindowTextW(HMODULE module);
  * @class title_line
  * @brief Manage title line with changing values
  */
-struct title_line {
+struct title_line_args {
     uint32_t game_thread_fps;
     uint32_t render_thread_fps;
     /**
@@ -108,7 +108,7 @@ private:
  * class notepad use array of static_control to batch render all together
  *
  */
-struct static_control {
+struct static_control_handler {
     friend notepad;
     using id_t = boost::uuids::uuid;
     // std::shared_ptr because boost::lockfree::spsc_queue no supported emplace
@@ -136,7 +136,7 @@ public:
      * @param where position in pixels
      * @return self for other builder functions
      */
-    static_control& with_position(pos where) noexcept {
+    static_control_handler& with_position(pos where) noexcept {
         this->position = where;
         return *this;
     }
@@ -146,7 +146,7 @@ public:
      * @param size in pixels
      * @return self for other builder functions
      */
-    static_control& with_size(pos size) noexcept {
+    static_control_handler& with_size(pos size) noexcept {
         this->size = size;
         return *this;
     }
@@ -156,7 +156,7 @@ public:
      * @param text [TODO:parameter]
      * @return  self for other builder functions
      */
-    static_control& with_text(std::string_view text) noexcept {
+    static_control_handler& with_text(std::string_view text) noexcept {
         this->text = text;
         return *this;
     }
@@ -166,7 +166,7 @@ public:
      * @param color foreground color
      * @return  self for other builder functions
      */
-    static_control& with_text_color(COLORREF color) noexcept {
+    static_control_handler& with_text_color(COLORREF color) noexcept {
         this->fore_color = color;
         return *this;
     }
@@ -255,8 +255,8 @@ public:
     using open_signal_t = boost::signals2::signal<void(
         std::shared_ptr<std::atomic_bool> shutdown_signal)>;
 
-    title_line window_title{};
-    std::vector<static_control> static_controls;
+    title_line_args window_title{};
+    std::vector<static_control_handler> static_controls;
 
     /**
      * @brief Get signal to connect for event that fired on, when all notepad
@@ -333,7 +333,7 @@ public:
      * @param np [TODO:parameter]
      * @return  reference to self
      */
-    void show_static_control(static_control&& ctrl) noexcept;
+    void show_static_control(static_control_handler&& ctrl) noexcept;
 
 private:
     static notepad& get() {

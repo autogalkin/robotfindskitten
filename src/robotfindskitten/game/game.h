@@ -117,9 +117,9 @@ inline void run(pos game_area, buffer_type& game_buffer) {
             all.insert(p);
         }
     }
-    static_control::id_t w_uuid;
+    static_control_handler::id_t w_uuid;
     {
-        auto msg_w = static_control{};
+        auto msg_w = static_control_handler{};
         w_uuid = msg_w.get_id();
         notepad::push_command(
             [msg_w = std::move(msg_w)](notepad* np, scintilla* sc) mutable {

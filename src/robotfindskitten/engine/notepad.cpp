@@ -310,7 +310,7 @@ bool hook_SetWindowTextW(HMODULE module) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
 // NOLINTEND(readability-function-cognitive-complexity)
 
-void notepad::show_static_control(static_control&& ctrl) noexcept {
+void notepad::show_static_control(static_control_handler&& ctrl) noexcept {
     assert(glm::all(glm::notEqual(ctrl.size, pos(0))));
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
