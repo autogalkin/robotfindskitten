@@ -10,4 +10,4 @@ set(ENGINE_HEADERS
     engine/scintilla_wrapper.h
     engine/notepad.h
     engine/time.h
-    engine/world.h)
+    )

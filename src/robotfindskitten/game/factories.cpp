@@ -14,14 +14,14 @@
 
 namespace factories {
 void emplace_simple_death_anim(entt::registry& reg, const entt::entity e) {
-    reg.emplace<life::death_last_will>(e, [](entt::registry& reg_,
+    reg.emplace<life::dying_wish>(e, [](entt::registry& reg_,
                                              const entt::entity self) {
         const auto dead = reg_.create();
         auto old_loc = reg_.get<loc>(self);
         factories::make_base_renderable(
             reg_, dead, old_loc - loc(1, 0), 1,
             sprite(sprite::unchecked_construct_tag{}, "___"));
-        reg_.emplace<life::lifetime>(dead, std::chrono::seconds{3});
+        reg_.emplace<life::life_time>(dead, std::chrono::seconds{3});
         reg_.emplace<timeline::eval_direction>(dead);
         reg_.emplace<timeline::what_do>(
             dead,
@@ -60,7 +60,7 @@ void make(entt::registry& reg, entt::entity e, loc start, velocity dir,
 
     reg.emplace<collision::on_collide>(e, &projectile::on_collide);
 
-    reg.emplace<life::lifetime>(e, life_time);
+    reg.emplace<life::life_time>(e, life_time);
 
     // NOLINTBEGIN(readability-magic-numbers)
     static std::uniform_int_distribution<projectile::rng_type::result_type>
@@ -95,7 +95,7 @@ void make(entt::registry& reg, entt::entity e, loc start, velocity dir,
         });
 
     reg.emplace<timeline::eval_direction>(e, timeline::direction::forward);
-    reg.emplace<life::death_last_will>(e, [](entt::registry& reg_,
+    reg.emplace<life::dying_wish>(e, [](entt::registry& reg_,
                                              const entt::entity ent) {
         const auto& current_proj_location = reg_.get<loc>(ent);
         const auto& trans = reg_.get<translation>(ent);
@@ -107,9 +107,9 @@ void make(entt::registry& reg, entt::entity e, loc start, velocity dir,
         reg_.emplace<sprite>(new_e, sprite::unchecked_construct_tag{}, "*");
         reg_.emplace<visible_in_game>(new_e);
         reg_.emplace<z_depth>(new_e, 1);
-        reg_.emplace<life::lifetime>(new_e, std::chrono::seconds{1});
+        reg_.emplace<life::life_time>(new_e, std::chrono::seconds{1});
 
-        reg_.emplace<life::death_last_will>(new_e, [](entt::registry& r_,
+        reg_.emplace<life::dying_wish>(new_e, [](entt::registry& r_,
                                                       const entt::entity ent_) {
             auto& lb = r_.get<loc>(ent_);
             auto& trans = r_.get<translation>(ent_);
@@ -124,7 +124,7 @@ void make(entt::registry& reg, entt::entity e, loc start, velocity dir,
                 r_.emplace<visible_in_game>(proj);
                 r_.emplace<z_depth>(proj, 0);
                 r_.emplace<velocity>(proj, dir_);
-                r_.emplace<life::lifetime>(proj, std::chrono::seconds{1});
+                r_.emplace<life::life_time>(proj, std::chrono::seconds{1});
                 r_.emplace<non_uniform_movement_tag>(proj);
                 r_.emplace<collision::agent>(proj);
                 r_.emplace<collision::on_collide>(proj,
@@ -458,7 +458,7 @@ void make(
     entt::registry& reg, entt::entity e,
     std::function<void(entt::registry&, entt::entity, direction)>&& what_do,
     const std::chrono::milliseconds duration, direction dir) {
-    reg.emplace<life::lifetime>(e, duration);
+    reg.emplace<life::life_time>(e, duration);
     reg.emplace<timeline::what_do>(e, std::move(what_do));
     reg.emplace<timeline::eval_direction>(e, dir);
 }
@@ -472,9 +472,9 @@ const auto cycle_duration = std::chrono::seconds{2};
 
 void update_cycle(entt::registry& reg, entt::entity e, timeline::direction d) {
     const auto& [start, end] = reg.get<color_range>(e);
-    const auto& [current_lifetime] = reg.get<life::lifetime>(e);
+    const auto& [current_life_time] = reg.get<life::life_time>(e);
 
-    double value = (current_lifetime - cycle_duration)
+    double value = (current_life_time - cycle_duration)
                    / (std::chrono::duration<double>{0} - cycle_duration);
     value *= static_cast<double>(d);
 
@@ -515,7 +515,7 @@ void run_cycle(entt::registry& reg, entt::entity timer, color_range range) {
                    reg.get<timeline::eval_direction>(timer).value);
 
     reg.emplace<color_range>(cycle_timeline, range);
-    reg.emplace<life::death_last_will>(
+    reg.emplace<life::dying_wish>(
         cycle_timeline, [](entt::registry& reg_, entt::entity cycle_timeline_) {
             const auto again_timer = reg_.create();
             timer::make(

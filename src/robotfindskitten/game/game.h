@@ -22,11 +22,11 @@
 #include "engine/scintilla_wrapper.h"
 #include "engine/time.h"
 #include "engine/world.h"
-#include "game/ecs_processors/collision_query.h"
-#include "game/ecs_processors/drawers.h"
-#include "game/ecs_processors/input.h"
-#include "game/ecs_processors/life.h"
-#include "game/ecs_processors/motion.h"
+#include "game/systems/collision_query.h"
+#include "game/systems/drawers.h"
+#include "game/systems/input.h"
+#include "game/systems/life.h"
+#include "game/systems/motion.h"
 #include "game/factories.h"
 #include "game/lexer.h"
 #include "messages.h"
@@ -82,18 +82,37 @@ inline void run(pos game_area, buffer_type& game_buffer) {
     notepad::push_command([&ALL_COLORS](notepad*, scintilla* sc) {
         define_all_styles(sc, ALL_COLORS);
     });
-    world w{};
-    auto& exec = w.procs;
-    exec.emplace_back(input::processor{});
-    exec.emplace_back(uniform_motion{});
-    exec.emplace_back(non_uniform_motion{});
-    exec.emplace_back(timeline::executor{});
-    exec.emplace_back(rotate_animator{});
-    exec.emplace_back(collision::query(w.registry, game_area));
-    exec.emplace_back(redrawer<buffer_type>(game_buffer, w));
-    exec.emplace_back(life::death_last_will_executor{});
-    exec.emplace_back(life::killer{w.registry});
-    exec.emplace_back(life::life_ticker{});
+
+    entt::organizer org;
+    entt::registry reg;
+
+#define CONCAT(a, b) CONCAT_INNER(a, b)
+#define CONCAT_INNER(a, b) a##b
+#define UNIQUE_NAME(base) CONCAT(base, __LINE__)
+#define EMPL(type, ...) \
+    type UNIQUE_NAME(type){__VA_ARGS__}; \
+    org.emplace<&type::operator()>(UNIQUE_NAME(type), #type);
+
+    EMPL(input::processor);
+    EMPL(uniform_motion);
+    EMPL(non_uniform_motion);
+    EMPL(timeline::executor, reg);
+    EMPL(rotate_animator);
+    // org.emplace<&sync_point>("Sync point");
+    EMPL(collision::query, reg, game_area);
+    EMPL(apply_translation);
+    EMPL(redrawer<buffer_type>, game_buffer, w);
+    EMPL(redraw_cleanup);
+    EMPL(life::fullfill_dying_wish, reg);
+    EMPL(life::killer, reg);
+    EMPL(life::life_ticker, reg);
+
+#undef EMPL
+#undef CONCAT
+#undef CONCAT_INNER
+#undef UNIQUE_NAME
+
+
 
     w.spawn_actor([](entt::registry& reg, const entt::entity e) {
         atmosphere::make(reg, e);
@@ -241,6 +260,12 @@ inline void run(pos game_area, buffer_type& game_buffer) {
     timings::fixed_time_step fixed_time_step{};
     timings::fps_count fps_count{};
 
+    const auto graph = org.graph();
+    // for (auto &&vertex : graph) {
+    //   vertex.prepare(reg);
+    // }
+
+    org.clear();
     while(game_flag == game_over::game_status_flag::unset) {
         fixed_time_step.sleep();
         fps_count.fps([](auto fps) {
@@ -251,7 +276,9 @@ inline void run(pos game_area, buffer_type& game_buffer) {
             });
         });
         // TODO(Igor): real alpha
-        w.tick(timings::dt);
+        for(auto& vertex: graph) {
+            vertex.callback()(vertex.data(), reg, timings::dt);
+        }
         // render
         notepad::push_command([&game_buffer](notepad* /*np*/, scintilla* sc) {
             // swap buffers in Scintilla

@@ -6,7 +6,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "game/ecs_processors/collision.h"
+#include "game/systems/collision.h"
 
 // NOLINTBEGIN(readability-magic-numbers)
 

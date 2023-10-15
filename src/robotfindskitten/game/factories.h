@@ -7,11 +7,11 @@
 #include "engine/details/base_types.hpp"
 #include "engine/time.h"
 #include "game/comps.h"
-#include "game/ecs_processors/collision_query.h"
-#include "game/ecs_processors/drawers.h"
-#include "game/ecs_processors/input.h"
-#include "game/ecs_processors/life.h"
-#include "game/ecs_processors/motion.h"
+#include "game/systems/collision_query.h"
+#include "game/systems/drawers.h"
+#include "game/systems/input.h"
+#include "game/systems/life.h"
+#include "game/systems/motion.h"
 
 namespace factories {
 struct actor_tag {};
@@ -60,8 +60,8 @@ struct timer_tag {};
 inline void make(entt::registry& reg, entt::entity e,
                  std::function<void(entt::registry&, entt::entity)> what_do,
                  std::chrono::milliseconds duration = std::chrono::seconds{1}) {
-    reg.emplace<life::lifetime>(e, duration);
-    reg.emplace<life::death_last_will>(e, std::move(what_do));
+    reg.emplace<life::life_time>(e, duration);
+    reg.emplace<life::dying_wish>(e, std::move(what_do));
 }
 }; // namespace timer
 

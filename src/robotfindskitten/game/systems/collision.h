@@ -426,6 +426,7 @@ public:
         explicit inserted(indx_t i): i_(i){};
 
     public:
+        static constexpr inserted null{INVALID_INDEX};
         explicit inserted(): i_(INVALID_INDEX){};
     };
 
