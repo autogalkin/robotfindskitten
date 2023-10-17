@@ -212,9 +212,9 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
         reg.emplace_or_replace<life::begin_die>(self);
         auto msg_wnd_uuid = reg.ctx().get<static_control_handler::id_t>(
             entt::hashed_string{"msg_window"});
-        notepad::push_command([msg_wnd_uuid](notepad* np, scintilla*) {
+        notepad::push_command([msg_wnd_uuid](notepad& np, scintilla&) {
             auto w = std::ranges::find_if(
-                np->static_controls,
+                np.static_controls,
                 [msg_wnd_uuid](auto& w) { return w.get_id() == msg_wnd_uuid; });
             static const char* msg = "Wow! It's a little gun!";
             SetWindowText(*w, msg);
@@ -313,9 +313,9 @@ static_control_handler make_character() {
 }
 void push_controls(std::array<static_control_handler, 2>&& ctrls) {
     notepad::push_command(
-        [ctrls = std::move(ctrls)](notepad* np, scintilla* sct) mutable {
+        [ctrls = std::move(ctrls)](notepad& np, scintilla& sct) mutable {
             // hide all other static controls
-            for(auto& i: np->static_controls) {
+            for(auto& i: np.static_controls) {
                 i.text = "";
                 SetWindowText(i.get_wnd(), i.text.data());
             }
@@ -326,7 +326,7 @@ void push_controls(std::array<static_control_handler, 2>&& ctrls) {
                 if(i.fore_color == RGB(0, 0, 0)) {
                     i.fore_color = sct->get_text_color(STYLE_DEFAULT);
                 }
-                np->show_static_control(std::move(i));
+                np.show_static_control(std::move(i));
             }
         });
 }
@@ -357,16 +357,16 @@ void bad_end_animation(entt::handle end_anim) {
                  entt::hashed_string{"character_uuid"}),
              k_uuid = h.registry()->ctx().get<static_control_handler::id_t>(
                  entt::hashed_string{"kitten_uuid"}),
-             ch_x](notepad* np, scintilla* /*sct*/) {
+             ch_x](notepad& np, scintilla& /*sct*/) {
                 auto find = [np](auto uuid) {
                     return std::ranges::find_if(
-                        np->static_controls,
+                        np.static_controls,
                         [uuid](auto& w) { return w.get_id() == uuid; });
                 };
                 auto k = find(k_uuid);
                 auto ch = find(ch_uuid);
-                if(ch == np->static_controls.end()
-                   || k == np->static_controls.end()) {
+                if(ch == np.static_controls.end()
+                   || k == np.static_controls.end()) {
                     return;
                 }
                 ch->position.x = static_cast<int32_t>(glm::round(ch_x));
@@ -410,15 +410,15 @@ void good_end_animation(entt::handle end_anim) {
                  entt::hashed_string{"character_uuid"}),
              k_uuid = h.registry()->ctx().get<static_control_handler::id_t>(
                  entt::hashed_string{"kitten_uuid"}),
-             k_x, ch_x](notepad* np, scintilla* /*sct*/) {
+             k_x, ch_x](notepad& np, scintilla& /*sct*/) {
                 auto ch = std::ranges::find_if(
-                    np->static_controls,
+                    np.static_controls,
                     [ch_uuid](auto& w) { return w.get_id() == ch_uuid; });
                 auto k = std::ranges::find_if(
-                    np->static_controls,
+                    np.static_controls,
                     [k_uuid](auto& w) { return w.get_id() == k_uuid; });
-                if(ch == np->static_controls.end()
-                   || k == np->static_controls.end()) {
+                if(ch == np.static_controls.end()
+                   || k == np.static_controls.end()) {
                     return;
                 }
                 ch->position.x = static_cast<int32_t>(glm::round(ch_x));
@@ -441,14 +441,14 @@ void create_input_wait(entt::registry& reg, game_status_flag status) {
     auto inpt = reg.create();
     reg.emplace<input::key_down_task>(
         inpt, +[](const void*, entt::handle h, std::span<input::key_state>) {
-            notepad::push_command([](notepad* np, scintilla* /*sct*/) {
-                np->static_controls.clear();
+            notepad::push_command([](notepad& np, scintilla& /*sct*/) {
+                np.static_controls.clear();
             });
             h.registry()->ctx().get<game_status_flag>() =
                 h.registry()->ctx().get<game_status_flag>(
                     entt::hashed_string{"flag_for_set"});
         });
-    notepad::push_command([](notepad* np, scintilla* sct) {
+    notepad::push_command([](notepad& np, scintilla& sct) {
         static constexpr pos msg_pos{450, 0};
         static constexpr pos w_size = pos(500, 50);
         auto ctrl = static_control_handler{}
@@ -456,7 +456,7 @@ void create_input_wait(entt::registry& reg, game_status_flag status) {
                         .with_size(w_size)
                         .with_text("Press any key to Restart")
                         .with_text_color(sct->get_text_color(STYLE_DEFAULT));
-        np->show_static_control(std::move(ctrl));
+        np.show_static_control(std::move(ctrl));
         // SetWindowText(ctrl, ctrl.text.data());
     });
 }
@@ -580,10 +580,10 @@ void update_cycle(const void* /*payload*/, entt::handle h,
             std::lerp(GetGValue(start), GetGValue(end), -value),
             std::lerp(GetBValue(start), GetBValue(end), -value));
 
-    notepad::push_command([new_back_color, new_front_color](notepad* np,
-                                                            scintilla* sct) {
-        // np->back_color = new_back_color;
-        for(auto& w: np->static_controls) {
+    notepad::push_command([new_back_color, new_front_color](notepad& np,
+                                                            scintilla& sct) {
+        // np.back_color = new_back_color;
+        for(auto& w: np.static_controls) {
             w.fore_color = new_front_color;
             SetWindowText(w.get_wnd(), w.text.data());
         }
@@ -632,7 +632,7 @@ void make(entt::handle h) {
     COLORREF fore_color = 0;
     bool ready = false;
     notepad::push_command([&back_color, &fore_color, &ready, &m,
-                           &cv](notepad* /*np*/, scintilla* sct) {
+                           &cv](notepad& /*np*/, scintilla& sct) {
         back_color = sct->get_background_color(STYLE_DEFAULT);
         fore_color = sct->get_text_color(STYLE_DEFAULT);
         {

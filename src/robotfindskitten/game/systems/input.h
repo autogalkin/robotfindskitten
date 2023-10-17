@@ -13,6 +13,8 @@
 
 #include <entt/entt.hpp>
 
+#include "engine/notepad.h"
+
 namespace input {
 using key_size = WPARAM;
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
@@ -21,12 +23,7 @@ enum class key : key_size {
     a = 0x41,
     s = 0x53,
     d = 0x44,
-    l = 0x49,
     space = VK_SPACE,
-    up = VK_UP,
-    right = VK_RIGHT,
-    left = VK_LEFT,
-    down = VK_DOWN,
 };
 struct key_state {
     input::key key{0};
@@ -66,11 +63,12 @@ struct player_input {
     }
 
     void operator()(entt::registry& reg) {
+        if(!notepad::is_active.load()){
+            return;
+        }
         static constexpr WPARAM IS_PRESSED = 0x8000;
         for(auto& i: keys_) {
-            // TODO(Igor)
-            // I think i has right to live rather then pipe lock_free_queue
-            // from the notepad thread, or no?...
+            // I think it has rights to live.. ¯\_(ツ)_/¯ it is fast..
             if(GetAsyncKeyState(static_cast<int>(i.key)) & IS_PRESSED) {
                 ++i.press_count;
             } else {

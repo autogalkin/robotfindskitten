@@ -5,6 +5,7 @@
  */
 
 #pragma once
+#include <atomic>
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
 
@@ -76,6 +77,7 @@ bool hook_CreateWindowExW(HMODULE module);
 bool hook_SetWindowTextW(HMODULE module);
 
 // NOLINTEND(readability-redundant-declaration)
+
 
 /**
  * @class title_line
@@ -248,7 +250,7 @@ public:
             : all(static_cast<uint8_t>(v)) {}
     };
 
-    using command_t = std::function<void(notepad*, scintilla*)>;
+    using command_t = std::function<void(notepad&, scintilla&)>;
     static constexpr int command_queue_capacity = 32;
     using commands_queue_t = boost::lockfree::spsc_queue<
         command_t, boost::lockfree::capacity<command_queue_capacity>>;
@@ -289,6 +291,9 @@ public:
             hook_SetWindowTextW(module);
         });
     }
+    // Indicate the application state
+    static std::atomic_bool is_active{true};
+
     /**
      * @brief Get Notepad.exe Main Window descriptor
      *
@@ -336,16 +341,16 @@ public:
     void show_static_control(static_control_handler&& ctrl) noexcept;
 
 private:
+    explicit notepad();
     static notepad& get() {
         static notepad notepad{};
         return notepad;
     }
-
-    commands_queue_t commands_;
-
     void start_game();
     void tick_render();
-    explicit notepad();
+
+    // commands from the other thread
+    commands_queue_t commands_;
     opts options_{opts::empty};
     HWND main_window_;
     timings::fixed_time_step fixed_time_step_;

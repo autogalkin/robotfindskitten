@@ -107,6 +107,14 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     case WM_NOTIFY: {
         break;
     }
+    case WM_SETFOCUS: {
+        notepad::is_active.store(true);
+        break;
+    }
+    case WM_KILLFOCUS : {
+        notepad::is_active.store(false);
+        break;
+    }
     case WM_SIZE: {
         if(np.scintilla_) {
             ::SetWindowPos(np.scintilla_->edit_window_, nullptr, 0, 0, 0, 0,
