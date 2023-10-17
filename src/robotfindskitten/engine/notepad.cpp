@@ -338,5 +338,6 @@ void notepad::show_static_control(static_control_handler&& ctrl) noexcept {
     ::ShowWindow( ctrl.wnd_.get(), SW_SHOW);
     ::UpdateWindow( ctrl.wnd_.get());
     ::InvalidateRect( ctrl.wnd_.get(), nullptr, TRUE);
+    ::SetWindowTextA(ctrl, ctrl.text.data());
     static_controls.emplace_back(std::move(ctrl));
 }

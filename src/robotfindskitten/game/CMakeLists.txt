@@ -8,7 +8,6 @@ set(GAME_HEADERS
     game/systems/input.h
     game/systems/motion.h
     game/systems/life.h
-    game/comps.h
     game/factories.h
     game/game.h
     game/lexer.h

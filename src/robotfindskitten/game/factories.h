@@ -6,7 +6,6 @@
 
 #include "engine/details/base_types.hpp"
 #include "engine/time.h"
-#include "game/comps.h"
 #include "game/systems/collision_query.h"
 #include "game/systems/drawers.h"
 #include "game/systems/input.h"
@@ -15,81 +14,83 @@
 
 namespace factories {
 struct actor_tag {};
-inline void make_base_renderable(entt::registry& reg, const entt::entity e,
-                                 loc start, int z_depth_position, sprite sprt) {
-    reg.emplace<visible_in_game>(e);
-    reg.emplace<loc>(e, start);
-    reg.emplace<translation>(e);
-    reg.emplace<sprite>(e, std::move(sprt));
-    reg.emplace<z_depth>(e, z_depth_position);
+inline void make_base_renderable(entt::handle h, loc start,
+                                 int z_depth_position, sprite sprt) {
+    h.emplace<visible_tag>();
+    h.emplace<loc>(start);
+    h.emplace<translation>();
+    h.emplace<sprite>(std::move(sprt));
+    h.emplace<current_rendering_sprite>(h.entity());
+    h.emplace<z_depth>(z_depth_position);
 }
 
-void emplace_simple_death_anim(entt::registry& reg, entt::entity e);
+void emplace_simple_death_anim(entt::handle h);
 } // namespace factories
 
 namespace projectile {
 struct projectile_tag {};
-collision::responce on_collide(entt::registry& r, collision::self self,
-                               collision::collider other);
-void make(entt::registry& reg, entt::entity e, loc start, velocity direction,
+void on_collide(const void* payload, entt::registry& r, collision::self self,
+                collision::collider other);
+void make(entt::handle h, loc start, velocity direction,
           std::chrono::milliseconds life_time = std::chrono::seconds{1});
+void initialize_for_all(entt::registry& reg);
 } // namespace projectile
 
 namespace gun {
 struct gun_tag {};
-collision::responce on_collide(entt::registry& reg, collision::self self,
-                               collision::collider collider);
+void on_collide(const void* payload, entt::registry& reg, collision::self self,
+                collision::collider collider);
 
-void make(entt::registry& reg, entt::entity e, loc loc, sprite sp);
+void make(entt::handle h, loc loc, sprite sp);
 
-void fire(entt::registry& reg, entt::entity character);
+void fire(entt::handle character);
 } // namespace gun
 
 namespace timeline {
 struct timeline_tag {};
-void make(
-    entt::registry& reg, entt::entity e,
-    std::function<void(entt::registry&, entt::entity, direction)>&& what_do,
-    std::chrono::milliseconds duration = std::chrono::seconds{1},
-    direction dir = direction::forward);
+void make(entt::handle h, timeline::what_do::function_type what_do,
+          std::chrono::milliseconds duration = std::chrono::seconds{1},
+          direction dir = direction::forward);
+
 }; // namespace timeline
 
 // waits for the end of time and call a given function
 namespace timer {
 struct timer_tag {};
-inline void make(entt::registry& reg, entt::entity e,
-                 std::function<void(entt::registry&, entt::entity)> what_do,
+inline void make(entt::handle h, life::dying_wish::function_type what_do,
                  std::chrono::milliseconds duration = std::chrono::seconds{1}) {
-    reg.emplace<life::life_time>(e, duration);
-    reg.emplace<life::dying_wish>(e, std::move(what_do));
+    h.emplace<life::life_time>(duration);
+    h.emplace<life::dying_wish>(what_do);
 }
 }; // namespace timer
 
 namespace character {
 struct character_tag {};
-collision::responce on_collide(entt::registry& reg, collision::self self,
-                               collision::collider collider);
+void on_collide(const void* payload, entt::registry& reg, collision::self self,
+                collision::collider collider);
 
-inline void make(entt::registry& reg, entt::entity e, loc l) {
-    reg.emplace<character_tag>(e);
-    reg.emplace<z_depth>(e, 2);
-    reg.emplace<draw_direction>(e, draw_direction::right);
-    reg.emplace<visible_in_game>(e);
-    reg.emplace<loc>(e, l);
-    reg.emplace<translation>(e);
-    reg.emplace<uniform_movement_tag>(e);
-    reg.emplace<velocity>(e);
-    reg.emplace<collision::agent>(e);
-    reg.emplace<collision::on_collide>(e, &character::on_collide);
+inline void make(entt::handle h, loc l, sprite sprt) {
+    h.emplace<character_tag>();
+    h.emplace<z_depth>(2);
+    h.emplace<collision::hit_extends>(sprt.bounds());
+    h.emplace<sprite>(sprt);
+    h.emplace<current_rendering_sprite>(h.entity());
+    h.emplace<draw_direction>(draw_direction::right);
+    h.emplace<visible_tag>();
+    h.emplace<loc>(l);
+    h.emplace<translation>();
+    h.emplace<uniform_movement_tag>();
+    h.emplace<velocity>();
+    h.emplace<collision::agent>();
+    h.emplace<collision::responce_func>(&character::on_collide);
 }
 
 // FIXME(Igor): a strange constexpr key setup
 template<input::key UP = input::key::w, input::key LEFT = input::key::a,
          input::key DOWN = input::key::s, input::key RIGHT = input::key::d>
-void process_movement_input(entt::registry& reg, const entt::entity e,
-                            const input::state_t& state,
-                            const timings::duration /*dt*/) {
-    auto& vel = reg.get<velocity>(e);
+void process_movement_input(const void*, entt::handle h,
+                            std::span<input::key_state> state) {
+    auto& [vel] = h.get<velocity>();
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters,
     auto upd = [](double& vel, int value, int pressed_count) mutable {
         static constexpr double pressed_count_end = 7.;
@@ -131,14 +132,10 @@ enum class game_status_flag {
 
 namespace kitten {
 struct kitten_tag {};
-collision::responce on_collide(entt::registry& reg, collision::self self,
-                               collision::collider collider,
-                               game_over::game_status_flag& game_over_flag,
-                               entt::entity character_entity);
+void on_collide(const void* payload, entt::registry& reg, collision::self self,
+                collision::collider collider);
 
-void make(entt::registry& reg, entt::entity e, loc loc, sprite sp,
-          game_over::game_status_flag& game_over_flag,
-          entt::entity character_entity);
+void make(entt::handle h, loc loc, sprite sp);
 
 } // namespace kitten
 
@@ -148,9 +145,9 @@ struct color_range {
     COLORREF start{RGB(0, 0, 0)};
     COLORREF end{RGB(255, 255, 255)};
 };
-void update_cycle(entt::registry& reg, entt::entity e, timeline::direction d);
-void run_cycle(entt::registry& reg, entt::entity timer);
-void make(entt::registry& reg, entt::entity e);
+void update_cycle(const void* /*payload*/, entt::handle h,
+                  timeline::direction d, timings::duration dr);
+void make(entt::handle h);
 
 } // namespace atmosphere
 

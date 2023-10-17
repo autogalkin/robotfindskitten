@@ -426,7 +426,9 @@ public:
         explicit inserted(indx_t i): i_(i){};
 
     public:
-        static constexpr inserted null{INVALID_INDEX};
+        bool is_valid() {
+            return i_ != INVALID_INDEX;
+        };
         explicit inserted(): i_(INVALID_INDEX){};
     };
 
@@ -473,11 +475,9 @@ public:
                     // Walk the leaf elements and add elements that intersect.
                     auto entity_node_i = leaf_node.first_child;
                     while(entity_node_i != NO_CHILDREN) {
-
                         const auto entity_i =
-                            e_nodes_[entity_node_i].indx_in_entities;                        
-                        if(
-                           entities_[entity_i].id != req_id
+                            e_nodes_[entity_node_i].indx_in_entities;
+                        if(entities_[entity_i].id != req_id
                            && !traversed[entity_i]
                            && details::intersect(req_box,
                                                  entities_[entity_i].bbox)) {
