@@ -50,7 +50,6 @@ namespace {} // namespace
 void on_collide(const void* /**/, entt::registry& r, collision::self self,
                 collision::collider other) {
     if(!r.all_of<projectile_tag>(other)) {
-        std::cout << "die";
         r.emplace_or_replace<life::begin_die>(self);
     }
 }
@@ -470,7 +469,6 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
     using namespace std::chrono_literals;
     static constexpr auto END_ANIM_DURATION = 5s;
     if(reg.all_of<projectile::projectile_tag>(collider)) {
-        std::cout << "die";
         factories::emplace_simple_death_anim({reg, self});
         reg.emplace<life::begin_die>(self);
         reg.emplace_or_replace<life::begin_die>(collider);
