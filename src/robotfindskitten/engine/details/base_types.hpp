@@ -15,12 +15,14 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <random>
 
 #include <glm/vec2.hpp>
 
 using npi_t = int32_t; // notepad's index size
 
 using char_size = char;
+using random_t = std::mt19937;
 
 template<typename T>
 using vec = glm::vec<2, T>;

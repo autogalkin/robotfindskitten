@@ -1,15 +1,13 @@
 set(GAME_SOURCES
-                 game/ecs_processors/motion.cpp
                  game/factories.cpp
                  )
 set(GAME_HEADERS
-    game/ecs_processors/collision.h
-    game/ecs_processors/collision_query.h
-    game/ecs_processors/drawers.h
-    game/ecs_processors/input.h
-    game/ecs_processors/motion.h
-    game/ecs_processors/life.h
-    game/comps.h
+    game/systems/collision.h
+    game/systems/collision_query.h
+    game/systems/drawers.h
+    game/systems/input.h
+    game/systems/motion.h
+    game/systems/life.h
     game/factories.h
     game/game.h
     game/lexer.h

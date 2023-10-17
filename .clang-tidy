@@ -16,6 +16,7 @@ Checks: >
   cppcoreguidelines-*,
 
   -llvm-include-order,
+  -readability-magic-numbers,
   -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-non-private-member-variables-in-classes,
