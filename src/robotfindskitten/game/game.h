@@ -111,6 +111,8 @@ inline void run(buffer_type& game_buffer) {
     // clang-format on
 }
 
+void print_graph(std::span<entt::organizer::vertex> graph);
+
 /**
  * @brief Game loop that execute the systems graph in the fixed time step
  *
@@ -121,6 +123,10 @@ inline void run(buffer_type& game_buffer) {
 inline void game_loop(entt::registry& reg, entt::organizer& org,
                       buffer_type& game_buffer) {
     const auto graph = org.graph();
+#ifndef NDEBUG
+    print_graph(graph);
+
+#endif
 
     timings::fixed_time_step fixed_time_step{};
     timings::fps_count fps_count{};
@@ -137,8 +143,7 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
         fps_count.fps([](auto fps) {
             notepad::push_command([fps](notepad& np, scintilla&) {
                 np.window_title.game_thread_fps =
-                    static_cast<decltype(np.window_title.game_thread_fps)>(
-                        fps);
+                    static_cast<decltype(np.window_title.game_thread_fps)>(fps);
             });
         });
 
@@ -160,7 +165,7 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
 
 inline static constexpr int ITEMS_COUNT = 48;
 static_assert(MESSAGES.size() >= ITEMS_COUNT
-              && "Count of messages cannon be less than items");
+              && "A count of messages cannon be less than a count of items");
 
 inline std::unordered_set<pos> generate_random_positions(entt::registry& reg,
                                                          pos game_area) {
@@ -266,9 +271,9 @@ inline void create_character(entt::registry& reg, [[maybe_unused]] pos char_pos,
         auto height = sc.get_lines_on_screen();
         auto width = sc.get_window_width() / sc.get_char_width();
         sc.scroll(std::max(0, static_cast<int>(std::min(char_pos.x - width / 2,
-                                                         game_area.x - width))),
-                   std::max(0, std::min(char_pos.y - height / 2,
-                                        game_area.y - height)));
+                                                        game_area.x - width))),
+                  std::max(0, std::min(char_pos.y - height / 2,
+                                       game_area.y - height)));
     });
 #endif
     ch.emplace<input::key_down_task>(input::key_down_task::function_type{
@@ -345,6 +350,45 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
             np.show_static_control(std::move(msg_w));
         });
 };
+
+// from the entt community https://github.com/fowlmouth/entt-execution-graph/
+void print_graph(std::span<entt::organizer::vertex> graph) {
+    std::cout << "the game execution graph:\n";
+    std::vector<const entt::type_info*> typeinfo_buffer;
+    typeinfo_buffer.reserve(64);
+    for(const auto& vert: graph) {
+        auto ro_count = vert.ro_count();
+        auto rw_count = vert.rw_count();
+
+        std::cout << "vert name= " << (vert.name() ? vert.name() : "(no name)")
+                  << std::endl;
+
+        out << "  ro_count= " << ro_count << std::endl;
+        typeinfo_buffer.resize(ro_count);
+        vert.ro_dependency(&typeinfo_buffer[0], typeinfo_buffer.size());
+        for(auto typeinfo: typeinfo_buffer) {
+            out << "    " << typeinfo->name() << std::endl;
+        }
+
+        out << "  rw_count= " << rw_count << std::endl;
+        typeinfo_buffer.resize(rw_count);
+        vert.rw_dependency(&typeinfo_buffer[0], typeinfo_buffer.size());
+        for(auto typeinfo: typeinfo_buffer) {
+            out << "    " << typeinfo->name() << std::endl;
+        }
+
+        out << "  is_top_level= " << (vert.top_level() ? "yes" : "no")
+            << std::endl
+            << "  children count= " << vert.children().size() << std::endl;
+        for(const size_t child: vert.children()) {
+            out << "    "
+                << (graph[child].name() ? graph[child].name() : "(noname)")
+                << std::endl;
+        }
+        out << std::endl;
+    }
+}
+
 } // namespace game
 
 #endif

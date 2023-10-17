@@ -23,6 +23,10 @@ struct current_rendering_sprite {
     entt::entity where = entt::null;
 };
 
+struct sprite_to_destroy {
+    entt::entity where = entt::null;
+};
+
 template<draw_direction Direction>
 struct direction_sprite {
     entt::entity where = entt::null;
@@ -189,10 +193,16 @@ public:
 template<typename BufferType>
     requires IsBuffer<BufferType>
 struct cleanup {
-    void operator()(entt::registry& reg) {
+    void operator()(
+        entt::view<entt::get_t<const sprite_to_destroy>> garbage_sprites_view,
+        entt::registry& reg) {
         reg.ctx()
             .get<std::optional<decltype(std::declval<BufferType&>().lock())>>(
                 entt::hashed_string{"buffer_lock"}) = std::nullopt;
+        for(auto& [ent, sprt] : garbage_sprites_view.each()){
+            reg.erase<sprite>(sprt.where);
+        }
+        reg.clear<sprite_to_destroy>();
         reg.clear<previous_sprite>();
         reg.clear<need_redraw_tag>();
     }

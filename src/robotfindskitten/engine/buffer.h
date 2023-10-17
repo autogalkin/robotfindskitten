@@ -170,7 +170,7 @@ private:
         for(size_t i = 0; i < sp.data().size(); i++) {
             if(pos p = sprite_pivot + pos(i % sp.width(), i / sp.width());
                p.x >= 0 && p.x < width_ - 1 && p.y >= 0
-               && p.y < buf_.size() / (width_ - 1)) { // TODO(Igor) maybe delete -1
+               && p.y < buf_.size() / width_) { 
                 visitor(p, sp.data()[i]);
             }
         }

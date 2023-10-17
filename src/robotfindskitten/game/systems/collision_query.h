@@ -80,7 +80,7 @@ public:
                 ent,
                 box_t({0, 0}, need_insert.get<hit_extends>(ent).v - pos(1)) //
                     + box_t(cur_loc, cur_loc));
-            reg.remove<need_update_entity>(ent); // safe, delete on the same ent
+            reg.erase<need_update_entity>(ent); // safe, delete on the same ent
         }
 
         struct node {

@@ -134,7 +134,6 @@ void make(entt::handle h, loc start, velocity dir,
         sprite_timer,
         life::dying_wish::function_type{+[](const void*, entt::handle timer) {
             auto proj = timer.get<projectile_i>().where;
-            // TODO(Igor): RAII
             if(timer.registry()->valid(proj)) {
                 timer.registry()->emplace<previous_sprite>(
                     proj, std::exchange(
@@ -277,8 +276,8 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
                                                             new_left_sprt);
         reg.emplace<direction_sprite<draw_direction::right>>(self,
                                                              new_right_sprt);
-        // TODO(Igor): RAII for sprites
         reg.emplace<previous_sprite>(self, old_sprt);
+        reg.emplace<sprite_to_destroy>(self, old_sprt);
 
         auto additional_input = reg.create();
         reg.emplace<input::task_owner>(additional_input, self);
@@ -414,9 +413,10 @@ void good_end_animation(entt::handle end_anim) {
                 auto ch = std::ranges::find_if(
                     np.static_controls,
                     [ch_uuid](auto& w) { return w.get_id() == ch_uuid; });
-                auto k = std::ranges::find_if(
-                    np.static_controls,
-                    [k_uuid](auto& w) { return w.get_id() == k_uuid; });
+                auto k =
+                    std::ranges::find_if(np.static_controls, [k_uuid](auto& w) {
+                        return w.get_id() == k_uuid;
+                    });
                 if(ch == np.static_controls.end()
                    || k == np.static_controls.end()) {
                     return;

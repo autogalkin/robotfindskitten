@@ -85,7 +85,6 @@ inline void make(entt::handle h, loc l, sprite sprt) {
     h.emplace<collision::responce_func>(&character::on_collide);
 }
 
-// FIXME(Igor): a strange constexpr key setup
 template<input::key UP = input::key::w, input::key LEFT = input::key::a,
          input::key DOWN = input::key::s, input::key RIGHT = input::key::d>
 void process_movement_input(const void*, entt::handle h,
