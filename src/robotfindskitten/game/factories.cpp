@@ -310,6 +310,7 @@ static_control_handler make_character() {
         .with_text_color(RGB(0, 0, 0))
         .with_size(w_size);
 }
+// FIXME(Igor) it is a bad function:(
 void push_controls(std::array<static_control_handler, 2>&& ctrls) {
     notepad::push_command(
         [ctrls = std::move(ctrls)](notepad& np, scintilla& sct) mutable {
@@ -321,7 +322,7 @@ void push_controls(std::array<static_control_handler, 2>&& ctrls) {
             for(auto& i: ctrls) {
                 // TODO(Igor): Shrink size
                 // i // {r.right-r.left, r.bottom-r.top}
-                // FIXME(Igor): implicit
+                // FIXME(Igor): make explicit
                 if(i.fore_color == RGB(0, 0, 0)) {
                     i.fore_color = sct->get_text_color(STYLE_DEFAULT);
                 }
@@ -591,7 +592,7 @@ void update_cycle(const void* /*payload*/, entt::handle h,
             sct->force_set_back_color(i, new_back_color);
             sct->force_set_text_color(i, new_front_color);
         }
-        // FIXME(Igor): All styles constant without computation
+        // FIXME(Igor): make an all styles constant without computation
         int style = MY_STYLE_START + PRINTABLE_RANGE.first;
         for(size_t i = 0; i < PRINTABLE_RANGE.second - PRINTABLE_RANGE.first;
             i++, style++) {
