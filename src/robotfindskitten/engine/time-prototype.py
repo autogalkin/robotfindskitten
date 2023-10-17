@@ -31,26 +31,29 @@ class FixedTimeStep:
         framerate.
         """
         new_point = time.time();
-        frame_time = new_point - self._prev_point + FixedTimeStep.dt ;
-        frame_time = min(0.25, frame_time)
-        self._lag_accum += frame_time
-        if self._lag_accum >= 0:
+        frame_time = new_point - self._prev_point;
+        alpha =  frame_time
+        self._lag_accum += FixedTimeStep.dt - frame_time
+        self._lag_accum = max(-0.25, self._lag_accum)
+        while self._lag_accum > 0:
             t1 = time.time()
             time.sleep(self._lag_accum)
             t2 = time.time()
             self._lag_accum -= t2 - t1
+            alpha = t2 - t1
         self._prev_point =  time.time()
+        return alpha
 
 
 def main():
     fps_counter     = FPSCount();
     fixed_time_step = FixedTimeStep()
     while True:
-        fixed_time_step.sleep();
+        alpha = fixed_time_step.sleep();
         fps_counter.fps()
+        print(f"step game for: {alpha:.3f} | fixed dt {FixedTimeStep.dt:.3f}")
         # hard work
-        #time.sleep(0.001)
-
+        # time.sleep(0.06)
 
 if __name__ == "__main__":
     try:

@@ -139,7 +139,7 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
     }
 
     while(game_flag == game_over::game_status_flag::unset) {
-        fixed_time_step.sleep();
+        dt = fixed_time_step.sleep();
         fps_count.fps([](auto fps) {
             notepad::push_command([fps](notepad& np, scintilla&) {
                 np.window_title.game_thread_fps =
@@ -147,8 +147,6 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
             });
         });
 
-        // TODO(Igor): real alpha
-        static_cast<void>(dt);
         for(const auto& vertex: graph) {
             vertex.callback()(vertex.data(), reg);
         }
