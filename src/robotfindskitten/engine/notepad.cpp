@@ -107,12 +107,8 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     case WM_NOTIFY: {
         break;
     }
-    case WM_SETFOCUS: {
-        notepad::is_active.store(true);
-        break;
-    }
-    case WM_KILLFOCUS : {
-        notepad::is_active.store(false);
+    case WM_ACTIVATE :{
+        notepad::is_active.store(wp != WA_INACTIVE);
         break;
     }
     case WM_SIZE: {
@@ -226,7 +222,6 @@ bool hook_GetMessageW(const HMODULE module) {
                     }
                     break;
                 }
-
                 default:
                     break;
                 }

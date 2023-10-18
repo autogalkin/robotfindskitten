@@ -63,7 +63,7 @@ struct player_input {
     }
 
     void operator()(entt::registry& reg) {
-        if(!notepad::is_active.load()){
+        if(!notepad::is_active.load()) {
             return;
         }
         static constexpr WPARAM IS_PRESSED = 0x8000;
