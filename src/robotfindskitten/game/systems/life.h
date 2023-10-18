@@ -52,8 +52,7 @@ struct dying_wish {
 };
 
 struct life_ticker {
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    void operator()(entt::view<entt::get_t<life_time>> view,
+    void operator()(const entt::view<entt::get_t<life_time>>& view,
                     entt::registry& reg, const timings::duration dt) {
         using namespace std::chrono_literals;
         view.each([dt, &reg](auto ent, auto& lt) {

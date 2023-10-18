@@ -42,23 +42,23 @@ public:
     duration sleep() {
         const point new_point = clock::now();
         auto frame_time = new_point - prev_point_ ;
+        duration real_dt = frame_time;
+        lag_accum_ += dt - frame_time;
         /*250ms is the limit put in place on the frame time to cope with the
          *spiral of death.*/
         static constexpr auto LIMIT = 250ms;
-        if(frame_time > LIMIT) {
-            frame_time = LIMIT;
+        if(lag_accum_ > LIMIT) {
+            lag_accum_ = LIMIT;
         }
-        duration alpha = frame_time;
-        lag_accum_ += dt - frame_time;
         while(lag_accum_ > 0ms) {
             const auto sleep_start = clock::now();
             std::this_thread::sleep_for(lag_accum_);
             const auto sleep_end = clock::now();
             lag_accum_ -= sleep_end - sleep_start;
-            alpha -= sleep_end - sleep_start;
+            real_dt += sleep_end - sleep_start;
         }
         prev_point_ = clock::now();
-        return alpha;
+        return  real_dt;
     }
 };
 

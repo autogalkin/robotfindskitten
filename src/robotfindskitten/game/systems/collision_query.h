@@ -55,20 +55,19 @@ public:
                 query::need_update_entity>>();
     }
 
-// NOLINTBEGIN(performance-unnecessary-value-param)
     inline void operator()( // NOLINT(readability-function-cognitive-complexity)
-        entt::view<
+        const entt::view<
             entt::get_t<const loc, const hit_extends, const need_update_entity,
-                        agent, const visible_tag>>
-            need_insert,
-        entt::view<entt::get_t<const loc, const translation, const hit_extends,
-                               const agent, const visible_tag>>
-            query_view,
-        entt::view<entt::get_t<const agent, const responce_func>> responce_view,
-        entt::view<entt::get_t<const translation, agent,
-                               const entt::exclude_t<const life::begin_die>>>
-            remove,
-        entt::view<entt::get_t<const life::begin_die, agent>> remove2,
+                        agent, const visible_tag>>& need_insert,
+        const entt::view<
+            entt::get_t<const loc, const translation, const hit_extends,
+                        const agent, const visible_tag>>& query_view,
+        const entt::view<entt::get_t<const agent, const responce_func>>&
+            responce_view,
+        const entt::view<
+            entt::get_t<const translation, agent,
+                        const entt::exclude_t<const life::begin_die>>>& remove,
+        const entt::view<entt::get_t<const life::begin_die, agent>>& remove2,
 
         entt::registry& reg) {
         // insert moved actors into the tree
@@ -150,7 +149,6 @@ public:
     }
 };
 
-// NOLINTEND(performance-unnecessary-value-param)
 } // namespace collision
 
 #endif

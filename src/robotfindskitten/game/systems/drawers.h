@@ -32,7 +32,6 @@ struct direction_sprite {
     entt::entity where = entt::null;
 };
 
-// NOLINTBEGIN(performance-unnecessary-value-param)
 struct z_depth {
     int32_t index;
 };
@@ -45,11 +44,10 @@ namespace drawing {
 class rotate_animator {
 public:
     void operator()(
-        entt::view<
+        const entt::view<
             entt::get_t<current_rendering_sprite, draw_direction, translation,
                         const direction_sprite<draw_direction::right>,
-                        const direction_sprite<draw_direction::left>>>
-            view) {
+                        const direction_sprite<draw_direction::left>>>& view) {
         for(const auto ent: view) {
             auto& trans = view.get<translation>(ent);
 
@@ -110,7 +108,7 @@ public:
 };
 
 struct check_need_update {
-    void operator()(entt::view<entt::get_t<const translation>> view,
+    void operator()(const entt::view<entt::get_t<const translation>>& view,
                     entt::registry& reg) {
         view.each([&reg](auto ent, const translation& trans) {
             if(trans.is_changed()) {
@@ -128,12 +126,12 @@ class erase_buffer {
 public:
     explicit erase_buffer(BufferType& buf): buf_(buf) {}
     void operator()(
-        entt::view<entt::get_t<const loc, const previous_sprite, const z_depth>>
-            erase_prev,
-        entt::view<entt::get_t<const loc, const current_rendering_sprite,
-                               const z_depth, const need_redraw_tag>>
+        const entt::view<entt::get_t<const loc, const previous_sprite,
+                                     const z_depth>>& erase_prev,
+        const entt::view<entt::get_t<const loc, const current_rendering_sprite,
+                                     const z_depth, const need_redraw_tag>>&
             erase_updated,
-        entt::view<entt::get_t<const sprite>> sprites) {
+        const entt::view<entt::get_t<const sprite>>& sprites) {
         for(const auto& [ent, loc, prev_sprt, zd]: erase_prev.each()) {
             buf_.get().erase(loc, sprites.get<const sprite>(prev_sprt.where),
                              zd.index);
@@ -150,8 +148,9 @@ public:
 
 struct apply_translation {
     void operator()(
-        entt::view<entt::get_t<loc, translation, const need_redraw_tag>> view) {
-        view.each([](auto ent, loc& l, translation& trans) {
+        const entt::view<entt::get_t<loc, translation, const need_redraw_tag>>&
+            view) {
+        view.each([](auto /*ent*/, loc& l, translation& trans) {
             l += std::exchange(trans.pin(), loc(0));
             trans.clear();
         });
@@ -173,13 +172,12 @@ public:
         // the destroyed entity reg.on_destroy<visible_tag>()
         //     .connect<&entt::registry::emplace_or_replace<need_redraw_tag>>();
     }
-    void
-    operator()(entt::view<entt::get_t<const loc, const current_rendering_sprite,
-                                      const visible_tag, const z_depth,
-                                      const need_redraw_tag>,
-                          entt::exclude_t<const life::begin_die>>
-                   draw,
-               entt::view<entt::get_t<const sprite>> sprites) {
+    void operator()(
+        const entt::view<entt::get_t<const loc, const current_rendering_sprite,
+                                     const visible_tag, const z_depth,
+                                     const need_redraw_tag>,
+                         entt::exclude_t<const life::begin_die>>& draw,
+        const entt::view<entt::get_t<const sprite>>& sprites) {
         for(auto e: draw) {
             buf_.get().draw(
                 draw.get<const loc>(e),
@@ -193,13 +191,13 @@ public:
 template<typename BufferType>
     requires IsBuffer<BufferType>
 struct cleanup {
-    void operator()(
-        entt::view<entt::get_t<const sprite_to_destroy>> garbage_sprites_view,
-        entt::registry& reg) {
+    void operator()(const entt::view<entt::get_t<const sprite_to_destroy>>&
+                        garbage_sprites_view,
+                    entt::registry& reg) {
         reg.ctx()
             .get<std::optional<decltype(std::declval<BufferType&>().lock())>>(
                 entt::hashed_string{"buffer_lock"}) = std::nullopt;
-        for(auto& [ent, sprt] : garbage_sprites_view.each()){
+        for(auto&& [ent, sprt]: garbage_sprites_view.each()) {
             reg.erase<sprite>(sprt.where);
         }
         reg.clear<sprite_to_destroy>();
@@ -208,7 +206,5 @@ struct cleanup {
     }
 };
 } // namespace drawing
-
-// NOLINTEND(performance-unnecessary-value-param)
 
 #endif

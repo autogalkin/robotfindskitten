@@ -20,10 +20,8 @@ namespace motion {
 struct non_uniform_motion {
     inline static constexpr velocity FRICTION_FACTOR{.v = {0.7, 0.7}};
     void operator()(
-        entt::view<
-            entt::get_t<translation, velocity, const non_uniform_movement_tag>>
-            // NOLINTNEXTLINE(performance-unnecessary-value-param)
-            view) {
+        const entt::view<entt::get_t<translation, velocity,
+                                     const non_uniform_movement_tag>>& view) {
         view.each([](auto, auto& trans, auto& vel) {
             using namespace std::literals;
             // double alpha = std::chrono::duration<double>(dt / 1s).count();
@@ -41,11 +39,9 @@ struct non_uniform_motion {
 
 struct uniform_motion {
     explicit uniform_motion() = default;
-    void
-    operator()(entt::view<
-               entt::get_t<translation, velocity, const uniform_movement_tag>>
-                   // NOLINTNEXTLINE(performance-unnecessary-value-param)
-                   view) {
+    void operator()(
+        const entt::view<entt::get_t<translation, velocity,
+                                     const uniform_movement_tag>>& view) {
         view.each([](auto, auto& trans, auto& vel) {
             if(vel.v != loc(0)) {
                 trans.pin() = std::exchange(vel, velocity{}).v;

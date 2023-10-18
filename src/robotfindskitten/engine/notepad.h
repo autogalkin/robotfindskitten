@@ -78,7 +78,6 @@ bool hook_SetWindowTextW(HMODULE module);
 
 // NOLINTEND(readability-redundant-declaration)
 
-
 /**
  * @class title_line
  * @brief Manage title line with changing values
@@ -292,7 +291,8 @@ public:
         });
     }
     // Indicate the application state
-    static std::atomic_bool is_active{true};
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+    inline static std::atomic_bool is_active{true}; 
 
     /**
      * @brief Get Notepad.exe Main Window descriptor

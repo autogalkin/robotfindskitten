@@ -50,7 +50,8 @@ inline void run(buffer_type& game_buffer);
  * @param game_area An area where game can work(collision, draw ent)
  * @param shutdown A shutdown signal
  */
-inline void start(pos game_area, std::shared_ptr<std::atomic_bool> shutdown) {
+inline void start(pos game_area,
+                  const std::shared_ptr<std::atomic_bool>& shutdown) {
     lexer GAME_LEXER{};
     notepad::push_command(
         [&GAME_LEXER](notepad&, scintilla& sc) { sc.set_lexer(&GAME_LEXER); });
@@ -111,7 +112,7 @@ inline void run(buffer_type& game_buffer) {
     // clang-format on
 }
 
-void print_graph(std::span<entt::organizer::vertex> graph);
+void print_graph(std::span<const entt::organizer::vertex> graph);
 
 /**
  * @brief Game loop that execute the systems graph in the fixed time step
@@ -125,7 +126,6 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
     const auto graph = org.graph();
 #ifndef NDEBUG
     print_graph(graph);
-
 #endif
 
     timings::fixed_time_step fixed_time_step{};
@@ -134,11 +134,12 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
         game_over::game_status_flag::unset);
     auto& dt = reg.ctx().emplace<timings::duration>(timings::dt);
 
-    for(auto& vertex: graph) {
+    for(const auto& vertex: graph) {
         vertex.prepare(reg);
     }
 
     while(game_flag == game_over::game_status_flag::unset) {
+        // std::this_thread::sleep_for(std::chrono::milliseconds{20});
         dt = fixed_time_step.sleep();
         fps_count.fps([](auto fps) {
             notepad::push_command([fps](notepad& np, scintilla&) {
@@ -155,7 +156,7 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
             // swap buffers in Scintilla
             const auto pos = sc.get_caret_index();
             game_buffer.view(
-                [sc](const auto& buf) { sc.set_new_all_text(buf); });
+                [&sc](const auto& buf) { sc.set_new_all_text(buf); });
             sc.set_caret_index(pos);
         });
     }
@@ -254,7 +255,7 @@ inline void create_gun(entt::registry& reg, [[maybe_unused]] pos gun_pos,
               sprite(sprite::unchecked_construct_tag{}, std::string{gun_mesh}));
 #endif
 }
-inline void create_character(entt::registry& reg, [[maybe_unused]] pos char_pos,
+inline void create_character([[maybe_unused]] pos char_pos, entt::registry& reg,
                              [[maybe_unused]] pos game_area) {
     auto ch = entt::handle{reg, reg.create()};
     reg.ctx().emplace_as<entt::entity>(entt::hashed_string{"character_id"},
@@ -291,6 +292,9 @@ inline void create_kitten(entt::registry& reg, [[maybe_unused]] pos kitten_pos,
 #endif
 }
 
+static inline constexpr int COLOR_COUNT = 255;
+using color_t = decltype(RGB(0, 0, 0));
+
 inline void define_all_styles(scintilla& sc,
                               std::span<const color_t> all_colors) {
     int style = MY_STYLE_START + PRINTABLE_RANGE.first;
@@ -300,9 +304,6 @@ inline void define_all_styles(scintilla& sc,
         style++;
     }
 }
-
-static inline constexpr int COLOR_COUNT = 255;
-using color_t = decltype(RGB(0, 0, 0));
 using all_colors_t =
     std::array<color_t, PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>;
 inline all_colors_t generate_colors(random_t& rnd) {
@@ -322,14 +323,14 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
         define_all_styles(sc, ALL_COLORS);
     });
     projectile::initialize_for_all(reg);
-    atmosphere::make(entt::handle{reg, reg.create()});
+    // atmosphere::make(entt::handle{reg, reg.create()});
 
     auto all = generate_random_positions(reg, game_buffer.get_extends());
     auto end = std::next(all.end(), -3);
     std::uniform_int_distribution<> dist_char(PRINTABLE_RANGE.first + 1,
                                               PRINTABLE_RANGE.second);
     distribute_items(reg, dist_char, all.begin(), std::next(all.end(), -3));
-    create_character(reg, *end, game_buffer.get_extends());
+    create_character(*end, reg, game_buffer.get_extends());
     std::advance(end, 1);
     create_gun(reg, *end, static_cast<char>(dist_char(rnd)));
     std::advance(end, 1);
@@ -350,7 +351,7 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
 };
 
 // from the entt community https://github.com/fowlmouth/entt-execution-graph/
-void print_graph(std::span<entt::organizer::vertex> graph) {
+inline void print_graph(std::span<const entt::organizer::vertex> graph) {
     std::cout << "the game execution graph:\n";
     std::vector<const entt::type_info*> typeinfo_buffer;
     typeinfo_buffer.reserve(64);
@@ -361,29 +362,29 @@ void print_graph(std::span<entt::organizer::vertex> graph) {
         std::cout << "vert name= " << (vert.name() ? vert.name() : "(no name)")
                   << std::endl;
 
-        out << "  ro_count= " << ro_count << std::endl;
+        std::cout << "  ro_count= " << ro_count << std::endl;
         typeinfo_buffer.resize(ro_count);
-        vert.ro_dependency(&typeinfo_buffer[0], typeinfo_buffer.size());
-        for(auto typeinfo: typeinfo_buffer) {
-            out << "    " << typeinfo->name() << std::endl;
+        vert.ro_dependency(typeinfo_buffer.data(), typeinfo_buffer.size());
+        for(const auto *typeinfo: typeinfo_buffer) {
+            std::cout << "    " << typeinfo->name() << std::endl;
         }
 
-        out << "  rw_count= " << rw_count << std::endl;
+        std::cout << "  rw_count= " << rw_count << std::endl;
         typeinfo_buffer.resize(rw_count);
-        vert.rw_dependency(&typeinfo_buffer[0], typeinfo_buffer.size());
-        for(auto typeinfo: typeinfo_buffer) {
-            out << "    " << typeinfo->name() << std::endl;
+        vert.rw_dependency(typeinfo_buffer.data(), typeinfo_buffer.size());
+        for(const auto *typeinfo: typeinfo_buffer) {
+            std::cout << "    " << typeinfo->name() << std::endl;
         }
 
-        out << "  is_top_level= " << (vert.top_level() ? "yes" : "no")
+        std::cout << "  is_top_level= " << (vert.top_level() ? "yes" : "no")
             << std::endl
             << "  children count= " << vert.children().size() << std::endl;
         for(const size_t child: vert.children()) {
-            out << "    "
+            std::cout << "    "
                 << (graph[child].name() ? graph[child].name() : "(noname)")
                 << std::endl;
         }
-        out << std::endl;
+        std::cout << std::endl;
     }
 }
 

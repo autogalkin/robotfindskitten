@@ -87,7 +87,7 @@ inline void make(entt::handle h, loc l, sprite sprt) {
 
 template<input::key UP = input::key::w, input::key LEFT = input::key::a,
          input::key DOWN = input::key::s, input::key RIGHT = input::key::d>
-void process_movement_input(const void*, entt::handle h,
+void process_movement_input(const void* /*unused*/, entt::handle h,
                             std::span<input::key_state> state) {
     auto& [vel] = h.get<velocity>();
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters,
@@ -131,7 +131,7 @@ enum class game_status_flag {
 
 namespace kitten {
 struct kitten_tag {};
-void on_collide(const void* payload, entt::registry& reg, collision::self self,
+void on_collide(const void* /*payload*/, entt::registry& reg, collision::self self,
                 collision::collider collider);
 
 void make(entt::handle h, loc loc, sprite sp);

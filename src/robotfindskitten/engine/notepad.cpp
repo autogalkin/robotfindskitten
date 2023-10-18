@@ -56,7 +56,7 @@ void notepad::tick_render() {
     // execute all commands from the Game thread
     commands_.consume_all([this](auto f) {
         if(f) {
-            f(this, &*scintilla_);
+            f(*this, *scintilla_);
         }
     });
     notepad::get().set_window_title(notepad::get().window_title.make());

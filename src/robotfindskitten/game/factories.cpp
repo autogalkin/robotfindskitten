@@ -324,7 +324,7 @@ void push_controls(std::array<static_control_handler, 2>&& ctrls) {
                 // i // {r.right-r.left, r.bottom-r.top}
                 // FIXME(Igor): make explicit
                 if(i.fore_color == RGB(0, 0, 0)) {
-                    i.fore_color = sct->get_text_color(STYLE_DEFAULT);
+                    i.fore_color = sct.get_text_color(STYLE_DEFAULT);
                 }
                 np.show_static_control(std::move(i));
             }
@@ -358,7 +358,7 @@ void bad_end_animation(entt::handle end_anim) {
              k_uuid = h.registry()->ctx().get<static_control_handler::id_t>(
                  entt::hashed_string{"kitten_uuid"}),
              ch_x](notepad& np, scintilla& /*sct*/) {
-                auto find = [np](auto uuid) {
+                auto find = [&np](auto uuid) {
                     return std::ranges::find_if(
                         np.static_controls,
                         [uuid](auto& w) { return w.get_id() == uuid; });
@@ -456,7 +456,7 @@ void create_input_wait(entt::registry& reg, game_status_flag status) {
                         .with_position(msg_pos)
                         .with_size(w_size)
                         .with_text("Press any key to Restart")
-                        .with_text_color(sct->get_text_color(STYLE_DEFAULT));
+                        .with_text_color(sct.get_text_color(STYLE_DEFAULT));
         np.show_static_control(std::move(ctrl));
         // SetWindowText(ctrl, ctrl.text.data());
     });
@@ -589,14 +589,14 @@ void update_cycle(const void* /*payload*/, entt::handle h,
             SetWindowText(w.get_wnd(), w.text.data());
         }
         for(auto i: {0, STYLE_DEFAULT}) {
-            sct->force_set_back_color(i, new_back_color);
-            sct->force_set_text_color(i, new_front_color);
+            sct.force_set_back_color(i, new_back_color);
+            sct.force_set_text_color(i, new_front_color);
         }
         // FIXME(Igor): make an all styles constant without computation
         int style = MY_STYLE_START + PRINTABLE_RANGE.first;
         for(size_t i = 0; i < PRINTABLE_RANGE.second - PRINTABLE_RANGE.first;
             i++, style++) {
-            sct->force_set_back_color(style, new_back_color);
+            sct.force_set_back_color(style, new_back_color);
         }
     });
 }
@@ -634,8 +634,8 @@ void make(entt::handle h) {
     bool ready = false;
     notepad::push_command([&back_color, &fore_color, &ready, &m,
                            &cv](notepad& /*np*/, scintilla& sct) {
-        back_color = sct->get_background_color(STYLE_DEFAULT);
-        fore_color = sct->get_text_color(STYLE_DEFAULT);
+        back_color = sct.get_background_color(STYLE_DEFAULT);
+        fore_color = sct.get_text_color(STYLE_DEFAULT);
         {
             std::lock_guard lk(m);
             ready = true;
