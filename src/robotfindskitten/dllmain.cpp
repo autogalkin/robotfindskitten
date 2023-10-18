@@ -42,7 +42,7 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
             nullptr); // get the module handle of the notepad.exe
 
         [[maybe_unused]] constexpr notepad::opts start_options =
-            notepad::opts::empty | notepad::opts::show_eol
+            notepad::opts::empty// | notepad::opts::show_eol
             | notepad::opts::show_spaces;
 
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
