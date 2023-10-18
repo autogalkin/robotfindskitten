@@ -162,9 +162,7 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
     }
 }
 
-inline static constexpr int ITEMS_COUNT = 48;
-static_assert(MESSAGES.size() >= ITEMS_COUNT
-              && "A count of messages cannon be less than a count of items");
+inline static constexpr int ITEMS_COUNT = MESSAGES.size();
 
 inline std::unordered_set<pos> generate_random_positions(entt::registry& reg,
                                                          pos game_area) {
@@ -365,24 +363,26 @@ inline void print_graph(std::span<const entt::organizer::vertex> graph) {
         std::cout << "  ro_count= " << ro_count << std::endl;
         typeinfo_buffer.resize(ro_count);
         vert.ro_dependency(typeinfo_buffer.data(), typeinfo_buffer.size());
-        for(const auto *typeinfo: typeinfo_buffer) {
+        for(const auto* typeinfo: typeinfo_buffer) {
             std::cout << "    " << typeinfo->name() << std::endl;
         }
 
         std::cout << "  rw_count= " << rw_count << std::endl;
         typeinfo_buffer.resize(rw_count);
         vert.rw_dependency(typeinfo_buffer.data(), typeinfo_buffer.size());
-        for(const auto *typeinfo: typeinfo_buffer) {
+        for(const auto* typeinfo: typeinfo_buffer) {
             std::cout << "    " << typeinfo->name() << std::endl;
         }
 
         std::cout << "  is_top_level= " << (vert.top_level() ? "yes" : "no")
-            << std::endl
-            << "  children count= " << vert.children().size() << std::endl;
+                  << std::endl
+                  << "  children count= " << vert.children().size()
+                  << std::endl;
         for(const size_t child: vert.children()) {
             std::cout << "    "
-                << (graph[child].name() ? graph[child].name() : "(noname)")
-                << std::endl;
+                      << (graph[child].name() ? graph[child].name()
+                                              : "(noname)")
+                      << std::endl;
         }
         std::cout << std::endl;
     }

@@ -4,7 +4,6 @@
  *
  */
 
-#pragma once
 #include <atomic>
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
@@ -292,7 +291,7 @@ public:
     }
     // Indicate the application state
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    inline static std::atomic_bool is_active{true}; 
+    inline static std::atomic_bool is_active{true};
 
     /**
      * @brief Get Notepad.exe Main Window descriptor

@@ -3,7 +3,6 @@
  * @brief Render into BackBuffer
  */
 
-#pragma once
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_BUFFER_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_BUFFER_H
 
@@ -112,8 +111,8 @@ public:
         set_lines();
     }
 
-    [[nodiscard]] pos get_extends(){
-        return {width_-1, buf_.size()/width_};
+    [[nodiscard]] pos get_extends() {
+        return {width_ - 1, buf_.size() / width_};
     }
     /**
      * @brief Draw a sprite into the buffer
@@ -170,7 +169,7 @@ private:
         for(size_t i = 0; i < sp.data().size(); i++) {
             if(pos p = sprite_pivot + pos(i % sp.width(), i / sp.width());
                p.x >= 0 && p.x < width_ - 1 && p.y >= 0
-               && p.y < buf_.size() / width_) { 
+               && p.y < buf_.size() / width_) {
                 visitor(p, sp.data()[i]);
             }
         }

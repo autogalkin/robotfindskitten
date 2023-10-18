@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
 
@@ -131,8 +131,8 @@ enum class game_status_flag {
 
 namespace kitten {
 struct kitten_tag {};
-void on_collide(const void* /*payload*/, entt::registry& reg, collision::self self,
-                collision::collider collider);
+void on_collide(const void* /*payload*/, entt::registry& reg,
+                collision::self self, collision::collider collider);
 
 void make(entt::handle h, loc loc, sprite sp);
 

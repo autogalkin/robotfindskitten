@@ -107,7 +107,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     case WM_NOTIFY: {
         break;
     }
-    case WM_ACTIVATE :{
+    case WM_ACTIVATE: {
         notepad::is_active.store(wp != WA_INACTIVE);
         break;
     }
@@ -317,17 +317,18 @@ void notepad::show_static_control(static_control_handler&& ctrl) noexcept {
     assert(glm::all(glm::notEqual(ctrl.size, pos(0))));
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-    ctrl.wnd_.reset(CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                              "STATIC", " ", dwStyle, 0, 0,  ctrl.size.x,  ctrl.size.y,
-                              get_window(), nullptr,
-                              ::GetModuleHandle(nullptr), nullptr),
-               [](HWND w) { ::PostMessage(w, WM_CLOSE, 0, 0); });
-    ::SetLayeredWindowAttributes( 
+    ctrl.wnd_.reset(
+        CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+                       "STATIC", " ", dwStyle, 0, 0, ctrl.size.x, ctrl.size.y,
+                       get_window(), nullptr, ::GetModuleHandle(nullptr),
+                       nullptr),
+        [](HWND w) { ::PostMessage(w, WM_CLOSE, 0, 0); });
+    ::SetLayeredWindowAttributes(
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-         ctrl.wnd_.get(), scintilla_->get_background_color(STYLE_DEFAULT), 0,
+        ctrl.wnd_.get(), scintilla_->get_background_color(STYLE_DEFAULT), 0,
         LWA_COLORKEY);
-    ::SetWindowPos( ctrl.wnd_.get(), HWND_TOP,  ctrl.position.x,  ctrl.position.y,  ctrl.size.x,  ctrl.size.y,
-                   0);
+    ::SetWindowPos(ctrl.wnd_.get(), HWND_TOP, ctrl.position.x, ctrl.position.y,
+                   ctrl.size.x, ctrl.size.y, 0);
     static constexpr int font_size = 38;
     static const std::unique_ptr<std::remove_pointer_t<HFONT>,
                                  decltype(&::DeleteObject)>
@@ -336,11 +337,11 @@ void notepad::show_static_control(static_control_handler&& ctrl) noexcept {
                             CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
                             DEFAULT_PITCH | FF_SWISS, L"Consolas"),
               &::DeleteObject};
-    ::SendMessageW( ctrl.wnd_.get(), WM_SETFONT,
+    ::SendMessageW(ctrl.wnd_.get(), WM_SETFONT,
                    reinterpret_cast<WPARAM>(hFont.get()), TRUE);
-    ::ShowWindow( ctrl.wnd_.get(), SW_SHOW);
-    ::UpdateWindow( ctrl.wnd_.get());
-    ::InvalidateRect( ctrl.wnd_.get(), nullptr, TRUE);
+    ::ShowWindow(ctrl.wnd_.get(), SW_SHOW);
+    ::UpdateWindow(ctrl.wnd_.get());
+    ::InvalidateRect(ctrl.wnd_.get(), nullptr, TRUE);
     ::SetWindowTextA(ctrl, ctrl.text.data());
     static_controls.emplace_back(std::move(ctrl));
 }

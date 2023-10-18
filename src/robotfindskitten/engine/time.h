@@ -3,7 +3,6 @@
  * @brief Managing game time
  */
 
-#pragma once
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_TIME_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_TIME_H
 
@@ -41,7 +40,7 @@ public:
      */
     duration sleep() {
         const point new_point = clock::now();
-        auto frame_time = new_point - prev_point_ ;
+        auto frame_time = new_point - prev_point_;
         duration real_dt = frame_time;
         lag_accum_ += dt - frame_time;
         /*250ms is the limit put in place on the frame time to cope with the
@@ -58,7 +57,7 @@ public:
             real_dt += sleep_end - sleep_start;
         }
         prev_point_ = clock::now();
-        return  real_dt;
+        return real_dt;
     }
 };
 
