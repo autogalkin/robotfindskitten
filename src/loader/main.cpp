@@ -21,10 +21,8 @@ public:
 
 int main(int /*argc*/, char* /*argv*/[]) {
     try {
-        std::unique_ptr<PROCESS_INFORMATION,
-                        void (*)(const PROCESS_INFORMATION*)>
-            proc_info{new PROCESS_INFORMATION{},
-                      [](const PROCESS_INFORMATION* ptr) {
+        std::unique_ptr<PROCESS_INFORMATION, void (*)(PROCESS_INFORMATION*)>
+            proc_info{new PROCESS_INFORMATION{}, [](PROCESS_INFORMATION* ptr) {
                           CloseHandle(ptr->hThread);
                           CloseHandle(ptr->hProcess);
                       }};
@@ -35,9 +33,15 @@ int main(int /*argc*/, char* /*argv*/[]) {
                 "{}\\notepad.exe",
                 std::getenv("windir")); // NOLINT(concurrency-mt-unsafe)
             STARTUPINFOA startup_info{};
-            startup_info.cb = sizeof(STARTUPINFO);
-            if(!CreateProcessA(cmd.c_str(), // lpApplicationName
-                               nullptr, // lpCommandLine
+            ZeroMemory(&startup_info, sizeof(startup_info));
+            startup_info.cb = sizeof(STARTUPINFOA);
+            ZeroMemory(proc_info.get(), sizeof(PROCESS_INFORMATION));
+            // Causes Asan error `heap-use-after-free`
+            // in the function ntdll.dll`RtlCreateProcessParametersWithTemplate
+            // if `lpCommandLine` parameter is nullptr
+            auto dummy = std::string(2, ' ');
+            if(!CreateProcessA(static_cast<LPCSTR>(cmd.c_str()),
+                               dummy.data(), // lpCommandLine
                                nullptr, nullptr, FALSE, CREATE_SUSPENDED,
                                nullptr, nullptr, &startup_info,
                                proc_info.get())) {
