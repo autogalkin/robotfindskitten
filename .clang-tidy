@@ -16,6 +16,7 @@ Checks: >
   cppcoreguidelines-*,
 
   -llvm-include-order,
+  -bugprone-easily-swappable-parameters,
   -readability-magic-numbers,
   -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-avoid-magic-numbers,

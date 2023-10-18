@@ -162,7 +162,7 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
     }
 }
 
-inline static constexpr int ITEMS_COUNT = MESSAGES.size();
+inline static constexpr size_t ITEMS_COUNT = MESSAGES.size();
 
 inline std::unordered_set<pos> generate_random_positions(entt::registry& reg,
                                                          pos game_area) {
@@ -290,38 +290,75 @@ inline void create_kitten(entt::registry& reg, [[maybe_unused]] pos kitten_pos,
 #endif
 }
 
-static inline constexpr int COLOR_COUNT = 255;
-using color_t = decltype(RGB(0, 0, 0));
+using rgb_t = decltype(RGB(0, 0, 0));
 
-inline void define_all_styles(scintilla& sc,
-                              std::span<const color_t> all_colors) {
+inline void set_all_colors(scintilla& sc, std::span<const rgb_t> all_colors) {
     int style = MY_STYLE_START + PRINTABLE_RANGE.first;
     sc.clear_all_styles();
     for(auto i: all_colors) {
         sc.set_text_color(style, i);
+        sc.force_set_back_color(style, 0);
         style++;
     }
-}
-using all_colors_t =
-    std::array<color_t, PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>;
-inline all_colors_t generate_colors(random_t& rnd) {
-    std::uniform_int_distribution<> distr(0, COLOR_COUNT);
-    auto arr = std::array<decltype(RGB(0, 0, 0)),
-                          PRINTABLE_RANGE.second - PRINTABLE_RANGE.first - 1>();
-    for(auto& i: arr) {
-        i = RGB(distr(rnd), distr(rnd), distr(rnd));
+    // Default Styles
+    for(auto i: {0, STYLE_DEFAULT}) {
+        sc.force_set_back_color(i, 0);
+        sc.force_set_text_color(i, RGB(255, 255, 255));
     }
-    return arr;
+};
+
+inline rgb_t hsl2rgb(double h, double s, double l) {
+    std::cout << "hsl: " << h << ' ' << s << ' ' << l << "\n";
+    double v = (l <= 0.5) ? (l * (1.0 + s)) : (l + s - l * s);
+    auto to_rgb = [](double to_r, double to_g, double to_b) {
+        return RGB(to_r * 255, to_g * 255, to_b * 255);
+    };
+    if(v > 0) {
+        double m = l + l - v;
+        double sv = (v - m) / v;
+        h *= 6.0;
+        auto sextant = static_cast<int32_t>(h);
+        double fract = h - sextant;
+        double vsf = v * sv * fract;
+        double mid1 = m + vsf;
+        double mid2 = v - vsf;
+        switch(sextant) {
+        case 0:
+            return to_rgb(v, mid1, m);
+        case 1:
+            return to_rgb(mid2, v, m);
+        case 2:
+            return to_rgb(m, v, mid1);
+        case 3:
+            return to_rgb(m, mid2, v);
+        case 4:
+            return to_rgb(mid1, m, v);
+        case 5:
+            return to_rgb(v, m, mid2);
+        }
+    }
+    return to_rgb(l, l, l);
+}
+
+inline std::vector<rgb_t> generate_colors(random_t& rnd) {
+    std::uniform_real_distribution<> distr_h(0., 1.);
+    std::uniform_real_distribution<> distr_s(0., 1.);
+    std::uniform_real_distribution<> distr_l(0.4, 1.);
+    auto all = std::vector<rgb_t>();
+    all.resize(PRINTABLE_RANGE.second - PRINTABLE_RANGE.first + 1);
+    for(auto& i: all) {
+        i = hsl2rgb(distr_h(rnd), distr_s(rnd), distr_l(rnd));
+    }
+    return all;
 }
 
 inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
     auto& rnd = reg.ctx().emplace<random_t>(std::random_device{}());
-    const all_colors_t ALL_COLORS = generate_colors(rnd);
-    notepad::push_command([&ALL_COLORS](notepad&, scintilla& sc) {
-        define_all_styles(sc, ALL_COLORS);
-    });
+    notepad::push_command(
+        [ALL_COLORS = generate_colors(rnd)](notepad&, scintilla& sc) {
+            set_all_colors(sc, ALL_COLORS);
+        });
     projectile::initialize_for_all(reg);
-    // atmosphere::make(entt::handle{reg, reg.create()});
 
     auto all = generate_random_positions(reg, game_buffer.get_extends());
     auto end = std::next(all.end(), -3);
@@ -348,7 +385,8 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
         });
 };
 
-// from the entt community https://github.com/fowlmouth/entt-execution-graph/
+// from the entt community
+// https://github.com/fowlmouth/entt-execution-graph/
 inline void print_graph(std::span<const entt::organizer::vertex> graph) {
     std::cout << "the game execution graph:\n";
     std::vector<const entt::type_info*> typeinfo_buffer;

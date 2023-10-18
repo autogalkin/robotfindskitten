@@ -138,16 +138,4 @@ void make(entt::handle h, loc loc, sprite sp);
 
 } // namespace kitten
 
-namespace atmosphere {
-struct atmospere_tag {};
-struct color_range {
-    COLORREF start{RGB(0, 0, 0)};
-    COLORREF end{RGB(255, 255, 255)};
-};
-void update_cycle(const void* /*payload*/, entt::handle h,
-                  timeline::direction d, timings::duration dr);
-void make(entt::handle h);
-
-} // namespace atmosphere
-
 #endif
