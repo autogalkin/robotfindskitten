@@ -139,7 +139,6 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
     }
 
     while(game_flag == game_over::game_status_flag::unset) {
-        // std::this_thread::sleep_for(std::chrono::milliseconds{20});
         dt = fixed_time_step.sleep();
         fps_count.fps([](auto fps) {
             notepad::push_command([fps](notepad& np, scintilla&) {
@@ -149,6 +148,7 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
         });
 
         for(const auto& vertex: graph) {
+            // dt is passed implicitly through ctx()
             vertex.callback()(vertex.data(), reg);
         }
 

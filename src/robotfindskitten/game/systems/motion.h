@@ -6,6 +6,7 @@
 #include <entt/entt.hpp>
 
 #include "engine/details/base_types.hpp"
+#include "engine/time.h"
 
 struct uniform_movement_tag {};
 struct non_uniform_movement_tag {};
@@ -21,17 +22,13 @@ struct non_uniform_motion {
     inline static constexpr velocity FRICTION_FACTOR{.v = {0.7, 0.7}};
     void operator()(
         const entt::view<entt::get_t<translation, velocity,
-                                     const non_uniform_movement_tag>>& view) {
-        view.each([](auto, auto& trans, auto& vel) {
+                                     const non_uniform_movement_tag>>& view,
+        timings::duration dt) {
+        view.each([&dt](auto, auto& trans, auto& vel) {
             using namespace std::literals;
-            // double alpha = std::chrono::duration<double>(dt / 1s).count();
-            double alpha = 1. / 60.; // NOLINT(readability-magic-numbers)
+            double alpha = std::chrono::duration<double>(dt).count();
             loc friction = -(vel.v * FRICTION_FACTOR.v);
             vel.v += friction * loc(alpha);
-            // alpha = lag accum / dt
-            // oldvel = vel;
-            // vel += friction * dt/1s
-            // (vel)* alpha + oldvel * (1-alpha)
             trans.pin() = vel.v * static_cast<double>(alpha);
         });
     }
