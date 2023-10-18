@@ -28,6 +28,7 @@ using vec = glm::vec<2, T>;
 
 // an actor location, used for smooth move
 using loc = vec<double>;
+
 // notepad's col-row position
 using pos = vec<npi_t>;
 
@@ -43,13 +44,12 @@ public:
     inline static constexpr char whitespace = ' ';
     struct should_normalize_tag {};
     struct unchecked_construct_tag {};
-    explicit sprite() = delete;
-    sprite(unchecked_construct_tag /*tag*/,
-           const std::basic_string<char_size>& str)
-        : width_(static_cast<uint16_t>(str.size())), data_(str) {}
-    sprite(should_normalize_tag /*tag*/,
-           const std::basic_string<char_size>& str) {
-        *this = normilize_from_string(str);
+    explicit sprite(unchecked_construct_tag /*tag*/,
+                    std::basic_string<char_size> str)
+        : width_(static_cast<uint16_t>(str.size())), data_(std::move(str)) {}
+    explicit sprite(should_normalize_tag /*tag*/,
+                    std::basic_string<char_size> str) {
+        *this = normilize_from_string(std::move(str));
     }
     [[nodiscard]] pos bounds() const noexcept {
         return {width_, data_.size() / width_};

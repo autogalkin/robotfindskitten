@@ -2,8 +2,7 @@
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_MOTION_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_MOTION_H
 
-#include <entt/entity/entity.hpp>
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "engine/details/base_types.hpp"
 #include "engine/time.h"

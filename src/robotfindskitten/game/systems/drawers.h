@@ -6,6 +6,8 @@
 #include <mutex>
 
 #include <glm/vector_relational.hpp>
+#include <entt/entity/registry.hpp>
+#include <entt/entity/entity.hpp>
 
 #include "engine/details/base_types.hpp"
 #include "game/systems/life.h"

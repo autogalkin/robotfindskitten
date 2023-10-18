@@ -3,9 +3,11 @@
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
 
 #include <glm/gtx/easing.hpp>
+#include <entt/entity/registry.hpp>
+#include <entt/entity/entity.hpp>
+#include <entt/entity/handle.hpp>
 
 #include "engine/details/base_types.hpp"
-#include "engine/time.h"
 #include "game/systems/collision_query.h"
 #include "game/systems/drawers.h"
 #include "game/systems/input.h"

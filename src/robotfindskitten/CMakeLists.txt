@@ -164,7 +164,6 @@ target_include_directories(lexlib PRIVATE
 set(THIRD_PARTY_LIBRARIES
     ${Boost_LIBRARIES}
     glm::glm
-    EnTT::EnTT
     )
 
 list(
@@ -193,7 +192,8 @@ foreach(_target IN LISTS ROBOTFINDSKITTEN_ALL_TARGETS)
 endforeach()
 
 target_link_libraries(engine PRIVATE ${THIRD_PARTY_LIBRARIES})
-target_link_libraries(game PRIVATE engine ${THIRD_PARTY_LIBRARIES} lexlib)
+target_link_libraries(game PRIVATE engine ${THIRD_PARTY_LIBRARIES} lexlib
+    EnTT::EnTT)
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE engine

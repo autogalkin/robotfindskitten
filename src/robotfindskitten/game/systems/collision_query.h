@@ -2,7 +2,8 @@
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_COLLISION_QUERY_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_COLLISION_QUERY_H
 
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "engine/details/base_types.hpp"
 #include "game/systems/collision.h"
@@ -64,10 +65,10 @@ public:
                         const agent, const visible_tag>>& query_view,
         const entt::view<entt::get_t<const agent, const responce_func>>&
             responce_view,
-        const entt::view<
-            entt::get_t<const translation, agent,
-                        const entt::exclude_t<const life::begin_die>>>& remove,
-        const entt::view<entt::get_t<const life::begin_die, agent>>& remove2,
+        const entt::view<entt::get_t<const translation, agent>,
+                         entt::exclude_t<life::begin_die>>& remove_by_move,
+        const entt::view<entt::get_t<const life::begin_die, agent>>&
+            remove_by_die,
 
         entt::registry& reg) {
         // insert moved actors into the tree
@@ -137,13 +138,13 @@ public:
             reg.emplace_or_replace<need_update_entity>(ent);
         };
         // remove actors which will move, insert it again in the next tick
-        for(const auto ent: remove) {
-            if(remove.get<translation>(ent).is_changed()) {
-                remove_from_tree(remove, ent);
+        for(const auto ent: remove_by_move) {
+            if(remove_by_move.get<translation>(ent).is_changed()) {
+                remove_from_tree(remove_by_move, ent);
             }
         }
-        for(const auto ent: remove2) {
-            remove_from_tree(remove, ent);
+        for(const auto ent: remove_by_die) {
+            remove_from_tree(remove_by_move, ent);
         }
         tree_.cleanup();
     }

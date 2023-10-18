@@ -11,7 +11,6 @@
 
 #include <boost/container/small_vector.hpp>
 #include <boost/dynamic_bitset.hpp>
-#include <entt/entt.hpp>
 #include <glm/mat2x2.hpp>
 
 namespace collision {

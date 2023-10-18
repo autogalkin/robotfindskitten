@@ -11,11 +11,13 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
-#include <entt/entity/fwd.hpp>
 #include <glm/gtx/hash.hpp>
+#include <entt/entity/registry.hpp>
+#include <entt/entity/organizer.hpp>
 
 #include <Windows.h>
 
@@ -308,7 +310,6 @@ inline void set_all_colors(scintilla& sc, std::span<const rgb_t> all_colors) {
 };
 
 inline rgb_t hsl2rgb(double h, double s, double l) {
-    std::cout << "hsl: " << h << ' ' << s << ' ' << l << "\n";
     double v = (l <= 0.5) ? (l * (1.0 + s)) : (l + s - l * s);
     auto to_rgb = [](double to_r, double to_g, double to_b) {
         return RGB(to_r * 255, to_g * 255, to_b * 255);
@@ -358,6 +359,7 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
         [ALL_COLORS = generate_colors(rnd)](notepad&, scintilla& sc) {
             set_all_colors(sc, ALL_COLORS);
         });
+    // common data shared between all projectile instances such as sprite
     projectile::initialize_for_all(reg);
 
     auto all = generate_random_positions(reg, game_buffer.get_extends());

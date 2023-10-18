@@ -1,14 +1,14 @@
 #include <algorithm>
 #include <optional>
 #include <random>
-#include <sstream>
+#include <ostream>
+#include <array>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "game/systems/collision.h"
 
-// NOLINTBEGIN(readability-magic-numbers)
 
 TEST(FreeListTest, GetAllSize) {
   using namespace collision;
@@ -365,4 +365,3 @@ TEST_P(QuadTreeQueryTest, InsertRemoveAndQueryItems) {
 INSTANTIATE_TEST_SUITE_P(Power10, QuadTreeQueryTest,
                          ::testing::Values(10, 100, 1000, 10000));
 
-// NOLINTEND(readability-magic-numbers)

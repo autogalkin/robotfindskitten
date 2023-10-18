@@ -2,7 +2,10 @@
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_LIFE_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_LIFE_H
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
+#include <entt/entity/handle.hpp>
+#include <entt/entity/observer.hpp>
+#include <entt/signal/delegate.hpp>
 
 #include "engine/time.h"
 

@@ -11,7 +11,9 @@
 #include <Windows.h>
 #include <winuser.h>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
+#include <entt/entity/handle.hpp>
+#include <entt/signal/delegate.hpp>
 
 #include "engine/notepad.h"
 
