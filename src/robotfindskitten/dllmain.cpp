@@ -1,4 +1,3 @@
-
 #include <Windows.h>
 #include <consoleapi.h>
 #include <cstdint>
@@ -42,14 +41,18 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
             nullptr); // get the module handle of the notepad.exe
 
         [[maybe_unused]] constexpr notepad::opts start_options =
-            notepad::opts::empty // | notepad::opts::show_eol
+            notepad::opts::empty
+#ifndef NDEBUG
+            | notepad::opts::show_eol
+#endif
             | notepad::opts::show_spaces;
 
+        // Optional always valid here
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         np.on_open()->get().connect([](auto shutdown) {
 #ifndef NDEBUG
             static auto log_console = console::allocate();
-#endif // NDEBUG
+#endif
             std::cout << ("Notepad is loaded and initialized. Start a game\n");
             game::start(GAME_AREA, std::move(shutdown));
         });

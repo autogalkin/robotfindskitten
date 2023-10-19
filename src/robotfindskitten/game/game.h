@@ -54,7 +54,7 @@ inline void run(buffer_type& game_buffer);
  */
 inline void start(pos game_area,
                   const std::shared_ptr<std::atomic_bool>& shutdown) {
-    lexer GAME_LEXER{};
+    auto GAME_LEXER = lexer{};
     notepad::push_command(
         [&GAME_LEXER](notepad&, scintilla& sc) { sc.set_lexer(&GAME_LEXER); });
     auto game_buffer = back_buffer<thread_safe_trait<std::mutex>>{game_area};

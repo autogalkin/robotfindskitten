@@ -72,6 +72,9 @@ public:
     const char* SCI_METHOD PropertyGet(const char* /*key*/) override {
         return "";
     };
+    void Release() override{
+        // Overriding `delete this`
+    }
 };
 
 #endif

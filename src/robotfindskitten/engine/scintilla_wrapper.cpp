@@ -25,10 +25,9 @@ HWND scintilla::create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
     dcall1(SCI_SETHSCROLLBAR, 0);
     dcall1(SCI_SETVSCROLLBAR, 0);
 
-    // TODO(Igor): atmosphere actor cannot change this color
     if(notepad::opts::hide_selection & start_options) {
         dcall2(SCI_SETELEMENTCOLOUR, SC_ELEMENT_SELECTION_BACK,
-               RGB(255, 255, 255));
+               0);
     }
 
     dcall1(SCI_SETSELEOLFILLED, 0);
