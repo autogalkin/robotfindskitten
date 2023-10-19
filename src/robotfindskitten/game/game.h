@@ -70,6 +70,15 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer);
 inline void game_loop(entt::registry& reg, entt::organizer& org,
                       buffer_type& game_buffer);
 
+inline void render(buffer_type& game_buffer) {
+    notepad::push_command([&game_buffer](notepad& /*np*/, scintilla& sc) {
+        // swap buffers in Scintilla
+        const auto pos = sc.get_caret_index();
+        game_buffer.view([&sc](const auto& buf) { sc.set_new_all_text(buf); });
+        sc.set_caret_index(pos);
+    });
+}
+
 /**
  * @brief Initialize systems and run a game loop
  *
@@ -91,6 +100,7 @@ inline void run(buffer_type& game_buffer) {
                 }(),
                 ...);
         }
+        render(game_buffer);
         setup_components(reg, game_buffer);
         game_loop(reg, org, game_buffer);
         org.clear();
@@ -153,14 +163,7 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
             // dt is passed implicitly through ctx()
             vertex.callback()(vertex.data(), reg);
         }
-
-        notepad::push_command([&game_buffer](notepad& /*np*/, scintilla& sc) {
-            // swap buffers in Scintilla
-            const auto pos = sc.get_caret_index();
-            game_buffer.view(
-                [&sc](const auto& buf) { sc.set_new_all_text(buf); });
-            sc.set_caret_index(pos);
-        });
+        render(game_buffer);
     }
 }
 
@@ -260,6 +263,8 @@ inline void create_character([[maybe_unused]] pos char_pos, entt::registry& reg,
     auto ch = entt::handle{reg, reg.create()};
     reg.ctx().emplace_as<entt::entity>(entt::hashed_string{"character_id"},
                                        ch.entity());
+    ch.emplace<input::key_down_task>(input::key_down_task::function_type{
+        &character::process_movement_input<>});
 #ifndef NDEBUG
     character::make(ch, pos{10, 25},
                     sprite{sprite::unchecked_construct_tag{}, "#"});
@@ -267,16 +272,15 @@ inline void create_character([[maybe_unused]] pos char_pos, entt::registry& reg,
     character::make(ch, char_pos,
                     sprite{sprite::unchecked_construct_tag{}, "#"});
     notepad::push_command([char_pos, game_area](notepad&, scintilla& sc) {
-        auto height = sc.get_lines_on_screen();
-        auto width = sc.get_window_width() / sc.get_char_width();
-        sc.scroll(std::max(0, static_cast<int>(std::min(char_pos.x - width / 2,
+        npi_t height = sc.get_lines_on_screen();
+        auto width =
+            static_cast<npi_t>(sc.get_window_width() / sc.get_char_width());
+        sc.scroll(std::max(0, static_cast<npi_t>(std::min(char_pos.x - width / 2,
                                                         game_area.x - width))),
-                  std::max(0, std::min(char_pos.y - height / 2,
-                                       game_area.y - height)));
+                  static_cast<npi_t>(
+                      std::min(char_pos.y - height / 2, game_area.y - height)));
     });
 #endif
-    ch.emplace<input::key_down_task>(input::key_down_task::function_type{
-        &character::process_movement_input<>});
 }
 
 inline void create_kitten(entt::registry& reg, [[maybe_unused]] pos kitten_pos,

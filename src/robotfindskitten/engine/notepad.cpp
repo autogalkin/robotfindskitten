@@ -64,14 +64,17 @@ void notepad::tick_render() {
 
 // game in another thread
 void notepad::start_game() {
+    ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+    RECT rc;
+    ::GetWindowRect(main_window_, &rc);
+    ::SetWindowPos(scintilla_->edit_window_, nullptr, rc.left, rc.top,
+                   rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE);
+    ::InvalidateRect(scintilla_->edit_window_, nullptr, TRUE);
     static const thread_guard game_thread = thread_guard(std::thread(
         [on_open = std::exchange(
              on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr})]() {
             (*on_open)(shutdown_token);
         }));
-    ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0,
-                   SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-    ::InvalidateRect(scintilla_->edit_window_, nullptr, TRUE);
 }
 // NOLINTEND(bugprone-unchecked-optional-access)
 
@@ -94,7 +97,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
             DestroyMenu(hMenu);
             RECT rc{};
             GetWindowRect(notepad::get().get_window(), &rc);
-            PostMessage(notepad::get().get_window(), WM_SIZE, SIZE_RESTORED,
+            SendMessage(notepad::get().get_window(), WM_SIZE, SIZE_RESTORED,
                         MAKELPARAM(rc.right - rc.left, rc.bottom - rc.top));
         };
         np.start_game();

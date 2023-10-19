@@ -255,14 +255,14 @@ public:
         return r;
     }
     [[nodiscard]] uint32_t get_window_width() const noexcept;
-    [[nodiscard]] uint8_t get_font_size() const noexcept /*size in pt*/ {
-        return static_cast<uint8_t>(dcall1(SCI_STYLEGETSIZE, STYLE_DEFAULT));
+    [[nodiscard]] npi_t get_font_size() const noexcept /*size in pt*/ {
+        return static_cast<npi_t>(dcall1(SCI_STYLEGETSIZE, STYLE_DEFAULT));
     }
     [[nodiscard]] npi_t get_first_visible_line() const noexcept {
         return dcall0(SCI_GETFIRSTVISIBLELINE);
     }
-    [[nodiscard]] uint8_t get_lines_on_screen() const noexcept {
-        return static_cast<uint8_t>(dcall0(SCI_LINESONSCREEN));
+    [[nodiscard]] npi_t get_lines_on_screen() const noexcept {
+        return static_cast<npi_t>(dcall0(SCI_LINESONSCREEN));
     }
     [[nodiscard]] npi_t get_selected_text_lenght() const noexcept {
         return dcall0(SCI_GETSELTEXT);
