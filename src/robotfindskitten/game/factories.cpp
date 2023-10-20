@@ -1,3 +1,5 @@
+#include "game/factories.h"
+
 #include <array>
 #include <condition_variable>
 #include <utility>
@@ -10,19 +12,22 @@
 
 #include "engine/details/base_types.hpp"
 #include "engine/notepad.h"
-#include "game/factories.h"
 #include "game/systems/drawers.h"
 #include "game/systems/input.h"
 
+// A total iteration of an easing function
 struct total_iterations {
     double v;
 };
+// A curent iteration of an easing function
 struct current_iteration {
     double v;
 };
+// The end of the range for changing a value
 struct changing_value {
     double v;
 };
+// The start of the range for changing a value
 struct start_value {
     double v;
 };
@@ -46,7 +51,7 @@ void emplace_simple_death_anim(entt::handle h) {
 } // namespace factories
 namespace projectile {
 namespace {} // namespace
-void on_collide(const void* /**/, entt::registry& r, collision::self self,
+void on_collide(const void* /*payload*/, entt::registry& r, collision::self self,
                 collision::collider other) {
     if(!r.all_of<projectile_tag>(other)) {
         r.emplace_or_replace<life::begin_die>(self);
@@ -310,7 +315,7 @@ static_control_handler make_character() {
         .with_fore_color(RGB(0, 0, 0))
         .with_size(w_size);
 }
-// FIXME(Igor) it is a bad function:(
+// FIXME(Igor) it is a very very bad function:(
 void push_controls(std::array<static_control_handler, 2>&& ctrls) {
     notepad::push_command(
         [ctrls = std::move(ctrls)](notepad& np,
@@ -318,12 +323,12 @@ void push_controls(std::array<static_control_handler, 2>&& ctrls) {
             // hide all other static controls
             for(auto& i: np.get_all_static_controls()) {
                 i.with_text("");
-                SetWindowText(i.get_wnd(), i.get_text().data());
+                ::SetWindowText(i.get_wnd(), i.get_text().data());
             }
             for(auto& i: ctrls) {
                 // TODO(Igor): Shrink size
                 // i // {r.right-r.left, r.bottom-r.top}
-                // FIXME(Igor): make explicit
+                // FIXME(Igor): make it explicit
                 if(i.get_fore_color() == RGB(0, 0, 0)) {
                     i.with_fore_color(
                         scintilla::look_op{sct}.get_text_color(STYLE_DEFAULT));
@@ -375,11 +380,11 @@ void bad_end_animation(entt::handle end_anim) {
                 }
                 ch->with_position(pos(
                     static_cast<int32_t>(std::lround(ch_x), ch->get_pos().y)));
-                SetWindowText(*ch, ch->get_text().data());
-                SetWindowPos(*ch, HWND_TOP, ch->get_pos().x, ch->get_pos().y,
+                ::SetWindowText(*ch, ch->get_text().data());
+                ::SetWindowPos(*ch, HWND_TOP, ch->get_pos().x, ch->get_pos().y,
                              ch->get_size().x, ch->get_size().y, 0);
-                SetWindowText(*k, k->get_text().data());
-                SetWindowPos(*k, HWND_TOP, k->get_pos().x, k->get_pos().y,
+                ::SetWindowText(*k, k->get_text().data());
+                ::SetWindowPos(*k, HWND_TOP, k->get_pos().x, k->get_pos().y,
                              k->get_size().x, k->get_size().y, 0);
                 // NOLINTEND(readability-magic-numbers)
             });
@@ -428,11 +433,11 @@ void good_end_animation(entt::handle end_anim) {
                 }
                 ch->with_position(pos(std::lround(ch_x), ch->get_pos().y));
                 k->with_position(pos(std::lround(k_x), k->get_pos().y));
-                SetWindowText(*ch, ch->get_text().data());
-                SetWindowPos(*ch, HWND_TOP, ch->get_pos().x, ch->get_pos().y,
+                ::SetWindowText(*ch, ch->get_text().data());
+                ::SetWindowPos(*ch, HWND_TOP, ch->get_pos().x, ch->get_pos().y,
                              ch->get_size().x, ch->get_size().y, 0);
-                SetWindowText(*k, k->get_text().data());
-                SetWindowPos(*k, HWND_TOP, k->get_pos().x, k->get_pos().y,
+                ::SetWindowText(*k, k->get_text().data());
+                ::SetWindowPos(*k, HWND_TOP, k->get_pos().x, k->get_pos().y,
                              k->get_size().x, k->get_size().y, 0);
                 // NOLINTEND(readability-magic-numbers)
             });
@@ -464,7 +469,6 @@ void create_input_wait(entt::registry& reg, game_status_flag status) {
                         .with_fore_color(scintilla::look_op{sct}.get_text_color(
                             STYLE_DEFAULT));
         np.show_static_control(std::move(ctrl));
-        // SetWindowText(ctrl, ctrl.text.data());
     });
 }
 
@@ -492,7 +496,6 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
             static_control_handler{}
                 .with_position(dead_kitten_start_pos)
                 .with_text("___")
-                //.with_text_color(ALL_COLORS['_' - PRINTABLE_RANGE.first - 1])
                 .with_size(w_size);
         reg.ctx().emplace_as<static_control_handler::id_t>(
             entt::hashed_string{"kitten_uuid"}) = kitten.get_id();
@@ -522,8 +525,6 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
         auto kitten_wnd =
             static_control_handler{}
                 .with_position(kitten_start_pos)
-                //.with_text_color(
-                //    ALL_COLORS[sprt.data()[0] - PRINTABLE_RANGE.first - 1])
                 .with_text(sprt.data())
                 .with_size(kitten_size);
 

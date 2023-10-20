@@ -11,7 +11,7 @@
 
 #include <Windows.h>
 
-// should inludes alls in this order
+// Should inlude all in this order
 // clang-format off
 #include <ILexer.h>
 #include <Scintilla.h>

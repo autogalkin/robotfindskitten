@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @brief All ECS component factories
+ */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H
@@ -15,7 +19,15 @@
 #include "game/systems/motion.h"
 
 namespace factories {
-struct actor_tag {};
+
+/**
+ * @brief Emplaces a minimal set of components for execution in drawing systems
+ *
+ * @param h A handle to the entity
+ * @param start A position in the game
+ * @param z_depth_position A depth position
+ * @param sprt An entity sprite
+ */
 inline void make_base_renderable(entt::handle h, loc start,
                                  int z_depth_position, sprite sprt) {
     h.emplace<visible_tag>();
@@ -26,48 +38,135 @@ inline void make_base_renderable(entt::handle h, loc start,
     h.emplace<z_depth>(z_depth_position);
 }
 
+/**
+ * @brief Sets up the animation that will execute after the entity's death.
+ *
+ * @param h A handle to the entity
+ */
 void emplace_simple_death_anim(entt::handle h);
+
 } // namespace factories
 
+/**
+ * @namespace projectile
+ * @brief Functions for all projectiles
+ */
 namespace projectile {
+
+/**
+ * @struct projectile_tag
+ * @brief A projectile identifier
+ */
 struct projectile_tag {};
+
+// collision callback
 void on_collide(const void* payload, entt::registry& r, collision::self self,
                 collision::collider other);
+
+/**
+ * @brief Emplaces necessary components for a projectile instance
+ *
+ * @param h A handle to the entity
+ * @param start A projectile start position
+ * @param direction An initial force (projectiles work with pseudo non-uniform
+ * motion)
+ * @param life_time A projectile lifetime
+ */
 void make(entt::handle h, loc start, velocity direction,
           std::chrono::milliseconds life_time = std::chrono::seconds{1});
+
+/**
+ * @brief Sets up shared data for all projectiles into the registry
+ *
+ * @param reg The game registry
+ */
 void initialize_for_all(entt::registry& reg);
+
 } // namespace projectile
 
+/**
+ * @namespace gun
+ * @brief Functions for gun entity
+ */
 namespace gun {
+/**
+ * @struct gun_tag
+ * @brief A gun identifier
+ */
 struct gun_tag {};
+
+// collision callback
 void on_collide(const void* payload, entt::registry& reg, collision::self self,
                 collision::collider collider);
 
 void make(entt::handle h, loc loc, sprite sp);
 
-void fire(entt::handle character);
+/**
+ * @brief Executes fire action
+ *
+ * @param character The player entity
+ */
+void fire(entt::handle player);
 } // namespace gun
 
+/**
+ * @namespace timeline
+ * @brief Functions for objects that execute a task in every tick following a
+ * specific direction \ref timeline::direction
+ */
 namespace timeline {
+/**
+ * @struct timeline_tag
+ * @brief A identifier of the timeline entity
+ */
 struct timeline_tag {};
+
+/**
+ * @brief Emplaces a set of components for working with the timeline system
+ *
+ * @param h A handle to the entity
+ * @param what_do A timeline function for execution in every game tick
+ * @param duration A timeline execution duration
+ * @param dir A direction of the execution
+ */
 void make(entt::handle h, timeline::what_do::function_type what_do,
           std::chrono::milliseconds duration = std::chrono::seconds{1},
           direction dir = direction::forward);
 
 }; // namespace timeline
 
-// waits for the end of time and call a given function
+/**
+ * @namespace timer
+ * @brief Functions for objects that wait the end of own lifetime and call a
+ * given function
+ */
 namespace timer {
+/**
+ * @struct timer_tag
+ * @brief A timer identifier
+ */
 struct timer_tag {};
-inline void make(entt::handle h, life::dying_wish::function_type what_do,
+
+inline void make(entt::handle h,
+                 life::dying_wish::function_type what_do_at_the_end,
                  std::chrono::milliseconds duration = std::chrono::seconds{1}) {
     h.emplace<life::life_time>(duration);
     h.emplace<life::dying_wish>(what_do);
 }
 }; // namespace timer
 
+/**
+ * @namespace character
+ * @brief Functions for player entity
+ */
 namespace character {
+/**
+ * @struct character_tag
+ * @brief An identifier of the player entity
+ */
 struct character_tag {};
+
+// collision callback
 void on_collide(const void* payload, entt::registry& reg, collision::self self,
                 collision::collider collider);
 
@@ -122,7 +221,10 @@ void process_movement_input(const void* /*unused*/, entt::handle h,
 } // namespace character
 
 namespace game_over {
-
+/**
+ * @enum game_status_flag
+ * @brief Branches of the game
+ */
 enum class game_status_flag {
     unset,
     find,
@@ -132,7 +234,12 @@ enum class game_status_flag {
 } // namespace game_over
 
 namespace kitten {
+/**
+ * @struct kitten_tag
+ * @brief An identifier of the kitten entity
+ */
 struct kitten_tag {};
+// collision callback
 void on_collide(const void* /*payload*/, entt::registry& reg,
                 collision::self self, collision::collider collider);
 
