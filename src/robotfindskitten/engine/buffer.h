@@ -19,22 +19,22 @@ class mutex_debug_wrapper: public Mutex {
 public:
 #ifndef NDEBUG
     void lock() {
-        std::mutex::lock();
-        m_holder = std::this_thread::get_id();
+        Mutex::lock();
+        owner_thread_ = std::this_thread::get_id();
     }
 #endif // #ifndef NDEBUG
 
 #ifndef NDEBUG
     void unlock() {
-        m_holder = std::thread::id();
-        std::mutex::unlock();
+        owner_thread_ = std::thread::id();
+        Mutex::unlock();
     }
 #endif // #ifndef NDEBUG
 
 #ifndef NDEBUG
-    bool try_lock() {
-        if(std::mutex::try_lock()) {
-            m_holder = std::thread::id();
+    [[nodiscard]] bool try_lock() {
+        if(Mutex::try_lock()) {
+            owner_thread_ = std::thread::id();
             return true;
         }
         return false;
@@ -44,14 +44,14 @@ public:
 #ifndef NDEBUG
     /**
      * @return true iff the mutex is locked by the caller of this method. */
-    bool locked_by_caller() const {
-        return m_holder == std::this_thread::get_id();
+    [[nodiscard]] bool locked_by_caller() const {
+        return owner_thread_ == std::this_thread::get_id();
     }
 #endif // #ifndef NDEBUG
 
 private:
 #ifndef NDEBUG
-    std::atomic<std::thread::id> m_holder = std::thread::id{};
+    std::atomic<std::thread::id> owner_thread_ = std::thread::id{};
 #endif // #ifndef NDEBUG
 };
 
@@ -60,11 +60,11 @@ class thread_safe_trait {
     mutex_debug_wrapper<Mutex> mutex_;
 
 public:
-    std::unique_lock<mutex_debug_wrapper<Mutex>> lock() {
+    [[nodiscard]] std::unique_lock<mutex_debug_wrapper<Mutex>> lock() {
         return std::unique_lock<mutex_debug_wrapper<Mutex>>{mutex_};
     }
 #ifndef NDEBUG
-    bool is_locked_by_caller() {
+    [[nodiscard]] bool is_locked_by_caller() const {
         return mutex_.locked_by_caller();
     }
 #endif // #ifndef NDEBUG
@@ -75,7 +75,7 @@ public:
         return 0;
     }
 #ifndef NDEBUG
-    bool is_locked_by_caller() {
+    [[nodiscard]] bool is_locked_by_caller() const noexcept {
         return true;
     }
 #endif // #ifndef NDEBUG
@@ -111,7 +111,7 @@ public:
         set_lines();
     }
 
-    [[nodiscard]] pos get_extends() {
+    [[nodiscard]] pos get_extends() const noexcept {
         return {width_ - 1, buf_.size() / width_};
     }
     /**
@@ -185,7 +185,7 @@ template<typename Trait>
 void back_buffer<Trait>::draw(pos pivot, sprite_view sh, int32_t depth) {
     assert(this->is_locked_by_caller());
     traverse_sprite_positions(pivot, sh,
-                              [this, depth](const pos& p, const char_size ch) {
+                              [this, depth](const pos& p, char_size ch) {
                                   auto& z_value = at(z_buf_, width_, p);
                                   if(depth >= z_value) {
                                       z_value = depth;

@@ -4,7 +4,6 @@
  *
  */
 
-#include <atomic>
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
 
@@ -12,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <atomic>
 
 #include <boost/signals2.hpp>
 #include <Windows.h>
@@ -33,8 +33,7 @@
  *  - Initialize a game after notepad will be ready
  *  - handle WM_SIZE and redraw all spawned Static Controls
  */
-static LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp,
-                                      LPARAM lp);
+LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 
 /**
  * @brief A Hook for GetMessageW
@@ -82,8 +81,12 @@ bool hook_SetWindowTextW(HMODULE module);
  * @brief Manage title line with changing values
  */
 struct title_line_args {
-    uint32_t game_thread_fps;
-    uint32_t render_thread_fps;
+    void set_game_thread_fps(timings::fps_count::value_type fps) noexcept {
+        game_thread_fps = fps;
+    }
+    void set_notepad_thread_fps(timings::fps_count::value_type fps) noexcept {
+        notepad_thread_fps = fps;
+    }
     /**
      * @brief Construct a title line
      *
@@ -92,14 +95,17 @@ struct title_line_args {
      * @return std::wstring for Win32 API SetWindowTextW
      */
     [[nodiscard]] std::wstring make() {
-        return std::format(buf_, game_thread_fps, render_thread_fps);
+        return std::format(buf_, game_thread_fps, notepad_thread_fps);
     };
 
 private:
-    static constexpr auto buf_ =
-        PROJECT_NAME L", fps: game_thread {:02} | render_thread {:02}";
+    timings::fps_count::value_type game_thread_fps;
+    timings::fps_count::value_type notepad_thread_fps;
+    static constexpr auto buf_ = PROJECT_NAME
+        " v " PROJECT_VER L" fps: [ game_thread {:02} ] [ notepad_thread {:02} ]";
 };
 
+class notepad;
 /**
  * @class static_control
  * @brief Wrapper for Win32 API Text Static Control
@@ -122,94 +128,51 @@ private:
     }
     window_t wnd_ = {nullptr};
     id_t id_ = make_id();
+    pos size_;
+    pos position_;
+    std::string text_;
+    COLORREF fore_color_ = RGB(0, 0, 0);
 
 public:
-    // ┌──────────────────────────────────────────────────────────┐
-    // │  Builder functions                                       │
-    // └──────────────────────────────────────────────────────────┘
-
-    /**
-     * @brief Set Static Control window position
-     *
-     * For use in SetWindowPos
-     *
-     * @param where position in pixels
-     * @return self for other builder functions
-     */
     static_control_handler& with_position(pos where) noexcept {
-        this->position = where;
+        position_ = where;
         return *this;
     }
-    /**
-     * @brief Set Static Control window size
-     *
-     * @param size in pixels
-     * @return self for other builder functions
-     */
     static_control_handler& with_size(pos size) noexcept {
-        this->size = size;
+        size_ = size;
         return *this;
     }
-    /**
-     * @brief Set Static Control window text
-     *
-     * @param text [TODO:parameter]
-     * @return  self for other builder functions
-     */
+    [[nodiscard]] pos get_size() const noexcept {
+        return size_;
+    }
     static_control_handler& with_text(std::string_view text) noexcept {
-        this->text = text;
+        text_ = text;
         return *this;
     }
-    /**
-     * @brief Set Static Control color
-     *
-     * @param color foreground color
-     * @return  self for other builder functions
-     */
-    static_control_handler& with_text_color(COLORREF color) noexcept {
-        this->fore_color = color;
+    [[nodiscard]] std::string_view get_text() const noexcept {
+        return text_;
+    }
+    static_control_handler& with_fore_color(COLORREF color) noexcept {
+        fore_color_ = color;
         return *this;
     }
-
-    // ┌──────────────────────────────────────────────────────────┐
-    // │  Static Control functions                                │
-    // └──────────────────────────────────────────────────────────┘
-    /**
-     * @brief Inplicit convert into Win32 window descriptor
-     *
-     * @return window descriptor
-     */
     operator HWND() { // NOLINT(google-explicit-constructor)
         return wnd_.get();
     }
-    /**
-     * @brief Get current window uuid
-     *
-     * @return unique id of this window
-     */
     [[nodiscard]] id_t get_id() const noexcept {
         return id_;
     }
-
-    /**
-     * @brief Get current window Win32 API HWND
-     *
-     * @return HWND of this window
-     */
     [[nodiscard]] HWND get_wnd() const noexcept {
         return wnd_.get();
     }
-    pos size;
-    pos position;
-    std::string text;
-    COLORREF fore_color = RGB(0, 0, 0);
+    [[nodiscard]] pos get_pos() const noexcept {
+        return position_;
+    }
+    [[nodiscard]] COLORREF get_fore_color() const noexcept {
+        return fore_color_;
+    }
 };
 
-/**
- * @class thread_guard
- * @brief [TODO:description]
- *
- */
 class thread_guard {
     std::thread t_;
     std::shared_ptr<std::atomic_bool> shutdown_token_ =
@@ -224,7 +187,9 @@ public:
     thread_guard(thread_guard&&) = default;
     thread_guard& operator=(thread_guard&&) = default;
     ~thread_guard() {
-        shutdown_token_->store(true);
+        if(shutdown_token_) {
+            shutdown_token_->store(true);
+        }
         if(t_.joinable()) {
             try {
                 t_.join();
@@ -278,20 +243,12 @@ public:
             : all(static_cast<uint8_t>(v)) {}
     };
 
-    using command_t = std::function<void(notepad&, scintilla&)>;
+    using command_t = std::function<void(notepad&, scintilla::scintilla_dll&)>;
     static constexpr int command_queue_capacity = 32;
     using commands_queue_t = boost::lockfree::spsc_queue<
         command_t, boost::lockfree::capacity<command_queue_capacity>>;
     using open_signal_t = boost::signals2::signal<void(
         std::shared_ptr<std::atomic_bool> shutdown_signal)>;
-
-    title_line_args window_title{};
-    std::vector<static_control_handler> static_controls;
-    std::optional<thread_guard> game_thread{};
-
-    // Indicate the application state
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    inline static std::atomic_bool is_active{true};
 
     /**
      * @brief Get signal to connect for event that fired on, when all notepad
@@ -300,7 +257,7 @@ public:
      * @return a signal
      */
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
-    on_open() {
+    on_open() noexcept {
         return on_open_ ? std::make_optional(std::ref(*on_open_))
                         : std::nullopt;
     }
@@ -348,7 +305,7 @@ public:
      * @param cmd function to execute in the notepad thread
      * @return Success
      */
-    static bool push_command(command_t&& cmd) noexcept {
+    static bool push_command(command_t&& cmd) {
         return notepad::get().commands_.push(cmd);
     };
     /**
@@ -356,9 +313,13 @@ public:
      *
      * @return scintilla wrapper class
      */
-    [[nodiscard]] scintilla& get_scintilla() noexcept {
+    [[nodiscard]] scintilla::scintilla_dll& get_scintilla() noexcept {
         return *scintilla_;
     };
+
+    [[nodiscard]] static bool is_window_active() noexcept {
+        return notepad::get().is_active.load();
+    }
 
     /**
      * @brief [TODO:description]
@@ -366,28 +327,41 @@ public:
      * @param np [TODO:parameter]
      * @return  reference to self
      */
-    void show_static_control(static_control_handler&& ctrl) noexcept;
+    void show_static_control(static_control_handler&& ctrl);
+
+    void send_game_fps(timings::fps_count::value_type fps) noexcept {
+        window_title_args.set_game_thread_fps(fps);
+    }
+
+    std::vector<static_control_handler>& get_all_static_controls() noexcept {
+        return static_controls;
+    }
 
 private:
-    explicit notepad();
+    explicit notepad() = default;
     static notepad& get() {
-        static notepad notepad{};
-        return notepad;
+        static notepad notepad_{};
+        return notepad_;
     }
-    void start_game();
+    void start_game_thread();
     void tick_render();
 
     // commands from the other thread
-    commands_queue_t commands_;
+    commands_queue_t commands_{};
     opts options_{opts::empty};
-    HWND main_window_;
-    timings::fixed_time_step fixed_time_step_;
-    timings::fps_count fps_count_;
+    HWND main_window_{};
+    timings::fixed_time_step fixed_time_step_{};
+    timings::fps_count fps_count_{};
     // Live only on startup
-    std::unique_ptr<open_signal_t> on_open_;
+    std::unique_ptr<open_signal_t> on_open_{std::make_unique<open_signal_t>()};
     // Notepad.exe window proc
-    LONG_PTR original_proc_;
-    std::optional<scintilla> scintilla_;
+    LONG_PTR original_proc_{};
+    std::optional<scintilla::scintilla_dll> scintilla_{std::nullopt};
+    // Indicate the application state
+    std::atomic_bool is_active{true};
+    title_line_args window_title_args{};
+    std::vector<static_control_handler> static_controls;
+    std::optional<thread_guard> game_thread{std::nullopt};
 };
 
 #endif

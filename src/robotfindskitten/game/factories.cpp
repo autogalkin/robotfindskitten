@@ -11,7 +11,6 @@
 #include "engine/details/base_types.hpp"
 #include "engine/notepad.h"
 #include "game/factories.h"
-#include "game/lexer.h"
 #include "game/systems/drawers.h"
 #include "game/systems/input.h"
 
@@ -211,13 +210,14 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
         reg.emplace_or_replace<life::begin_die>(self);
         auto msg_wnd_uuid = reg.ctx().get<static_control_handler::id_t>(
             entt::hashed_string{"msg_window"});
-        notepad::push_command([msg_wnd_uuid](notepad& np, scintilla&) {
+        notepad::push_command([msg_wnd_uuid](notepad& np,
+                                             scintilla::scintilla_dll&) {
             auto w = std::ranges::find_if(
-                np.static_controls,
+                np.get_all_static_controls(),
                 [msg_wnd_uuid](auto& w) { return w.get_id() == msg_wnd_uuid; });
             static const char* msg = "Wow! It's a little gun!";
             SetWindowText(*w, msg);
-            w->text = msg;
+            w->with_text(msg);
         });
     }
 }
@@ -307,24 +307,28 @@ static_control_handler make_character() {
     return static_control_handler{}
         .with_position(start_pos)
         .with_text("#")
-        .with_text_color(RGB(0, 0, 0))
+        .with_fore_color(RGB(0, 0, 0))
         .with_size(w_size);
 }
 // FIXME(Igor) it is a bad function:(
 void push_controls(std::array<static_control_handler, 2>&& ctrls) {
     notepad::push_command(
-        [ctrls = std::move(ctrls)](notepad& np, scintilla& sct) mutable {
+        [ctrls = std::move(ctrls)](notepad& np,
+                                   scintilla::scintilla_dll& sct) mutable {
             // hide all other static controls
-            for(auto& i: np.static_controls) {
-                i.text = "";
-                SetWindowText(i.get_wnd(), i.text.data());
+            for(auto& i: np.get_all_static_controls()) {
+                i.with_text("");
+                SetWindowText(i.get_wnd(), i.get_text().data());
             }
             for(auto& i: ctrls) {
                 // TODO(Igor): Shrink size
                 // i // {r.right-r.left, r.bottom-r.top}
                 // FIXME(Igor): make explicit
-                if(i.fore_color == RGB(0, 0, 0)) {
-                    i.fore_color = sct.get_text_color(STYLE_DEFAULT);
+                if(i.get_fore_color() == RGB(0, 0, 0)) {
+                    i.with_fore_color(
+                        scintilla::look_op{sct}.get_text_color(STYLE_DEFAULT));
+                    ;
+                    ;
                 }
                 np.show_static_control(std::move(i));
             }
@@ -357,25 +361,26 @@ void bad_end_animation(entt::handle end_anim) {
                  entt::hashed_string{"character_uuid"}),
              k_uuid = h.registry()->ctx().get<static_control_handler::id_t>(
                  entt::hashed_string{"kitten_uuid"}),
-             ch_x](notepad& np, scintilla& /*sct*/) {
+             ch_x](notepad& np, scintilla::scintilla_dll& /*sct*/) {
                 auto find = [&np](auto uuid) {
                     return std::ranges::find_if(
-                        np.static_controls,
+                        np.get_all_static_controls(),
                         [uuid](auto& w) { return w.get_id() == uuid; });
                 };
                 auto k = find(k_uuid);
                 auto ch = find(ch_uuid);
-                if(ch == np.static_controls.end()
-                   || k == np.static_controls.end()) {
+                if(ch == np.get_all_static_controls().end()
+                   || k == np.get_all_static_controls().end()) {
                     return;
                 }
-                ch->position.x = static_cast<int32_t>(glm::round(ch_x));
-                SetWindowText(*ch, ch->text.data());
-                SetWindowPos(*ch, HWND_TOP, ch->position.x, ch->position.y,
-                             ch->size.x, ch->size.y, 0);
-                SetWindowText(*k, k->text.data());
-                SetWindowPos(*k, HWND_TOP, k->position.x, k->position.y,
-                             k->size.x, k->size.y, 0);
+                ch->with_position(pos(
+                    static_cast<int32_t>(std::lround(ch_x), ch->get_pos().y)));
+                SetWindowText(*ch, ch->get_text().data());
+                SetWindowPos(*ch, HWND_TOP, ch->get_pos().x, ch->get_pos().y,
+                             ch->get_size().x, ch->get_size().y, 0);
+                SetWindowText(*k, k->get_text().data());
+                SetWindowPos(*k, HWND_TOP, k->get_pos().x, k->get_pos().y,
+                             k->get_size().x, k->get_size().y, 0);
                 // NOLINTEND(readability-magic-numbers)
             });
     });
@@ -410,26 +415,25 @@ void good_end_animation(entt::handle end_anim) {
                  entt::hashed_string{"character_uuid"}),
              k_uuid = h.registry()->ctx().get<static_control_handler::id_t>(
                  entt::hashed_string{"kitten_uuid"}),
-             k_x, ch_x](notepad& np, scintilla& /*sct*/) {
+             k_x, ch_x](notepad& np, scintilla::scintilla_dll& /*sct*/) {
                 auto ch = std::ranges::find_if(
-                    np.static_controls,
+                    np.get_all_static_controls(),
                     [ch_uuid](auto& w) { return w.get_id() == ch_uuid; });
-                auto k =
-                    std::ranges::find_if(np.static_controls, [k_uuid](auto& w) {
-                        return w.get_id() == k_uuid;
-                    });
-                if(ch == np.static_controls.end()
-                   || k == np.static_controls.end()) {
+                auto k = std::ranges::find_if(
+                    np.get_all_static_controls(),
+                    [k_uuid](auto& w) { return w.get_id() == k_uuid; });
+                if(ch == np.get_all_static_controls().end()
+                   || k == np.get_all_static_controls().end()) {
                     return;
                 }
-                ch->position.x = static_cast<int32_t>(glm::round(ch_x));
-                k->position.x = static_cast<int32_t>(glm::round(k_x));
-                SetWindowText(*ch, ch->text.data());
-                SetWindowPos(*ch, HWND_TOP, ch->position.x, ch->position.y,
-                             ch->size.x, ch->size.y, 0);
-                SetWindowText(*k, k->text.data());
-                SetWindowPos(*k, HWND_TOP, k->position.x, k->position.y,
-                             k->size.x, k->size.y, 0);
+                ch->with_position(pos(std::lround(ch_x), ch->get_pos().y));
+                k->with_position(pos(std::lround(k_x), k->get_pos().y));
+                SetWindowText(*ch, ch->get_text().data());
+                SetWindowPos(*ch, HWND_TOP, ch->get_pos().x, ch->get_pos().y,
+                             ch->get_size().x, ch->get_size().y, 0);
+                SetWindowText(*k, k->get_text().data());
+                SetWindowPos(*k, HWND_TOP, k->get_pos().x, k->get_pos().y,
+                             k->get_size().x, k->get_size().y, 0);
                 // NOLINTEND(readability-magic-numbers)
             });
     });
@@ -442,21 +446,23 @@ void create_input_wait(entt::registry& reg, game_status_flag status) {
     auto inpt = reg.create();
     reg.emplace<input::key_down_task>(
         inpt, +[](const void*, entt::handle h, std::span<input::key_state>) {
-            notepad::push_command([](notepad& np, scintilla& /*sct*/) {
-                np.static_controls.clear();
-            });
+            notepad::push_command(
+                [](notepad& np, scintilla::scintilla_dll& /*sct*/) {
+                    np.get_all_static_controls().clear();
+                });
             h.registry()->ctx().get<game_status_flag>() =
                 h.registry()->ctx().get<game_status_flag>(
                     entt::hashed_string{"flag_for_set"});
         });
-    notepad::push_command([](notepad& np, scintilla& sct) {
+    notepad::push_command([](notepad& np, scintilla::scintilla_dll& sct) {
         static constexpr pos msg_pos{450, 0};
         static constexpr pos w_size = pos(500, 50);
         auto ctrl = static_control_handler{}
                         .with_position(msg_pos)
                         .with_size(w_size)
                         .with_text("Press any key to Restart")
-                        .with_text_color(sct.get_text_color(STYLE_DEFAULT));
+                        .with_fore_color(scintilla::look_op{sct}.get_text_color(
+                            STYLE_DEFAULT));
         np.show_static_control(std::move(ctrl));
         // SetWindowText(ctrl, ctrl.text.data());
     });

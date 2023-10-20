@@ -56,7 +56,9 @@ inline void start(pos game_area,
                   const std::shared_ptr<std::atomic_bool>& shutdown) {
     auto GAME_LEXER = lexer{};
     notepad::push_command(
-        [&GAME_LEXER](notepad&, scintilla& sc) { sc.set_lexer(&GAME_LEXER); });
+        [&GAME_LEXER](notepad&, scintilla::scintilla_dll& sc) {
+            scintilla::look_op{sc}.set_lexer(&GAME_LEXER);
+        });
     auto game_buffer = back_buffer<thread_safe_trait<std::mutex>>{game_area};
     while(!shutdown->load()) {
         run(game_buffer);
@@ -71,12 +73,16 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
                       buffer_type& game_buffer);
 
 inline void render(buffer_type& game_buffer) {
-    notepad::push_command([&game_buffer](notepad& /*np*/, scintilla& sc) {
-        // swap buffers in Scintilla
-        const auto pos = sc.get_caret_index();
-        game_buffer.view([&sc](const auto& buf) { sc.set_new_all_text(buf); });
-        sc.set_caret_index(pos);
-    });
+    notepad::push_command(
+        [&game_buffer](notepad& /*np*/, scintilla::scintilla_dll& sc) {
+            // swap buffers in Scintilla
+            const auto caret = scintilla::caret_op{sc};
+            const auto pos = caret.get_caret_index();
+            game_buffer.view([&sc](const auto& buf) {
+                scintilla::text_op{sc}.set_new_all_text(buf);
+            });
+            caret.set_caret_index(pos);
+        });
 }
 
 /**
@@ -153,10 +159,10 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
     while(game_flag == game_over::game_status_flag::unset) {
         dt = fixed_time_step.sleep();
         fps_count.fps([](auto fps) {
-            notepad::push_command([fps](notepad& np, scintilla&) {
-                np.window_title.game_thread_fps =
-                    static_cast<decltype(np.window_title.game_thread_fps)>(fps);
-            });
+            notepad::push_command(
+                [fps](notepad& np, scintilla::scintilla_dll&) {
+                    np.send_game_fps(fps);
+                });
         });
 
         for(const auto& vertex: graph) {
@@ -231,13 +237,14 @@ distribute_items(entt::registry& reg,
                         [msg_wnd_uuid,
                          msg =
                              MESSAGES.at(reg.get<const message_index>(self).i)](
-                            notepad& np, scintilla&) {
+                            notepad& np, scintilla::scintilla_dll&) {
                             auto w = std::ranges::find_if(
-                                np.static_controls, [msg_wnd_uuid](auto& w) {
+                                np.get_all_static_controls(),
+                                [msg_wnd_uuid](auto& w) {
                                     return w.get_id() == msg_wnd_uuid;
                                 });
                             SetWindowText(*w, msg.data());
-                            w->text = msg;
+                            w->with_text(msg);
                         });
                 }
                 if(reg.all_of<projectile::projectile_tag>(collider)) {
@@ -271,14 +278,17 @@ inline void create_character([[maybe_unused]] pos char_pos, entt::registry& reg,
 #else
     character::make(ch, char_pos,
                     sprite{sprite::unchecked_construct_tag{}, "#"});
-    notepad::push_command([char_pos, game_area](notepad&, scintilla& sc) {
-        npi_t height = sc.get_lines_on_screen();
+    notepad::push_command([char_pos, game_area](notepad&, scintilla::scintilla_dll& sc) {
+        auto scroll_op = scintilla::scroll_op{sc};
+        auto size_op = scintilla::size_op{sc};
+        npi_t height = size_op.get_lines_on_screen();
         auto width =
-            static_cast<npi_t>(sc.get_window_width() / sc.get_char_width());
-        sc.scroll(std::max(0, static_cast<npi_t>(std::min(char_pos.x - width / 2,
-                                                        game_area.x - width))),
-                  static_cast<npi_t>(
-                      std::min(char_pos.y - height / 2, game_area.y - height)));
+            static_cast<npi_t>(size_op.get_window_width() / size_op.get_char_width());
+        scroll_op.scroll(
+            std::max(0, static_cast<npi_t>(std::min(char_pos.x - width / 2,
+                                                    game_area.x - width))),
+            static_cast<npi_t>(
+                std::min(char_pos.y - height / 2, game_area.y - height)));
     });
 #endif
 }
@@ -298,18 +308,20 @@ inline void create_kitten(entt::registry& reg, [[maybe_unused]] pos kitten_pos,
 
 using rgb_t = decltype(RGB(0, 0, 0));
 
-inline void set_all_colors(scintilla& sc, std::span<const rgb_t> all_colors) {
+inline void set_all_colors(scintilla::scintilla_dll& sc,
+                           std::span<const rgb_t> all_colors) {
     int style = MY_STYLE_START + PRINTABLE_RANGE.first;
-    sc.clear_all_styles();
+    const auto look_op = scintilla::look_op{sc};
+    look_op.clear_all_styles();
     for(auto i: all_colors) {
-        sc.set_text_color(style, i);
-        sc.force_set_back_color(style, 0);
+        look_op.set_text_color(style, i);
+        look_op.force_set_back_color(style, 0);
         style++;
     }
     // Default Styles
     for(auto i: {0, STYLE_DEFAULT}) {
-        sc.force_set_back_color(i, 0);
-        sc.force_set_text_color(i, RGB(255, 255, 255));
+        look_op.force_set_back_color(i, 0);
+        look_op.force_set_text_color(i, RGB(255, 255, 255));
     }
 };
 
@@ -359,10 +371,10 @@ inline std::vector<rgb_t> generate_colors(random_t& rnd) {
 
 inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
     auto& rnd = reg.ctx().emplace<random_t>(std::random_device{}());
-    notepad::push_command(
-        [ALL_COLORS = generate_colors(rnd)](notepad&, scintilla& sc) {
-            set_all_colors(sc, ALL_COLORS);
-        });
+    notepad::push_command([ALL_COLORS = generate_colors(rnd)](
+                              notepad&, scintilla::scintilla_dll& sc) {
+        set_all_colors(sc, ALL_COLORS);
+    });
     // common data shared between all projectile instances such as sprite
     projectile::initialize_for_all(reg);
 
@@ -380,15 +392,17 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
     auto msg_w = static_control_handler{};
     reg.ctx().emplace_as<static_control_handler::id_t>(
         entt::hashed_string{"msg_window"}, msg_w.get_id());
-    notepad::push_command(
-        [msg_w = std::move(msg_w)](notepad& np, scintilla& sc) mutable {
-            static constexpr int height = 100;
-            static constexpr int wnd_x = 20;
-            msg_w.with_size(pos(sc.get_window_width(), height))
-                .with_position(pos(wnd_x, 0))
-                .with_text_color(sc.get_text_color(STYLE_DEFAULT));
-            np.show_static_control(std::move(msg_w));
-        });
+    notepad::push_command([msg_w = std::move(msg_w)](
+                              notepad& np,
+                              scintilla::scintilla_dll& sc) mutable {
+        static constexpr int height = 100;
+        static constexpr int wnd_x = 20;
+        msg_w.with_size(pos(scintilla::size_op{sc}.get_window_width(), height))
+            .with_position(pos(wnd_x, 0))
+            .with_fore_color(
+                scintilla::look_op{sc}.get_text_color(STYLE_DEFAULT));
+        np.show_static_control(std::move(msg_w));
+    });
 };
 
 // from the entt community

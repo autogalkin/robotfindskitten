@@ -66,8 +66,12 @@ public:
  * @brief Count FPS and return count of frames between calls fps()
  */
 class fps_count {
+public:
+    using value_type = uint32_t;
+
+private:
     point start_point_ = clock::now();
-    uint32_t frames_ = 0;
+    value_type frames_ = 0;
 
 public:
     /**
@@ -77,15 +81,15 @@ public:
      * @param printer a lambda of type Printer
      */
     template<typename Printer>
-        requires std::is_invocable_v<Printer, uint64_t>
+        requires std::is_invocable_v<Printer, fps_count::value_type>
     void fps(Printer&& printer) {
         frames_++;
         const point new_point_ = clock::now();
         const auto delta = new_point_ - start_point_;
         if(delta >= 1s) {
             printer(
-                std::round(static_cast<double>(frames_)
-                           / (std::chrono::duration<double>(delta).count())));
+                std::lround(static_cast<double>(frames_)
+                            / (std::chrono::duration<double>(delta).count())));
             frames_ = 0;
             start_point_ = new_point_;
         }

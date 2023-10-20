@@ -21,16 +21,10 @@
 #include "engine/scintilla_wrapper.h"
 #include "engine/time.h"
 
-notepad::notepad()
-    : main_window_(), fixed_time_step_(), fps_count_(),
-      on_open_(std::make_unique<open_signal_t>()), original_proc_(0),
-      scintilla_(std::nullopt) {}
-
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
 void notepad::tick_render() {
     fps_count_.fps([](auto fps) {
-        notepad::get().window_title.render_thread_fps = static_cast<
-            decltype(notepad::get().window_title.render_thread_fps)>(fps);
+        notepad::get().window_title_args.set_notepad_thread_fps(fps);
     });
     // execute all commands from the Game thread
     commands_.consume_all([this](auto f) {
@@ -38,25 +32,25 @@ void notepad::tick_render() {
             f(*this, *scintilla_);
         }
     });
-    notepad::get().set_window_title(notepad::get().window_title.make());
+    notepad::get().set_window_title(notepad::get().window_title_args.make());
 }
 
 // game in another thread
-void notepad::start_game() {
+void notepad::start_game_thread() {
     ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
     RECT rc;
     ::GetWindowRect(main_window_, &rc);
-    ::SetWindowPos(scintilla_->edit_window_, nullptr, rc.left, rc.top,
+    ::SetWindowPos(scintilla_->get_native_window(), nullptr, rc.left, rc.top,
                    rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE);
-    ::InvalidateRect(scintilla_->edit_window_, nullptr, TRUE);
+    ::InvalidateRect(scintilla_->get_native_window(), nullptr, TRUE);
     auto shutdown_token = std::make_shared<std::atomic_bool>(false);
     auto shutdown_to_game = shutdown_token;
-    game_thread = std::make_optional(thread_guard(
+    game_thread.emplace(thread_guard(
         std::thread(
             [on_open = std::exchange(
                  on_open_, std::unique_ptr<notepad::open_signal_t>{nullptr}),
-             shutdown_token = std::move(shutdown_to_game)]() {
-                (*on_open)(shutdown_token);
+             shutdown = std::move(shutdown_to_game)]() {
+                (*on_open)(shutdown);
             }),
         std::move(shutdown_token)));
 }
@@ -84,7 +78,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
             ::SendMessage(notepad::get().get_window(), WM_SIZE, SIZE_RESTORED,
                           MAKELPARAM(rc.right - rc.left, rc.bottom - rc.top));
         };
-        np.start_game();
+        np.start_game_thread();
         break;
     }
     case WM_DESTROY: {
@@ -95,18 +89,18 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         break;
     }
     case WM_ACTIVATE: {
-        notepad::is_active.store(wp != WA_INACTIVE);
+        notepad::get().is_active.store(wp != WA_INACTIVE);
         break;
     }
     case WM_SIZE: {
         if(np.scintilla_) {
-            ::SetWindowPos(np.scintilla_->edit_window_, nullptr, 0, 0, 0, 0,
-                           SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            ::SetWindowPos(np.scintilla_->get_native_window(), nullptr, 0, 0, 0,
+                           0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
             RECT rect = {NULL};
-            ::GetWindowRect(np.scintilla_->edit_window_, &rect);
+            ::GetWindowRect(np.scintilla_->get_native_window(), &rect);
             for(auto& w: np.static_controls) {
-                ::SetWindowPos(w, nullptr, w.position.x, w.position.y, w.size.x,
-                               w.size.y, SWP_NOACTIVATE);
+                ::SetWindowPos(w, nullptr, w.get_pos().x, w.get_pos().y,
+                               w.get_size().x, w.get_size().y, SWP_NOACTIVATE);
             }
         }
         break;
@@ -115,7 +109,8 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
         auto& np = notepad::get();
         if(np.scintilla_) {
             auto back_color =
-                np.scintilla_->get_background_color(STYLE_DEFAULT);
+                scintilla::look_op{*np.scintilla_}.get_background_color(
+                    STYLE_DEFAULT);
             for(auto& w: np.static_controls) {
                 if(w == reinterpret_cast<HWND>(lp)) {
                     static std::unique_ptr<std::remove_pointer_t<HBRUSH>,
@@ -124,7 +119,7 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
                                     &::DeleteObject};
                     hBrushLabel.reset(::CreateSolidBrush(back_color));
                     HDC popup = reinterpret_cast<HDC>(wp);
-                    ::SetTextColor(popup, w.fore_color);
+                    ::SetTextColor(popup, w.get_fore_color());
                     ::SetLayeredWindowAttributes(w, back_color, 0,
                                                  LWA_COLORKEY);
                     ::SetBkColor(popup, back_color);
@@ -160,31 +155,32 @@ bool hook_GetMessageW(const HMODULE module) {
                 case WM_MOUSEWHEEL: {
                     auto scroll_delta = GET_WHEEL_DELTA_WPARAM(lpMsg->wParam);
                     // horizontal scroll
+                    auto scroll_op = scintilla::scroll_op{*np.scintilla_};
+                    auto size_op = scintilla::size_op{*np.scintilla_};
+                    auto text_op = scintilla::text_op{*np.scintilla_};
                     if(LOWORD(lpMsg->wParam) & MK_SHIFT) {
-                        auto char_width = np.scintilla_->get_char_width();
-                        np.scintilla_->scroll(
+                        auto char_width = size_op.get_char_width();
+                        scroll_op.scroll(
                             scroll_delta > 0
                                 ? -3
                                 : (static_cast<npi_t>(
-                                       np.scintilla_
-                                               ->get_horizontal_scroll_offset()
+                                       scroll_op.get_horizontal_scroll_offset()
                                            / char_width
-                                       + (np.scintilla_->get_window_width()
+                                       + (size_op.get_window_width()
                                           / char_width))
                                            < static_cast<npi_t>(
-                                               np.scintilla_->get_line_lenght(
-                                                   0))
+                                               text_op.get_line_lenght(0))
                                        ? 3
                                        : 0),
                             0);
                         lpMsg->message = WM_NULL;
                         // vertical scroll
                     } else if(!(LOWORD(lpMsg->wParam))) {
-                        np.scintilla_->scroll(
+                        scroll_op.scroll(
                             0, scroll_delta > 0
                                    ? -3
-                                   : ((np.scintilla_->get_lines_on_screen() - 1)
-                                              < np.scintilla_->get_lines_count()
+                                   : ((size_op.get_lines_on_screen() - 1)
+                                              < text_op.get_lines_count()
                                           ? 3
                                           : 0));
                         lpMsg->message = WM_NULL;
@@ -263,7 +259,8 @@ bool hook_CreateWindowExW(HMODULE module) {
                          WC_EDITW)) // handles the edit control creation
                                     // and create custom window
             {
-                np.scintilla_.emplace(construct_key<scintilla>{});
+                np.scintilla_.emplace(
+                    scintilla::construct_key<scintilla::scintilla_dll>{});
 
                 out_hwnd = np.scintilla_->create_native_window(
                     dwExStyle, lpWindowName,
@@ -302,23 +299,24 @@ bool hook_SetWindowTextW(HMODULE module) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
 // NOLINTEND(readability-function-cognitive-complexity)
 
-void notepad::show_static_control(static_control_handler&& ctrl) noexcept {
-    assert(glm::all(glm::notEqual(ctrl.size, pos(0))));
+void notepad::show_static_control(static_control_handler&& ctrl) {
+    assert(glm::all(glm::notEqual(ctrl.get_size(), pos(0))));
     DWORD dwStyle =
         WS_CHILD | WS_VISIBLE | SS_LEFT | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
     ctrl.wnd_.reset(
         ::CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                         "STATIC", " ", dwStyle, 0, 0, ctrl.size.x, ctrl.size.y,
-                         get_window(), nullptr, ::GetModuleHandle(nullptr),
-                         nullptr),
+                         "STATIC", " ", dwStyle, 0, 0, ctrl.size_.x,
+                         ctrl.size_.y, get_window(), nullptr,
+                         ::GetModuleHandle(nullptr), nullptr),
         [](HWND w) { ::PostMessage(w, WM_CLOSE, 0, 0); });
     ::SetLayeredWindowAttributes(
         // Scintilla was not valid only on startup
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-        ctrl.wnd_.get(), scintilla_->get_background_color(STYLE_DEFAULT), 0,
+        ctrl,
+        scintilla::look_op{*scintilla_}.get_background_color(STYLE_DEFAULT), 0,
         LWA_COLORKEY);
-    ::SetWindowPos(ctrl.wnd_.get(), HWND_TOP, ctrl.position.x, ctrl.position.y,
-                   ctrl.size.x, ctrl.size.y, 0);
+    ::SetWindowPos(ctrl, HWND_TOP, ctrl.get_pos().x, ctrl.get_pos().y,
+                   ctrl.get_size().x, ctrl.get_size().y, 0);
     static constexpr int font_size = 38;
     static const std::unique_ptr<std::remove_pointer_t<HFONT>,
                                  decltype(&::DeleteObject)>
@@ -327,11 +325,11 @@ void notepad::show_static_control(static_control_handler&& ctrl) noexcept {
                             CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
                             DEFAULT_PITCH | FF_SWISS, L"Consolas"),
               &::DeleteObject};
-    ::SendMessageW(ctrl.wnd_.get(), WM_SETFONT,
-                   reinterpret_cast<WPARAM>(hFont.get()), TRUE);
-    ::ShowWindow(ctrl.wnd_.get(), SW_SHOW);
-    ::UpdateWindow(ctrl.wnd_.get());
-    ::InvalidateRect(ctrl.wnd_.get(), nullptr, TRUE);
-    ::SetWindowTextA(ctrl, ctrl.text.data());
+    ::SendMessageW(ctrl, WM_SETFONT, reinterpret_cast<WPARAM>(hFont.get()),
+                   TRUE);
+    ::ShowWindow(ctrl, SW_SHOW);
+    ::UpdateWindow(ctrl);
+    ::InvalidateRect(ctrl, nullptr, TRUE);
+    ::SetWindowTextA(ctrl, ctrl.get_text().data());
     static_controls.emplace_back(std::move(ctrl));
 }
