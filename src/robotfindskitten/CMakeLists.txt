@@ -43,7 +43,7 @@ add_custom_command(
         COMMENT "Replace Scintilla source code files with patched files"
     )
 
-# find make
+# find Make for Scintilla
 find_program(IS_NMAKE_EXISTS nmake)
 if(IS_NMAKE_EXISTS)
     set(SCI_BUILD_COMMAND nmake -f scintilla.mak)
@@ -71,13 +71,14 @@ else()
     endif()
 endif()
 
-# Run scintilla makefile
+# Run the Scintilla Makefile
 add_custom_target(
         scintilla
         COMMAND ${SCI_BUILD_COMMAND}
         WORKING_DIRECTORY "${scintilla_SOURCE_DIR}/win32"
         DEPENDS "${SCI_PACHED_STAMP}"
         COMMENT "Build Scintilla with original Makefile")
+# Make rebuilding the Scintilla optional
 if(NOT EXISTS "${SCI_OUT_FILE}")
     set_target_properties(scintilla PROPERTIES EXCLUDE_FROM_ALL OFF)
 else()
@@ -104,10 +105,8 @@ install(
         CONFIGURATIONS Release
         DESTINATION . )
 
-#endif()
 
 # build robotfindskitten.dll
-
 
 find_package(
     glm
@@ -120,15 +119,18 @@ find_package(
 find_package(Boost COMPONENTS container) # and header-only signals2
 
 
-# project splits into static libraries !IMPORTANT include needs to make include
-# namespaces for libraries e.g notepad.h -> engine/notepad.h
+# The project splits into static libraries 
+# !IMPORTANT `include` needs to make the include
+# namespaces for libraries e.g 
+# notepad.h -> engine/notepad.h
+# game.h -> game/game.h
 include(engine/CMakeLists.txt)
 include(game/CMakeLists.txt)
 
 add_library(engine STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 add_library(game STATIC ${GAME_SOURCES} ${GAME_HEADERS})
 
-
+# Embed robotfindskitten messages
 file(READ "${CMAKE_CURRENT_LIST_DIR}/game/assets/messages.txt" MESSAGES_FILE_CONTENT)
 string(REPLACE "\n" ";" MESSAGES_LIST ${MESSAGES_FILE_CONTENT})
 list(FILTER MESSAGES_LIST EXCLUDE REGEX "^$" )
@@ -143,6 +145,7 @@ target_include_directories(game PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 
 add_library(${PROJECT_NAME} SHARED ./dllmain.cpp)
 
+# Link lexilla
 file(GLOB LEX_SOURCES CONFIGURE_DEPENDS ${lexilla_SOURCE_DIR}/lexlib/*.cxx)
 file(GLOB LEX_HEADERS CONFIGURE_DEPENDS ${lexilla_SOURCE_DIR}/lexlib/*.h)
 add_library(lexlib STATIC ${LEX_SOURCES} ${LEX_HEADERS})
@@ -152,8 +155,9 @@ set_target_properties(
         PROPERTIES CXX_STANDARD 20
                    CXX_STANDARD_REQUIRED ON
                    LINKER_LANGUAGE CXX)
-target_compile_definitions(lexlib PUBLIC # windows.h
+target_compile_definitions(lexlib PUBLIC
                                 NOMINMAX WIN32_LEAN_AND_MEAN)
+
 target_include_directories(lexlib PRIVATE
 "${scintilla_SOURCE_DIR}/include"
 "${lexilla_SOURCE_DIR}/lexlib"
@@ -172,6 +176,7 @@ list(
     engine
     game
     ${PROJECT_NAME})
+
 foreach(_target IN LISTS ROBOTFINDSKITTEN_ALL_TARGETS)
     set_target_properties(
         ${_target}

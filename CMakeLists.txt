@@ -35,11 +35,32 @@ add_subdirectory(src/loader)
 add_subdirectory(src/robotfindskitten)
 
 
+option(ROBOTFINDSKITTEN_BUILD_TESTING "Enable building tests." OFF)
 
-find_package(GTest CONFIG REQUIRED)
-enable_testing()
-add_subdirectory(tests)
+if(ROBOTFINDSKITTEN_BUILD_TESTING)
+    find_package(GTest CONFIG REQUIRED)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
+option(ROBOTFINDSKITTEN_BUILD_DOCS "Enable building with documentation." OFF)
+
+if(ROBOTFINDSKITTEN_BUILD_DOCS)
+    find_package(Doxygen)
+    configure_file(DoxygenFile.in DoxygenFile @ONLY)
+    add_custom_target(
+    docs ALL
+    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/DoxygenFile
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    VERBATIM
+    SOURCES
+        "${CMAKE_CURRENT_BINARY_DIR}/DoxygenFile"
+    )
+    install(
+        DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+        DESTINATION docs
+    )
+endif()
 
 add_custom_target(
     copy-compile-commands ALL

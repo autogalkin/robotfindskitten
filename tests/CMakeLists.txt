@@ -39,6 +39,5 @@ foreach(source_file ${TEST_SOURCES})
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
     set_target_properties(${target_name} PROPERTIES FOLDER tests)
-    # set_target_properties(${target_name} PROPERTIES EXCLUDE_FROM_ALL ON)
     list(APPEND TEST_TARGETS ${target_name})
 endforeach()
