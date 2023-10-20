@@ -44,6 +44,9 @@ struct self {
     }
 };
 
+/**
+ * @brief A collision callback
+ */
 struct responce_func {
     using function_type = entt::delegate<void(entt::registry&, self, collider)>;
     function_type fun;
@@ -51,11 +54,20 @@ struct responce_func {
         fun(reg, s, c);
     }
 };
+
+/**
+ * @brief A hit box of the entity in the game
+ */
 struct hit_extends {
     pos v;
 };
+
+/**
+ * @brief Quad Tree collision detection system
+ */
 class query {
-    // mark entity to remove from tree and insert again
+    // Marking the entity for removal from the tree and insertion again in the
+    // next tick.
     struct need_update_entity {};
     quad_tree<entt::entity> tree_;
 
@@ -82,7 +94,7 @@ public:
             remove_by_die,
 
         entt::registry& reg) {
-        // insert moved actors into the tree
+        // Insert moved actors into the tree
         for(const auto ent: need_insert) {
             const auto cur_loc = need_insert.get<loc>(ent);
             auto& [index_in_quad_tree] = need_insert.get<agent>(ent);
@@ -93,14 +105,14 @@ public:
                     + box_t(cur_loc, cur_loc));
             reg.erase<need_update_entity>(ent); // safe, delete on the same ent
         }
-
+        // Pack intersections into a flat buffer
         struct node {
             entt::entity ent;
             enum type { requester, collider } ty;
         };
         std::deque<node> result_list{};
 
-        // compute collision
+        // Compute intersections
         for(const auto ent: query_view) {
             const loc& current_location = query_view.get<loc>(ent);
             const translation& trans = query_view.get<translation>(ent);
@@ -118,6 +130,7 @@ public:
                 result_list.push_back(node{.ent = resp, .ty = node::collider});
             });
         }
+        // Execute callbacks
         if(!result_list.empty()) {
             size_t curr_req = 0;
             for(size_t i = 0; i < result_list.size();) {
@@ -148,7 +161,7 @@ public:
             tree_.remove(view.template get<agent>(ent).index_in_quad_tree);
             reg.emplace_or_replace<need_update_entity>(ent);
         };
-        // remove actors which will move, insert it again in the next tick
+        // Remove actors which will move, insert them again in the next tick
         for(const auto ent: remove_by_move) {
             if(remove_by_move.get<translation>(ent).is_changed()) {
                 remove_from_tree(remove_by_move, ent);
