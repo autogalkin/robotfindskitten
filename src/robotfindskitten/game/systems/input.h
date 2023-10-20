@@ -18,7 +18,9 @@
 #include "engine/notepad.h"
 
 namespace input {
+
 using key_size = WPARAM;
+// Supported keys
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 enum class key : key_size {
     w = 0x57,
@@ -27,6 +29,11 @@ enum class key : key_size {
     d = 0x44,
     space = VK_SPACE,
 };
+
+/**
+ * @struct key_state
+ * @brief A key and a count of key presses.
+ */
 struct key_state {
     input::key key{0};
     uint16_t press_count = 0;
@@ -34,6 +41,13 @@ struct key_state {
 
 using state_t = std::vector<key_state>;
 
+/**
+ * @brief Checks the key is pressed or not
+ *
+ * @param state The current keyboard state
+ * @param key Which key
+ * @return A state of the given key
+ */
 [[maybe_unused]] [[nodiscard]] static std::optional<key_state>
 has_key(std::span<key_state> state, input::key key) {
     auto it = std::ranges::find_if(state,
@@ -41,12 +55,27 @@ has_key(std::span<key_state> state, input::key key) {
     return it == state.end() ? std::nullopt : std::make_optional(*it);
 }
 
+/**
+ * @struct key_down_task
+ * @brief An ECS component with a reaction to key pressing
+ */
 struct key_down_task {
     using function_type =
         entt::delegate<void(entt::handle, std::span<key_state>)>;
     function_type exec;
 };
+/**
+ * @struct task_disable_tag
+ * @brief If the \ref key_down_task is disabled inside the ecs execution graph
+ */
 struct task_disable_tag {};
+
+/**
+ * @struct task_owner
+ * @briefA node among the many key_down_tasks within a single registry. For
+ * additional input, we create a new entity and emplace a link to the player
+ * entity.
+ */
 struct task_owner {
     entt::entity v = entt::null;
 };
@@ -59,8 +88,7 @@ struct player_input {
         [[maybe_unused]] auto initialize_group =
             reg.group<key_down_task>({}, entt::exclude<task_disable_tag>);
         for(size_t i = 0; i < keys_.size(); ++i) {
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
-            keys_[i] = key_state{SUPPORTED_KEYS[i], 0};
+            keys_.at(i) = key_state{SUPPORTED_KEYS.at(i), 0};
         }
     }
 
@@ -70,7 +98,7 @@ struct player_input {
         }
         static constexpr WPARAM IS_PRESSED = 0x8000;
         for(auto& i: keys_) {
-            // I think it has rights to live.. ¯\_(ツ)_/¯ it is fast..
+            // I believe it has the right to exist... ¯\_(ツ)_/¯ it is fast...
             if(GetAsyncKeyState(static_cast<int>(i.key)) & IS_PRESSED) {
                 ++i.press_count;
             } else {
