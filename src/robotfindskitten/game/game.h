@@ -1,9 +1,10 @@
-#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_GAME_H
-#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_GAME_H
 /**
  * @file
- * @brief The main game loop
+ * @brief The entry point to the game.
  */
+
+#ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_GAME_H
+#define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_GAME_H
 
 #include <array>
 #include <chrono>
@@ -37,20 +38,26 @@
 
 namespace game {
 
-// All `robotfindskitten` messages
+/**
+ * @var MESSAGES
+ * @brief All `robotfindskitten` messages.
+ *
+ * They come from config.h.in and are embedded by CMake.
+ **/
 constexpr std::array MESSAGES =
     std::to_array<std::string_view>(ALL_GAME_MESSAGES);
 
-// Using thread safe buffer
+// A thread safe buffer for this game
 using buffer_type = back_buffer<thread_safe_trait<std::mutex>>;
 
-inline void run(buffer_type& game_buffer);
+void run(buffer_type& game_buffer);
 
 /**
- * @brief Start a game loop
+ * @brief Starts a game loop within the specified extends.
  *
- * @param game_area An area where game can work(collision, draw ent)
- * @param shutdown A shutdown signal
+ * @param game_area An area where the game can operate, including collision,
+ * drawing, and more.
+ * @param shutdown A shutdown signal to exit the loop.
  */
 inline void start(pos game_area,
                   const std::shared_ptr<std::atomic_bool>& shutdown) {
@@ -64,18 +71,23 @@ inline void start(pos game_area,
         run(game_buffer);
         auto lock = game_buffer.lock();
         game_buffer.clear();
-        // restart a game
+        // Restart a game again
     }
 };
 
-inline void setup_components(entt::registry& reg, buffer_type& game_buffer);
-inline void game_loop(entt::registry& reg, entt::organizer& org,
-                      buffer_type& game_buffer);
+void setup_components(entt::registry& reg, buffer_type& game_buffer);
+void game_loop(entt::registry& reg, entt::organizer org,
+               buffer_type& game_buffer);
 
+/**
+ * @brief Sends the content of the \p game_buffer to Scintilla.
+ *
+ * @param game_buffer A buffer for rendering.
+ */
 inline void render(buffer_type& game_buffer) {
     notepad::push_command(
         [&game_buffer](notepad& /*np*/, scintilla::scintilla_dll& sc) {
-            // swap buffers in Scintilla
+            // swaps the buffer in Scintilla
             const auto caret = scintilla::caret_op{sc};
             const auto pos = caret.get_caret_index();
             game_buffer.view([&sc](const auto& buf) {
@@ -86,13 +98,13 @@ inline void render(buffer_type& game_buffer) {
 }
 
 /**
- * @brief Initialize systems and run a game loop
+ * @brief Initializes the systems execution graph and runs a game loop.
  *
- * @param game_buffer A game back buffer
+ * @param game_buffer A back buffer of the current game.
  */
 inline void run(buffer_type& game_buffer) {
-    entt::registry reg;
-    // all systems live on the stack until the game end
+    entt::registry reg; // Acts as static variable for the game.
+    // All systems live on the stack until the game ends.
     auto run_with = [&reg, &game_buffer]<typename... Systems>(Systems... t) {
         entt::organizer org;
         auto system_names = std::to_array(
@@ -106,11 +118,16 @@ inline void run(buffer_type& game_buffer) {
                 }(),
                 ...);
         }
+        // Fills the initial area inside Scintilla
+        // It allows us to scroll to the random start point.
         render(game_buffer);
         setup_components(reg, game_buffer);
-        game_loop(reg, org, game_buffer);
-        org.clear();
+        game_loop(reg, std::move(org), game_buffer);
     };
+    // The execution graph.
+    // The order of systems is important.For example, the collision system
+    // checks a future position of an entity based on its translation, which is
+    // set by the motion system.
     // clang-format off
     run_with(input::player_input{reg}, 
              motion::uniform_motion{}, 
@@ -133,15 +150,16 @@ inline void run(buffer_type& game_buffer) {
 void print_graph(std::span<const entt::organizer::vertex> graph);
 
 /**
- * @brief Game loop that execute the systems graph in the fixed time step
+ * @brief Executes the systems graph following a fixed time step.
  *
- * @param reg entt registry
- * @param org entt organizer
- * @param game_buffer our game back buffer
+ * @param reg An entt::registry with all game components.
+ * @param org An entt::organizer with all systems.
+ * @param game_buffer Our game's back buffer.
  */
-inline void game_loop(entt::registry& reg, entt::organizer& org,
+inline void game_loop(entt::registry& reg, entt::organizer org,
                       buffer_type& game_buffer) {
     const auto graph = org.graph();
+    org.clear();
 #ifndef NDEBUG
     print_graph(graph);
 #endif
@@ -164,16 +182,16 @@ inline void game_loop(entt::registry& reg, entt::organizer& org,
                     np.send_game_fps(fps);
                 });
         });
-
+        // Execute all systems.
         for(const auto& vertex: graph) {
-            // dt is passed implicitly through ctx()
+            // The delta time is implicitly passed through ctx().
             vertex.callback()(vertex.data(), reg);
         }
         render(game_buffer);
     }
 }
 
-inline static constexpr size_t ITEMS_COUNT = MESSAGES.size();
+constexpr size_t ITEMS_COUNT = MESSAGES.size();
 
 inline std::unordered_set<pos> generate_random_positions(entt::registry& reg,
                                                          pos game_area) {
@@ -193,7 +211,10 @@ inline std::unordered_set<pos> generate_random_positions(entt::registry& reg,
     return all;
 }
 
-// index in MESSAGES
+/**
+ * @struct message_index
+ * @brief An index in \ref MESSAGES
+ */
 struct message_index {
     size_t i;
 };
@@ -243,7 +264,7 @@ distribute_items(entt::registry& reg,
                                 [msg_wnd_uuid](auto& w) {
                                     return w.get_id() == msg_wnd_uuid;
                                 });
-                            SetWindowText(*w, msg.data());
+                            ::SetWindowText(*w, msg.data());
                             w->with_text(msg);
                         });
                 }
@@ -278,18 +299,19 @@ inline void create_character([[maybe_unused]] pos char_pos, entt::registry& reg,
 #else
     character::make(ch, char_pos,
                     sprite{sprite::unchecked_construct_tag{}, "#"});
-    notepad::push_command([char_pos, game_area](notepad&, scintilla::scintilla_dll& sc) {
-        auto scroll_op = scintilla::scroll_op{sc};
-        auto size_op = scintilla::size_op{sc};
-        npi_t height = size_op.get_lines_on_screen();
-        auto width =
-            static_cast<npi_t>(size_op.get_window_width() / size_op.get_char_width());
-        scroll_op.scroll(
-            std::max(0, static_cast<npi_t>(std::min(char_pos.x - width / 2,
-                                                    game_area.x - width))),
-            static_cast<npi_t>(
-                std::min(char_pos.y - height / 2, game_area.y - height)));
-    });
+    notepad::push_command(
+        [char_pos, game_area](notepad&, scintilla::scintilla_dll& sc) {
+            auto scroll_op = scintilla::scroll_op{sc};
+            auto size_op = scintilla::size_op{sc};
+            npi_t height = size_op.get_lines_on_screen();
+            auto width = static_cast<npi_t>(size_op.get_window_width()
+                                            / size_op.get_char_width());
+            scroll_op.scroll(
+                std::max(0, static_cast<npi_t>(std::min(char_pos.x - width / 2,
+                                                        game_area.x - width))),
+                static_cast<npi_t>(
+                    std::min(char_pos.y - height / 2, game_area.y - height)));
+        });
 #endif
 }
 
@@ -318,7 +340,7 @@ inline void set_all_colors(scintilla::scintilla_dll& sc,
         look_op.force_set_back_color(style, 0);
         style++;
     }
-    // Default Styles
+    // Default styles
     for(auto i: {0, STYLE_DEFAULT}) {
         look_op.force_set_back_color(i, 0);
         look_op.force_set_text_color(i, RGB(255, 255, 255));
@@ -375,7 +397,8 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
                               notepad&, scintilla::scintilla_dll& sc) {
         set_all_colors(sc, ALL_COLORS);
     });
-    // common data shared between all projectile instances such as sprite
+    // A common data is shared among all projectile instances, such as a single
+    // sprite
     projectile::initialize_for_all(reg);
 
     auto all = generate_random_positions(reg, game_buffer.get_extends());
@@ -405,7 +428,7 @@ inline void setup_components(entt::registry& reg, buffer_type& game_buffer) {
     });
 };
 
-// from the entt community
+// Taken from the entt community
 // https://github.com/fowlmouth/entt-execution-graph/
 inline void print_graph(std::span<const entt::organizer::vertex> graph) {
     std::cout << "the game execution graph:\n";
