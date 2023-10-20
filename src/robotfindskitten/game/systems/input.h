@@ -50,7 +50,7 @@ struct task_disable_tag {};
 struct task_owner {
     entt::entity v = entt::null;
 };
-inline static constexpr auto SUPPORTED_KEYS =
+constexpr auto SUPPORTED_KEYS =
     std::to_array({key::w, key::a, key::s, key::d, key::space});
 
 struct player_input {

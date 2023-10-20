@@ -38,7 +38,7 @@
 namespace game {
 
 // All `robotfindskitten` messages
-static const std::array MESSAGES =
+constexpr std::array MESSAGES =
     std::to_array<std::string_view>(ALL_GAME_MESSAGES);
 
 // Using thread safe buffer

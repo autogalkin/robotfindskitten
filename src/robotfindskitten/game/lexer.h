@@ -31,8 +31,8 @@
 #include "config.h"
 // clang-format on
 
-static inline constexpr int MY_STYLE_START = 33;
-[[maybe_unused]] static inline constexpr std::pair<int, int> PRINTABLE_RANGE{
+constexpr int MY_STYLE_START = 33;
+[[maybe_unused]] constexpr std::pair<int, int> PRINTABLE_RANGE{
     static_cast<int>(' '), static_cast<int>('~')};
 
 class lexer: public Lexilla::DefaultLexer {

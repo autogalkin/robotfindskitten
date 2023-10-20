@@ -184,14 +184,14 @@ namespace pos_declaration {
 // clang-format on
 
 // X - horizontal coordinates from left to right
-inline static constexpr size_t X = 0;
+constexpr size_t X = 0;
 // Y - vertical coordinates from top to bottom
-inline static constexpr size_t Y = 1;
+constexpr size_t Y = 1;
 
 // A `Start` point
-inline static constexpr size_t S = 0;
+constexpr size_t S = 0;
 // An `End` point
-inline static constexpr size_t E = 1;
+constexpr size_t E = 1;
 
 // Quadrants type, represent each child index of 4 branch children
 // int the frat array

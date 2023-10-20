@@ -37,8 +37,8 @@ class sprite {
     // expect CharT null terminator;
     std::basic_string<char_size> data_;
     [[nodiscard]] static sprite normilize_from_string(std::string s);
-    sprite(uint16_t width, const std::basic_string<char_size>& str)
-        : width_(width), data_(str) {}
+    sprite(uint16_t width, std::basic_string<char_size> str)
+        : width_(width), data_(std::move(str)) {}
 
 public:
     inline static constexpr char whitespace = ' ';

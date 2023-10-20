@@ -17,7 +17,7 @@ using namespace std::chrono_literals;
 using clock = std::chrono::steady_clock;
 
 // fixed time stem inderval
-static auto constexpr dt = std::chrono::duration<int64_t, std::ratio<1, 60>>{1};
+constexpr auto dt = std::chrono::duration<int64_t, std::ratio<1, 60>>{1};
 
 using duration = decltype(clock::duration{} + dt);
 // clock time point

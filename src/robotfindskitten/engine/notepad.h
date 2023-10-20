@@ -205,6 +205,36 @@ public:
     COLORREF fore_color = RGB(0, 0, 0);
 };
 
+/**
+ * @class thread_guard
+ * @brief [TODO:description]
+ *
+ */
+class thread_guard {
+    std::thread t_;
+    std::shared_ptr<std::atomic_bool> shutdown_token_ =
+        std::make_shared<std::atomic_bool>(false);
+
+public:
+    explicit thread_guard(std::thread t,
+                          std::shared_ptr<std::atomic_bool> shutdown)
+        : t_(std::move(t)), shutdown_token_(std::move(shutdown)) {}
+    thread_guard(const thread_guard&) = delete;
+    thread_guard& operator=(const thread_guard&) = delete;
+    thread_guard(thread_guard&&) = default;
+    thread_guard& operator=(thread_guard&&) = default;
+    ~thread_guard() {
+        shutdown_token_->store(true);
+        if(t_.joinable()) {
+            try {
+                t_.join();
+            } catch(const std::system_error&) {
+                /* suppressed */
+            }
+        }
+    }
+};
+
 // A static Singelton for notepad.exe wrapper
 /**
  * @class notepad
@@ -257,6 +287,11 @@ public:
 
     title_line_args window_title{};
     std::vector<static_control_handler> static_controls;
+    std::optional<thread_guard> game_thread{};
+
+    // Indicate the application state
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+    inline static std::atomic_bool is_active{true};
 
     /**
      * @brief Get signal to connect for event that fired on, when all notepad
@@ -281,17 +316,11 @@ public:
         const HMODULE module /* notepad.exe module*/,
         const opts start_options = notepad::opts::empty) noexcept {
         options_ = start_options;
-        static std::once_flag once;
-        std::call_once(once, [module] {
-            hook_CreateWindowExW(module);
-            hook_SendMessageW(module);
-            hook_GetMessageW(module);
-            hook_SetWindowTextW(module);
-        });
+        hook_CreateWindowExW(module);
+        hook_SendMessageW(module);
+        hook_GetMessageW(module);
+        hook_SetWindowTextW(module);
     }
-    // Indicate the application state
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    inline static std::atomic_bool is_active{true};
 
     /**
      * @brief Get Notepad.exe Main Window descriptor
