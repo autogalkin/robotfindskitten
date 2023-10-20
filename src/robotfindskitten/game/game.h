@@ -39,7 +39,6 @@
 namespace game {
 
 /**
- * @var MESSAGES
  * @brief All `robotfindskitten` messages.
  *
  * They come from config.h.in and are embedded by CMake.
@@ -212,7 +211,6 @@ inline std::unordered_set<pos> generate_random_positions(entt::registry& reg,
 }
 
 /**
- * @struct message_index
  * @brief An index in \ref MESSAGES
  */
 struct message_index {

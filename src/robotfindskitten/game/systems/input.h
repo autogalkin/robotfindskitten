@@ -31,7 +31,6 @@ enum class key : key_size {
 };
 
 /**
- * @struct key_state
  * @brief A key and a count of key presses.
  */
 struct key_state {
@@ -56,7 +55,6 @@ has_key(std::span<key_state> state, input::key key) {
 }
 
 /**
- * @struct key_down_task
  * @brief An ECS component with a reaction to key pressing
  */
 struct key_down_task {
@@ -65,13 +63,11 @@ struct key_down_task {
     function_type exec;
 };
 /**
- * @struct task_disable_tag
  * @brief If the \ref key_down_task is disabled inside the ecs execution graph
  */
 struct task_disable_tag {};
 
 /**
- * @struct task_owner
  * @briefA node among the many key_down_tasks within a single registry. For
  * additional input, we create a new entity and emplace a link to the player
  * entity.

@@ -13,11 +13,18 @@
 
 namespace collision {
 
+/**
+ * @brief An index inside \ref collision::quad_tree
+ */
 class agent {
     friend class query;
     quad_tree<entt::entity>::inserted index_in_quad_tree{};
 };
 
+/**
+ * @brief A transparency type to avoid swappable mistakes with requester
+ * entity
+ */
 struct collider {
     entt::entity ent;
     // // NOLINTNEXTLINE(google-explicit-constructor)
@@ -25,6 +32,10 @@ struct collider {
         return ent;
     }
 };
+/**
+ * @brief A transparency type to avoid swappable mistakes with colliders
+ * entity
+ */
 struct self {
     entt::entity ent;
     // // NOLINTNEXTLINE(google-explicit-constructor)

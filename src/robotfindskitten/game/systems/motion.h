@@ -12,18 +12,15 @@
 #include "engine/time.h"
 
 /**
- * @struct uniform_movement_tag
  * @brief A tag for movement without pseudo physics.
  */
 struct uniform_movement_tag {};
 /**
- * @struct non_uniform_movement_tag
  * @brief A tag for movement with a pseudo friction.
  */
 struct non_uniform_movement_tag {};
 
 /**
- * @struct velocity
  * @brief Acs as a force. Applies to the translation in the every tick.
  *
  * Inside the uniform_motion system, the velocity resets to 0 every tick, and
@@ -36,7 +33,6 @@ struct velocity {
 };
 
 /**
- * @typedef translation
  * @brief Accumullates all movement from all systems and then applies to the
  * entity's location in the \ref drawing::redrawer after erasing a previous
  * entity sprite position from the game buffer

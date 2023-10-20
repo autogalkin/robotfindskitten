@@ -48,13 +48,11 @@ void emplace_simple_death_anim(entt::handle h);
 } // namespace factories
 
 /**
- * @namespace projectile
  * @brief Functions for all projectiles
  */
 namespace projectile {
 
 /**
- * @struct projectile_tag
  * @brief A projectile identifier
  */
 struct projectile_tag {};
@@ -85,12 +83,10 @@ void initialize_for_all(entt::registry& reg);
 } // namespace projectile
 
 /**
- * @namespace gun
  * @brief Functions for gun entity
  */
 namespace gun {
 /**
- * @struct gun_tag
  * @brief A gun identifier
  */
 struct gun_tag {};
@@ -110,13 +106,11 @@ void fire(entt::handle player);
 } // namespace gun
 
 /**
- * @namespace timeline
  * @brief Functions for objects that execute a task in every tick following a
  * specific direction \ref timeline::direction
  */
 namespace timeline {
 /**
- * @struct timeline_tag
  * @brief A identifier of the timeline entity
  */
 struct timeline_tag {};
@@ -136,13 +130,11 @@ void make(entt::handle h, timeline::what_do::function_type what_do,
 }; // namespace timeline
 
 /**
- * @namespace timer
  * @brief Functions for objects that wait the end of own lifetime and call a
  * given function
  */
 namespace timer {
 /**
- * @struct timer_tag
  * @brief A timer identifier
  */
 struct timer_tag {};
@@ -156,12 +148,10 @@ inline void make(entt::handle h,
 }; // namespace timer
 
 /**
- * @namespace character
  * @brief Functions for player entity
  */
 namespace character {
 /**
- * @struct character_tag
  * @brief An identifier of the player entity
  */
 struct character_tag {};
@@ -222,7 +212,6 @@ void process_movement_input(const void* /*unused*/, entt::handle h,
 
 namespace game_over {
 /**
- * @enum game_status_flag
  * @brief Branches of the game
  */
 enum class game_status_flag {
@@ -235,7 +224,6 @@ enum class game_status_flag {
 
 namespace kitten {
 /**
- * @struct kitten_tag
  * @brief An identifier of the kitten entity
  */
 struct kitten_tag {};
