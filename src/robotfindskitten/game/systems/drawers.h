@@ -13,36 +13,55 @@
 #include "game/systems/life.h"
 #include "game/systems/motion.h"
 
+namespace drawing {
+
+/*! @brief Possible sprite directions */
 enum class draw_direction {
     left = -1,
     right = 1,
 };
+
+/*! @brief Inverts sprite direction */
 inline draw_direction invert(draw_direction s) {
     return static_cast<draw_direction>(-1 * static_cast<int>(s));
 }
 
+/*! @brief A sprite id in the sprites entt::registry storage */
 struct current_rendering_sprite {
     entt::entity where = entt::null;
 };
 
+/*! @brief An id of the sprite that needs to be removed from the entt::registry
+ * sprites storage*/
 struct sprite_to_destroy {
     entt::entity where = entt::null;
 };
 
+/*! @brief If the sprite changes, this component should store the previous
+ * sprite to ensure proper erasure in the game buffer. */
+struct previous_sprite {
+    entt::entity where = entt::null;
+};
+
+/*! @brief An id of the sprite that represent a direction */
 template<draw_direction Direction>
 struct direction_sprite {
     entt::entity where = entt::null;
 };
 
+/*! @brief A depth index of the entity */
 struct z_depth {
     int32_t index;
 };
-struct previous_sprite {
-    entt::entity where = entt::null;
-};
+
+/*! @brief Should the system render the entity or not? */
 struct visible_tag {};
 
-namespace drawing {
+/**
+ * @brief Inverts sprites by direction, set the \ref direction_sprite to the
+ * \ref current_rendering_sprite. And the \ref current_rendering sprite to the
+ * \ref previous_sprite
+ */
 class rotate_animator {
 public:
     void operator()(
@@ -81,6 +100,8 @@ public:
     }
 };
 
+/*! @brief Sets up by \ref check_need_update system if the entity's translation
+ * is changed */
 struct need_redraw_tag {};
 
 template<typename BufferType>
@@ -90,6 +111,10 @@ concept IsBuffer = requires(BufferType& b, pos p, sprite_view w, int z_depth) {
     { b.lock() };
 };
 
+/**
+ * @brief A helper class that locks the game buffer mutex before the erase
+ * system and the redraw system execute.
+ */
 template<typename BufferType>
     requires IsBuffer<BufferType>
 class lock_buffer {
@@ -102,13 +127,15 @@ public:
             entt::hashed_string{"buffer_lock"});
     }
     void operator()(entt::registry& reg) {
-        // a mutex lock for draw and erase together
         reg.ctx()
             .get<std::optional<lock_type>>(entt::hashed_string{"buffer_lock"})
             .emplace(buf_.get().lock());
     }
 };
 
+/**
+ * @brief Inserts \ref need_redraw_tag into the moved entities
+ */
 struct check_need_update {
     void operator()(const entt::view<entt::get_t<const translation>>& view,
                     entt::registry& reg) {
@@ -120,6 +147,9 @@ struct check_need_update {
     }
 };
 
+/**
+ * @brief Erases previous positions and sprites from the game buffer
+ */
 template<typename BufferType>
     requires IsBuffer<BufferType>
 class erase_buffer {
@@ -148,6 +178,10 @@ public:
     }
 };
 
+/**
+ * @brief Apply the entity translation into the entity location for the moved
+ * entities.
+ */
 struct apply_translation {
     void operator()(
         const entt::view<entt::get_t<loc, translation, const need_redraw_tag>>&
@@ -159,6 +193,9 @@ struct apply_translation {
     }
 };
 
+/**
+ * @brief Draws \ref need_redraw_tag sprites into the game buffer
+ */
 template<typename BufferType>
     requires IsBuffer<BufferType>
 class redraw {
@@ -170,8 +207,9 @@ public:
             .connect<&entt::registry::emplace_or_replace<need_redraw_tag>>();
         reg.on_construct<life::begin_die>()
             .connect<&entt::registry::emplace_or_replace<need_redraw_tag>>();
-        // TODO(Igor): its not clear, because it also invokes need_redraw_tag to
-        // the destroyed entity reg.on_destroy<visible_tag>()
+        // TODO(Igor): its not clear, because it also invokes 'need_redraw_tag'
+        // to the destroyed entity by registry.destroy(entity) and fails
+        // reg.on_destroy<visible_tag>()
         //     .connect<&entt::registry::emplace_or_replace<need_redraw_tag>>();
     }
     void operator()(
@@ -190,6 +228,11 @@ public:
     }
 };
 
+/**
+ * @brief Cleans up \ref need_redraw_tag and \ref previous_sprite components
+ * from the entire  registry. Removes each sprite sprite marked for destruction
+ * in  \ref sprite_to_destroy.
+ */
 template<typename BufferType>
     requires IsBuffer<BufferType>
 struct cleanup {
