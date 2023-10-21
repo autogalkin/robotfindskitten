@@ -47,7 +47,7 @@ Binary files will be located in the *./out/bin/x64-release* directory.
 
 - I have implemented a cool header only Quad Tree collision detection algorithm based on
 [@DragonEnergy] article, You can check it in
-*src/robotfindskitten/game/systems/collision.h* and tests are located in
+*src/robotfindskitten/game/systems/collision.h*. Tests are located in
 *tests/test_collision.cpp*
 - I update the notepad message pipe from GetMessageW() to the PeekMessageW() inside
   hook_GetMessageW() so now it does not sleep for a message, just poll and run
