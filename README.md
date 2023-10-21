@@ -50,7 +50,7 @@ Binary files will be located in the *./out/bin/x64-release* directory.
 *src/robotfindskitten/game/systems/collision.h*. Tests are located in
 *tests/test_collision.cpp*
 - I update the notepad message pipe from GetMessageW() to the PeekMessageW() inside
-  hook_GetMessageW() so now it does not sleep for a message, just poll and run
+  hook_GetMessageW() so now the notepad does not sleep for a message, just poll and run
   as a real game.
 
 - Remove Notepad's main menu and status bar, and changes the window title to fit the game's context
