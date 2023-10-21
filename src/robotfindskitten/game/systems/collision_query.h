@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief The Quad Tree collision detection ECS system
+ * @brief The Quad Tree collision detection ECS system.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_COLLISION_QUERY_H

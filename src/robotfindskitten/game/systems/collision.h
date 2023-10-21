@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief An implementation of the quad tree collision detection algorithm
+ * @brief An implementation of the quad tree collision detection algorithm.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_COLLISION_H
@@ -335,7 +335,7 @@ inline box_t compute_child_rect(box_t parent,
 } // namespace details
 
 /**
- * @brief The Quad tree collision detection algorithm
+ * @brief The quad tree collision detection algorithm
  *
  * @tparam ID_Type How to represent an entity in quad_tree
  */

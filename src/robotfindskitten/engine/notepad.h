@@ -1,6 +1,6 @@
 ﻿/**
  * @file
- * @brief Controls the Notepad.exe
+ * @brief Controls the Notepad.exe.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H

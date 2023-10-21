@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief The systems for moving actors in the game
+ * @brief The systems for moving actors in the game.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_MOTION_H

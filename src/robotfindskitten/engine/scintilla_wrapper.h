@@ -1,6 +1,6 @@
 ﻿/**
  * @file
- * @brief Experimental wrappers of the Scintilla API
+ * @brief Experimental wrappers of the Scintilla API.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_SCINTILLA_WRAPPER_H
@@ -49,7 +49,7 @@ class scintilla_dll;
 
 /**
  * @brief Specialization of the \ref construct_key for \ref scintilla_dll
- * Allows creating a scintilla_dll in the scintilla_sll and in the
+ * Allows creating a scintilla_dll in the scintilla_dll and in the
  * hook_CreateWindowExW
  */
 template<>

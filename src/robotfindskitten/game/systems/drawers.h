@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Systems that works with the game_buffer
+ * @brief Systems that works with the game_buffer.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_DRAWERS_H

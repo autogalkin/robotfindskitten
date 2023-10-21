@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief All ECS component factories
+ * @brief All ECS component factories.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_FACTORIES_H

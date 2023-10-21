@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Import adress table hooking
+ * @brief Import adress table hooking.
  */
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_IAT_HOOK_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_IAT_HOOK_H
