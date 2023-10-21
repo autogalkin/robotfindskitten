@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @brief An implementation of the quad tree collision detection algorithm
+ */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_COLLISION_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_GAME_ECS_PROCESSORS_COLLISION_H
@@ -16,16 +20,15 @@
 namespace collision {
 
 // int64_t Is a signed type guaranteed to be at least 64 bits.
-// it will almost certainly hold all relevant values of type size_t
-// Needs for use a -1 marker
+// it will almost certainly hold all relevant values of type size_t.
+// It's needed for using a -1 marker to indicate invalid or unused indexes.
 using indx_t = int64_t;
-// Needs for mark some indexes as invalid and unused
 static_assert(std::is_signed_v<indx_t>);
 
-// The main component for perform collision queries
-// Represent `Start` corner of the box and the `End` corner
+// The primary component for performing intersection queries.
+// Represent the `Start` corner and the `End` corner of the rectangle.
 using box_t = glm::mat<2, 2, indx_t>;
-// A half of a box
+// A half of the box
 using point_t = glm::vec<2, indx_t>;
 
 namespace details {
@@ -35,6 +38,11 @@ concept ConvertibleTo = (std::is_convertible_v<T, Args> && ...);
 } // namespace details
 
 namespace free_list {
+
+/**
+ * @brief Throw by \ref free_list if given index refers to tombstone position or
+ * out of bounds
+ */
 class bad_free_list_access: public std::runtime_error {
 public:
     explicit bad_free_list_access(const std::string& what)
@@ -43,20 +51,23 @@ public:
 };
 
 /**
- * @brief An unordered dynamic container that support erace O(1) and insert O(1)
+ * @brief An unordered dynamic container that supports erasing and inserting in
+ * O(1) time complexity. The elements are stored contiguously.
  *
- * A very poor implementation of Free List: a container that stores
- * union of value T and pointer to previos erased elements. Erased elements made
- * a linked list chain of vacant positions, value of index stores the index to
- * the next free ceil.
+ * A basic implementation of a Free List, a container that stores a union of
+ * values of type T and pointers to previously erased elements. Erased elements
+ * form a linked list chain of vacant positions, and the index stores the index
+ * of the next available position.
+ * [ -1 ] [ T ] [ 0 ] [ T ] [ T ], tail = index 2
+ *                ^~ empty position, next empty position is 0
  */
 template<typename Element>
 class free_list {
     // a value of the next empty index in the "empty indexes" linked list
     enum class next_free_index : indx_t {};
 
-    // Some imroves for code-readability
-    inline static constexpr next_free_index END_OF_LIST =
+    // Some sugar for code-readability
+    static constexpr next_free_index END_OF_LIST =
         static_cast<next_free_index>(-1);
 
     using value_type = std::variant<Element, next_free_index>;
@@ -64,7 +75,7 @@ class free_list {
 #ifdef NDEBUG
         boost::container::small_vector<value_type, 128>;
 #else
-        // for LLDB pretty printing
+        // for the LLDB pretty printing
         std::vector<value_type>;
 #endif // NDEBUG
 
@@ -79,16 +90,16 @@ public:
     explicit free_list(ManyElements... elts): data_{elts...} {}
     explicit free_list() = default;
 
-    // NOTE: It can return a custom bidirectional iterator but
-    // it is not useful in the quad_tree context, because inserted key must be
-    // stable and not will be invalidated through potential reallocations of the
-    // container_t
+    // NOTE: While it can return a custom bidirectional iterator, it's not
+    // useful in the context of quad_tree implementation because the inserted
+    // keys must remain stable and not be invalidated by potential container_t
+    // reallocations.
 
     /**
-     * @brief Insert an element into the list
+     * @brief Inserts an element into the list
      *
      * @param elt An element to insert
-     * @return Inserted element position in the list
+     * @return Inserted element index in the list
      */
     template<typename... Args>
         requires std::is_convertible_v<Args..., Element>
@@ -109,7 +120,7 @@ public:
     }
 
     /**
-     * @brief Remove an element by index from the list
+     * @brief Removes an element by index from the list
      *
      * @param n Index of the element to be remove
      */
@@ -119,7 +130,7 @@ public:
     }
 
     /**
-     * @brief Remove all elements from the list
+     * @brief Removes all elements from the list
      */
     void clear() noexcept {
         data_.clear();
@@ -164,7 +175,7 @@ private:
 namespace details {
 
 namespace pos_declaration {
-// represent a box in the quad tree
+// representation of a box in the quad tree
 
 // clang-format off
 /*
@@ -193,8 +204,8 @@ constexpr size_t S = 0;
 // An `End` point
 constexpr size_t E = 1;
 
-// Quadrants type, represent each child index of 4 branch children
-// int the frat array
+// Quadrants type, representing each child index among 4 branch children in the
+// continuous frat array
 enum class quadrant : int8_t {
     top_left = 0,
     top_right = 1,
@@ -205,8 +216,7 @@ enum class quadrant : int8_t {
 } // namespace pos_declaration
 
 /**
- * @brief Check two 2D box for intersection
- *
+ * @brief Checks two 2D box for intersection
  * @param a one 2D box
  * @param b another 2D box
  * @return intersect or not
@@ -223,10 +233,10 @@ enum class quadrant : int8_t {
 }
 
 /**
- * @brief Get Center of the 2D box
+ * @brief Gets Center of the 2D box
  *
- * @param b box
- * @return center point
+ * @param b Abox
+ * @return A center point
  */
 [[nodiscard]] inline point_t center(const box_t b) noexcept {
     using namespace pos_declaration;
@@ -234,12 +244,12 @@ enum class quadrant : int8_t {
 }
 
 /**
- * @brief Get quadrants in which a value is
+ * @brief Gets quadrants in which a value is
  *
- * @tparam Visitor function for perform what you want with quadrant
- * @param node_box Main 2D bounding box
- * @param value_box Any 2D bounding box inside the node_box
- * @param visitor function to pass a quafrant in
+ * @tparam Visitor function for performing what you want do with quadrants
+ * @param node_box The main 2D bounding box
+ * @param value_box Any 2D bounding box inside the \p node_box
+ * @param visitor A function to perform actions on quadrants as needed
  */
 template<typename Visitor>
     requires std::is_invocable_v<Visitor, pos_declaration::quadrant>
@@ -274,11 +284,11 @@ quadrants(box_t node_box, box_t value_box, Visitor visitor) noexcept(
 }
 
 /**
- * @brief Compute a child box by given quadrant from the parent box
+ * @brief Computes a child box by the given quadrant from the parent box
  *
- * @param parent a parent quad tree rect
- * @param child a quadrant
- * @return a child quad tree rect
+ * @param parent A parent quad tree rect
+ * @param child A quadrant
+ * @return A child quad tree rect
  */
 inline box_t compute_child_rect(box_t parent,
                                 pos_declaration::quadrant child) noexcept {
@@ -325,30 +335,29 @@ inline box_t compute_child_rect(box_t parent,
 } // namespace details
 
 /**
- * @class quad_tree
- * @brief Quad tree collision detection algorithm
+ * @brief The Quad tree collision detection algorithm
  *
  * @tparam ID_Type How to represent an entity in quad_tree
- *
  */
 template<typename ID_Type>
 class quad_tree {
 private:
-    // is a max number of values a node can contain before we try to split it
+    // Is a max number of values a node can contain before we try to split it
     static constexpr uint8_t MAX_ELEMENTS = 8;
     // Stores the maximum depth allowed for the quadtree.
     static constexpr uint8_t MAX_DEPTH = 8;
 
-    // Some imroves for code-readability, -1 is a marker for many things
-    // in the quad_tree implementation, used for mark the end of linked lists
+    // Some sugar for code-readability, -1 is a marker for many things
+    // in the quad_tree implementation, here it is used for marking the end of
+    // linked lists
     static constexpr int8_t NO_CHILDREN = -1;
-    // This node is a branch, this value sets to node::count_entities
+    // Mark node as a branch, this value sets to /ref node::count_entities
     static constexpr int8_t IS_BRANCH = -1;
     static constexpr indx_t INVALID_INDEX = -1;
 
-    // represent an entity in the quadtree.
-    // An element is only inserted once to the quadtree no matter how many cells
-    // it occupies.
+    // An entity in the quadtree.
+    // An 'entity' is only inserted once to the quadtree no matter how many
+    // cells it occupies.
     struct entity {
         box_t bbox;
         ID_Type id;
@@ -356,6 +365,7 @@ private:
     // Stores all real actors
     free_list::free_list<entity> entities_;
 
+    // A Leaf or a Branch node
     struct node {
         // Points to the first child if this node is a branch or the first
         // element if this node is a leaf.
@@ -371,7 +381,7 @@ private:
     // always the root. All another nodes represents branches and leaves
     free_list::free_list<node> nodes_;
 
-    // for each cell it occupies, an "element node" is inserted which indexes
+    // For each cell it occupies, an "element node" is inserted which indexes
     // that element. singly-linked index list node into an array
     struct entity_node {
         // Points to the next element in the leaf node.
@@ -394,12 +404,6 @@ private:
     // Stores the quadtree extents.
     box_t root_rect_;
 
-    // Stores the first free node in the quadtree to be reclaimed as 4
-    // contiguous nodes at once. A value of -1(end_of_list) indicates that the
-    // free list is empty, at which point we simply insert 4 nodes to the back
-    // of the quad_tree::nodes array.
-    // indx_t first_free_node_ = NO_CHILDREN;
-
 public:
     // ┌──────────────────────────────────────────────────────────┐
     // │  Interface                                               │
@@ -410,14 +414,17 @@ public:
           nodes_{/*a root node*/ node{.first_child = NO_CHILDREN,
                                       .count_entities = 0}} {}
 
+    /**
+     * @brief Gets a Quad Tree extents
+     *
+     * @return A (X, Y) pair of the quad tree working size
+     */
     [[nodiscard]] box_t get_root_rect() const noexcept {
         return root_rect_;
     }
 
     /**
-     * @class inserted
      * @brief Index for the inserted element in the quad tree
-     *
      */
     class inserted {
         friend class quad_tree<ID_Type>;
@@ -432,26 +439,26 @@ public:
     };
 
     /**
-     * @brief cInsert element into quad tree
+     * @brief Inserts element into quad tree
      *
-     * @param item item id
-     * @param bbox item extents
-     * @return Index to inserted element
+     * @param item The item id
+     * @param bbox An item extents
+     * @return Index to the inserted element
      */
     [[nodiscard]] inserted insert(ID_Type item, box_t item_box);
 
     /**
-     * @brief Remove an element from the quad tree
+     * @brief Removes an element from the quad tree
      *
-     * @param indx key for inserted element
+     * @param indx The key to the inserted element
      */
     void remove(inserted& indx);
 
     /**
-     * @brief Find all intersections with given rect
+     * @brief Finds all intersections with the given rect
      *
-     * @tparam Visitor Function for call for each collider
-     * @param rect Input rectangle
+     * @tparam Visitor A Function which calls for each finded collider
+     * @param rect The input rectangle for finding intersections with
      * @param what_do_with_collider Visitor instance
      */
     template<typename Visitor>
@@ -459,7 +466,6 @@ public:
     void query(std::pair<ID_Type, box_t> req, Visitor what_do_with_collider) {
         // Find the leaves that intersect the specified query rectangle.
         // For each leaf node, look for elements that intersect.
-        // binary search leaves which `rect` intersects
         if(details::intersect(req.second, root_rect_)) {
             find_leaves(
                 root_search_data(), req.second,
@@ -491,13 +497,13 @@ public:
     }
 
     /**
-     * @brief Defferer cleanup, Should call after delete all moved actors
-     * for merge empty leaves
+     * @brief The Defferer cleanup should be called after deleting all moved
+     * actors to merge empty leaves
      */
     void cleanup();
 
     /**
-     * @brief Get entity by  'inserted' key
+     * @brief Gets entity by the 'inserted' key
      * This function is for debugging purpose
      *
      * @param element Entity key
@@ -508,21 +514,21 @@ public:
     }
 
 private:
-    // start point for traverse through all nodes
+    // The start point for traverse through all nodes
     [[nodiscard]] node_search_data root_search_data() const {
         return {.rect = root_rect_, .indx_in_nodes = 0, .depth = 0};
     }
-    // insert entity into the given leaf
+    // Inserts entity into the given leaf
     void insert_into_leaf(const node_search_data& leaf, indx_t element);
 
-    // split a leaf into 4 leaves
+    // Splits a leaf into 4 leaves
     void split(const node_search_data& leaf);
-    // merge 4 leaves into one
+    // Merges 4 leaves into one
     void merge(indx_t branch_node_i_in_nodes);
 
-    // main function for perform binary search for leaf or branch that intersect
-    // with given start_rect if a start_rect is a root, than all leaves and
-    // branches will be visited
+    // The main function for perform binary search for the leaf or the branch
+    // that intersect with given start_rect if a start_rect is a root, than all
+    // leaves and branches will be visited
     template<typename BranchVisitor, typename LeafVisitor>
         requires std::is_invocable_v<BranchVisitor, const node_search_data&>
                  && std::is_invocable_v<LeafVisitor, const node_search_data&>
@@ -579,7 +585,7 @@ quad_tree<T>::inserted quad_tree<T>::insert(T item, box_t item_box) {
     const indx_t element = entities_.emplace(entity{item_box, std::move(item)});
     // Find the leaves that intersect with entity rect
     // and insert the element to all the leaves found.
-    find_leaves(root_search_data(), item_box, // entities_[element].bbox,
+    find_leaves(root_search_data(), item_box,
                 [this, element](const node_search_data& leaf) {
                     insert_into_leaf(leaf, element);
                 });
@@ -622,17 +628,17 @@ void quad_tree<T>::split(const node_search_data& leaf_data) {
         }
     }
     // Start by allocating 4 child nodes.
-    // NOTE: Do not use reference or pointers for leaf_node here
-    // NOTE: continuos emplace into free list based on the fact that
-    // we always deletes all 4 leaves from the quad_tree::nodes_ free list
+    // NOTE: Do not use references or pointers for leaf_node here
+    // NOTE: The continuos emplace into free list based on the fact that
+    // we always delete all 4 leaves from the quad_tree::nodes_ free list
     // and than insert 4 leaves, and the order for the each 4 leaves always
     // keeps
     nodes_[leaf_data.indx_in_nodes].count_entities = IS_BRANCH;
     nodes_[leaf_data.indx_in_nodes].first_child =
-        // first child
+        // First child
         nodes_.emplace(node{.first_child = NO_CHILDREN, .count_entities = 0});
     for(int i = 0; i < 3; ++i) {
-        // other children
+        // Other children
         auto j = nodes_.emplace(
             node{.first_child = NO_CHILDREN, .count_entities = 0});
     }
@@ -668,11 +674,11 @@ void quad_tree<T>::remove(inserted& indx) {
                         // Remove the element node.
                         if(prev_i == INVALID_INDEX) {
                             // Previous entity not exists, set the next entity
-                            // as a first
+                            // as the first
                             node.first_child =
                                 e_nodes_[e_node_i].next_entity_in_leaf;
                         } else {
-                            // remove current from the chain between the prev
+                            // Remove current from the chain between the prev
                             // and the next
                             e_nodes_[prev_i].next_entity_in_leaf =
                                 e_nodes_[e_node_i].next_entity_in_leaf;
@@ -718,7 +724,7 @@ void quad_tree<T>::cleanup() {
 
 template<typename T>
 void quad_tree<T>::merge(indx_t branch_node_i_in_nodes) {
-    // NOTE: Remove all 4 children in reverse order so that they
+    // NOTE: We remove all 4 children in reverse order so that they
     // can be reclaimed on subsequent insertions in proper
     // order.
     for(int i = 3; i >= 0; --i) {
