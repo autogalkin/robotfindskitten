@@ -6,7 +6,7 @@ inside the Notepad.exe and uses the Entity Component System by the great [EnTT]ð
 
 The game uses DLL injection to modify the notepad and replace the default Win32 EditControl with [Scintilla]. 
 
-Also, I've implemented a gun, so be careful!
+Also, I've implemented a little gun, so be careful!
 
 // An image here
 
