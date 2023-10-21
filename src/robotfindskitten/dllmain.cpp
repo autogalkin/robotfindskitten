@@ -29,13 +29,13 @@ inline std::unique_ptr<void, void (*)(void*)> allocate() {
 
 BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
                       LPVOID /*lp_reserved*/) {
-    //  the h_module is the robotfindskitten.dll
+    //  The h_module is the robotfindskitten.dll
 
     if(ul_reason_for_call == DLL_PROCESS_ATTACH) {
         // Ignore thread notifications
         DisableThreadLibraryCalls(h_module);
 
-        // run the notepad singleton
+        // Runs the notepad singleton
         notepad& np = notepad::get();
         auto* const np_module = GetModuleHandleW(
             nullptr); // get the module handle of the notepad.exe
@@ -58,7 +58,8 @@ BOOL APIENTRY DllMain(const HMODULE h_module, const DWORD ul_reason_for_call,
         });
 
         np.connect_to_notepad(
-            np_module, start_options); // start initialization and the game loop
+            np_module,
+            start_options); // start the initialization and the game loop
     }
     return TRUE;
 }

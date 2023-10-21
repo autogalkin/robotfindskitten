@@ -43,7 +43,7 @@ add_custom_command(
         COMMENT "Replace Scintilla source code files with patched files"
     )
 
-# find Make for Scintilla
+# Find Make for Scintilla
 find_program(IS_NMAKE_EXISTS nmake)
 if(IS_NMAKE_EXISTS)
     set(SCI_BUILD_COMMAND nmake -f scintilla.mak)

@@ -18,7 +18,7 @@
 
 #include <glm/vec2.hpp>
 
-using npi_t = int32_t; // notepad's index size
+using npi_t = int32_t; //!< the notepad's index size
 
 using char_size = char;
 using random_t = std::mt19937;
@@ -26,27 +26,30 @@ using random_t = std::mt19937;
 template<typename T>
 using vec = glm::vec<2, T>;
 
-// an actor location, used for smooth move
+//! An actor's location, using a double for smooth movement.
 using loc = vec<double>;
 
-// notepad's col-row position
+// A notepad's col-row position
 using pos = vec<npi_t>;
 
+/**
+ * @brief An actor shape for rendering in the game.
+ */
 class sprite {
-    uint16_t width_{};
-    // expect CharT null terminator;
+    size_t width_{};
+    // Expect CharT null terminator
     std::basic_string<char_size> data_;
     [[nodiscard]] static sprite normilize_from_string(std::string s);
     sprite(uint16_t width, std::basic_string<char_size> str)
         : width_(width), data_(std::move(str)) {}
 
 public:
-    inline static constexpr char whitespace = ' ';
+    static constexpr char whitespace = ' ';
     struct should_normalize_tag {};
     struct unchecked_construct_tag {};
     explicit sprite(unchecked_construct_tag /*tag*/,
                     std::basic_string<char_size> str)
-        : width_(static_cast<uint16_t>(str.size())), data_(std::move(str)) {}
+        : width_(str.size()), data_(std::move(str)) {}
     explicit sprite(should_normalize_tag /*tag*/,
                     std::basic_string<char_size> str) {
         *this = normilize_from_string(std::move(str));
@@ -54,7 +57,7 @@ public:
     [[nodiscard]] pos bounds() const noexcept {
         return {width_, data_.size() / width_};
     }
-    [[nodiscard]] uint16_t width() const noexcept {
+    [[nodiscard]] size_t width() const noexcept {
         return width_;
     }
     [[nodiscard]] std::string_view data() const noexcept {
@@ -62,23 +65,34 @@ public:
     }
 };
 
+/**
+ * @brief A trivially copyable view of the \ref sprite
+ */
 class sprite_view {
-    uint16_t width_;
+    size_t width_;
     std::string_view data_;
 
 public:
     // NOLINTNEXTLINE(google-explicit-constructor)
     sprite_view(const sprite& s): width_(s.width()), data_(s.data()) {}
 
-    [[nodiscard]] uint16_t width() const noexcept {
+    [[nodiscard]] size_t width() const noexcept {
         return width_;
     }
     [[nodiscard]] std::string_view data() const noexcept {
         return data_;
     }
 };
+
+/**
+ * @brief Merges multiline sprites into a flat continuous buffer, removes all
+ * newline characters, fills lines with spaces to match the maximum line length.
+ *
+ * @param s A multiline ascii art
+ * @return A builded sprite
+ */
 inline sprite sprite::normilize_from_string(std::string s) {
-    // trim right and left
+    // Trim right and left spaces
     auto start = std::find_if(
         s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); });
     auto end = std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
@@ -90,16 +104,16 @@ inline sprite sprite::normilize_from_string(std::string s) {
             it = std::find(++it, end, '\n')) {
             pred(it);
         }
-        // last line to end
+        // it == end
         pred(end);
     };
-    uint16_t max_len = 0;
+    size_t max_len = 0;
     size_t lines = 1;
     for_each_line(start, end, [start, &lines, &max_len](auto it) mutable {
         ++lines;
         size_t new_len = std::distance(start, it);
         if(new_len > max_len) {
-            max_len = static_cast<uint16_t>(new_len);
+            max_len = new_len;
         }
         start = ++it;
     });
@@ -113,6 +127,9 @@ inline sprite sprite::normilize_from_string(std::string s) {
     return {max_len, out};
 };
 
+/**
+ * @brief Marks a value if it is changed
+ */
 template<typename T>
 class dirty_flag {
     bool changed_ = true;
@@ -127,22 +144,27 @@ public:
     explicit constexpr dirty_flag(Args&&... args) noexcept
         : v_(std::forward<Args>(args)...) {}
 
+    /**
+     * @brief Gets the non const value, the marker will set to the dirty state
+     *
+     * @return The non const value reference
+     */
     [[nodiscard]] T& pin() noexcept {
         changed_ = true;
         return v_;
     }
-    // NOLINTNEXTLINE(google-explicit-constructor)
-    operator T&() const noexcept
-        requires(!std::is_convertible_v<T, bool>)
-    {
+
+    /**
+     * @brief Gets the const value, the marker will not change
+     *
+     * @return The const value reference
+     */
+    [[nodiscard]] const T& get() const noexcept {
         return v_;
     }
     // NOLINTNEXTLINE(google-explicit-constructor)
     operator bool() const noexcept {
         return changed_;
-    }
-    [[nodiscard]] const T& get() const noexcept {
-        return v_;
     }
     [[nodiscard]] bool is_changed() const noexcept {
         return changed_;
