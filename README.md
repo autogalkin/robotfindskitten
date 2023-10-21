@@ -1,69 +1,72 @@
 # robotfindskitten
 
-![title](./resources/title.png?raw=true "Title")
+## About
 
-## Table of Contents
+`robotfindskitten` is a c++ reimplementation of the game originally written by
+[Leonard Richardson](https://www.crummy.com/software/robotfindskitten/), now
+inside notepad.exe and powered by the Entity Component System approach using
+[EnTT].
 
-- [About](#about)
-- [Getting Started](#getting_started)
-- [Thanks](#thanks)
+The game uses DLL injection to modify the notepad and replaces the default Win32 EditControl with [Scintilla]. 
 
-## About <a name = "about"></a>
+Also, I've implemented a gun, so be careful!
 
-`robotfindskitten` is an example of an open-world 2D top-down game that runs within the standard Windows notepad.exe application. The game engine uses DLL injection to modify the notepad.exe process at startup and make the following changes:
+// An image here
 
-- Replaces the default Win32 EditControl with Scintilla, which is used in notepad++
-- Updates the notepad.exe message processing mechanism from GetMessageW to PeekMessageW, providing a modern way to implement a fixed-time-step game loop
-- Hooks the standard keyboard and mouse inputs to allow for player interaction
-- Removes Notepad's main menu and status bar, and changes the window title to fit the game's context
 
-[<video src=./resources/example.mp4 >](https://user-images.githubusercontent.com/97976281/223846104-b2485ac3-26d2-48a6-9dda-85df107ebc9e.mp4)
+[Scintilla]: https://www.scintilla.org
+[EnTT]:  https://github.com/skypjack/entt
 
-The game in Notepad is based on an entity-component-system and supports:
-- an open world
-- a night-day cycle
-- UTF-8 symbols for shapes
-- multi-symbol big shapes
-- collision detection based on a Quadtree algorithm
-- pseudo non-uniform movement for projectiles that explode into fragments upon impact
 
-## Getting Started <a name = "getting_started"></a>
+## Getting Started
 
-This project only works on Windows and has only been tested on x64 platforms. It uses C++20. To build from source:
-### Prerequisites
+The game can works only with the old version of Notepad.exe before Windows 11. To get it:
+- Open Settings > Apps
+- In the center pane select Advanced app settings > App execution aliases
+- Toggle off Notepad
 
-The project uses vcpkg to manage dependencies, and depends on several libraries:
+And get it:
+- Download Pre-built binaries from [Releases page]().
+- Unpack and run `loader.exe`
 
-- boost (signals2, container)
+## Build
+
+In this project I wanted to practice with glm and boost libraries and I use
+`vcpkg` for:
+- boost
+- glm
 - EnTT
-- Eigen3
-- utfcpp
-- range-v3
 
-### Getting robotfindskitten
-
-Please note that the robotfindskitten depends on a scintilla submodule. The simplest way to clone it is:
-```
-git clone --recurse-submodules -j8 git@github.com:autogalkin/robotfindskitten.git 
-```
-
-### Build
-
-The project uses CMake, and the CMakePresets contain a preset based on Ninja and MSVC
+I created CMakePresets for 64-bit builds based on Ninja and MSVC. To build the game, run:
 
 ```
-cmake --build --preset x64-debug --target all install
+cmake --preset x64-release
+cmake --build --preset x64-release --target install
 ```
+Binary files will be located in the *./out/bin/x64-release* directory.
 
-Binary files will be located in the */bin* directory. You need to run loader.exe
+
+## Details
+
+- I have implemented a cool header only Quad Tree collision detection algorithm based on
+[@DragonEnergy] article, You can check it in
+*src/robotfindskitten/game/systems/collision.h* and tests are located in
+*tests/test_collision.cpp*
+- I update the notepad message pipe from GetMessageW() to the PeekMessageW() inside
+  hook_GetMessageW() so now it does not sleep for a message, just poll and run
+  as a real game.
+
+- Remove Notepad's main menu and status bar, and changes the window title to fit the game's context
+
+- Fixed time step with 60 fps in *src/robotfindskitten/engine/time.h*.
 
 
-Enjoy!
+## Special thanks
 
-## Thanks <a name = "thanks"></a>
-
-- [render-with-notepad](https://github.com/khalladay/render-with-notepad) for showing the ability to implement a game in text editor
+- [render-with-notepad](https://github.com/khalladay/render-with-notepad) for
+  showing the abilities to implement a game in the notepad
 
 - [SuperNotepadBros](https://github.com/branw/SuperNotepadBros) for the clean iat table's hook example and an good game's time
 
 - the long and intresting story with examples about quad tree by user @DragonEnergy on [stackoverflow](https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det)
+

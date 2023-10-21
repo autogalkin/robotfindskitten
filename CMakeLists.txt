@@ -47,14 +47,14 @@ option(ROBOTFINDSKITTEN_BUILD_DOCS "Enable building with documentation." OFF)
 
 if(ROBOTFINDSKITTEN_BUILD_DOCS)
     find_package(Doxygen)
-    configure_file(DoxygenFile.in DoxygenFile @ONLY)
+    configure_file(DoxyFile.in DoxyFile @ONLY)
     add_custom_target(
     docs ALL
-    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/DoxygenFile
+    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/DoxyFile
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     VERBATIM
     SOURCES
-        "${CMAKE_CURRENT_BINARY_DIR}/DoxygenFile"
+        "${CMAKE_CURRENT_BINARY_DIR}/DoxyFile"
     )
     install(
         DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
