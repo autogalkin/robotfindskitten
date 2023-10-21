@@ -1,13 +1,10 @@
 # robotfindskitten
 
-## About
-
-`robotfindskitten` is a c++ reimplementation of the game originally written by
+`robotfindskitten` is a my reimplementation of the game originally written by
 [Leonard Richardson](https://www.crummy.com/software/robotfindskitten/), now
-inside notepad.exe and powered by the Entity Component System approach using
-[EnTT].
+inside the Notepad.exe and uses the Entity Component System by the great [EnTT]🚀.
 
-The game uses DLL injection to modify the notepad and replaces the default Win32 EditControl with [Scintilla]. 
+The game uses DLL injection to modify the notepad and replace the default Win32 EditControl with [Scintilla]. 
 
 Also, I've implemented a gun, so be careful!
 
@@ -25,8 +22,8 @@ The game can works only with the old version of Notepad.exe before Windows 11. T
 - In the center pane select Advanced app settings > App execution aliases
 - Toggle off Notepad
 
-And get it:
-- Download Pre-built binaries from [Releases page]().
+And download the game:
+- Download Pre-built binaries from [Releases page](https://github.com/autogalkin/robotfindskitten/releases).
 - Unpack and run `loader.exe`
 
 ## Build
@@ -40,7 +37,7 @@ In this project I wanted to practice with glm and boost libraries and I use
 I created CMakePresets for 64-bit builds based on Ninja and MSVC. To build the game, run:
 
 ```
-cmake --preset x64-release
+cmake . --preset x64-release
 cmake --build --preset x64-release --target install
 ```
 Binary files will be located in the *./out/bin/x64-release* directory.
@@ -58,13 +55,14 @@ Binary files will be located in the *./out/bin/x64-release* directory.
 
 - Remove Notepad's main menu and status bar, and changes the window title to fit the game's context
 
-- Fixed time step with 60 fps in *src/robotfindskitten/engine/time.h*.
+- The game uses fixed time step with with 60 fps (*src/robotfindskitten/engine/time.h*).
 
+[@DragonEnergy]: https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det
 
 ## Special thanks
 
 - [render-with-notepad](https://github.com/khalladay/render-with-notepad) for
-  showing the abilities to implement a game in the notepad
+  showing the abilities to implementation.
 
 - [SuperNotepadBros](https://github.com/branw/SuperNotepadBros) for the clean iat table's hook example and an good game's time
 
