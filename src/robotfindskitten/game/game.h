@@ -178,7 +178,7 @@ inline void game_loop(entt::registry& reg, entt::organizer org,
         fps_count.fps([](auto fps) {
             notepad::push_command(
                 [fps](notepad& np, scintilla::scintilla_dll&) {
-                    np.send_game_fps(fps);
+                    np.send_game_fps_to_window_title(fps);
                 });
         });
         // Execute all systems.

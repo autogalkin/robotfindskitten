@@ -20,14 +20,14 @@
 namespace drawing {
 
 /*! @brief Possible sprite directions */
-enum class draw_direction {
+enum class direction {
     left = -1,
     right = 1,
 };
 
 /*! @brief Inverts sprite direction */
-inline draw_direction invert(draw_direction s) {
-    return static_cast<draw_direction>(-1 * static_cast<int>(s));
+inline direction invert(direction s) {
+    return static_cast<direction>(-1 * static_cast<int>(s));
 }
 
 /*! @brief A sprite id in the sprites entt::registry storage */
@@ -48,7 +48,7 @@ struct previous_sprite {
 };
 
 /*! @brief An id of the sprite that represent a direction */
-template<draw_direction Direction>
+template<direction Direction>
 struct direction_sprite {
     entt::entity where = entt::null;
 };
@@ -70,29 +70,29 @@ class rotate_animator {
 public:
     void operator()(
         const entt::view<
-            entt::get_t<current_rendering_sprite, draw_direction, translation,
-                        const direction_sprite<draw_direction::right>,
-                        const direction_sprite<draw_direction::left>>>& view) {
+            entt::get_t<current_rendering_sprite, direction, translation,
+                        const direction_sprite<direction::right>,
+                        const direction_sprite<direction::left>>>& view) {
         for(const auto ent: view) {
             auto& trans = view.get<translation>(ent);
 
-            if(auto& dir = view.get<draw_direction>(ent);
+            if(auto& dir = view.get<direction>(ent);
                trans.get().x != 0
                && static_cast<int>(std::copysign(1, trans.get().x))
                       != static_cast<int>(dir)) {
                 dir = invert(dir);
                 auto& [cur_sprt] = view.get<current_rendering_sprite>(ent);
                 switch(dir) {
-                case draw_direction::left: {
+                case direction::left: {
                     cur_sprt =
-                        view.get<const direction_sprite<draw_direction::left>>(
+                        view.get<const direction_sprite<direction::left>>(
                                 ent)
                             .where;
                     break;
                 }
-                case draw_direction::right: {
+                case direction::right: {
                     cur_sprt =
-                        view.get<const direction_sprite<draw_direction::right>>(
+                        view.get<const direction_sprite<direction::right>>(
                                 ent)
                             .where;
                     break;

@@ -88,9 +88,9 @@ void make(entt::handle h, loc start, velocity dir,
     auto sprt_i =
         h.registry()->ctx().get<projectile_sprite<base_sprite_tag>>().where;
     h.emplace<projectile_tag>();
-    h.emplace<visible_tag>();
-    h.emplace<current_rendering_sprite>(sprt_i);
-    h.emplace<z_depth>(1);
+    h.emplace<drawing::visible_tag>();
+    h.emplace<drawing::current_rendering_sprite>(sprt_i);
+    h.emplace<drawing::z_depth>(1);
     h.emplace<loc>(start);
     h.emplace<translation>();
     h.emplace<non_uniform_movement_tag>();
@@ -139,10 +139,10 @@ void make(entt::handle h, loc start, velocity dir,
         life::dying_wish::function_type{+[](const void*, entt::handle timer) {
             auto proj = timer.get<projectile_i>().where;
             if(timer.registry()->valid(proj)) {
-                timer.registry()->emplace<previous_sprite>(
+                timer.registry()->emplace<drawing::previous_sprite>(
                     proj, std::exchange(
                               timer.registry()
-                                  ->get<current_rendering_sprite>(proj)
+                                  ->get<drawing::current_rendering_sprite>(proj)
                                   .where,
                               timer.registry()
                                   ->ctx()
@@ -161,13 +161,13 @@ void make(entt::handle h, loc start, velocity dir,
         bang.emplace<projectile_tag>();
         bang.emplace<loc>(current_proj_location);
         bang.emplace<translation>(trans.get());
-        bang.emplace<current_rendering_sprite>(
+        bang.emplace<drawing::current_rendering_sprite>(
             h.registry()
                 ->ctx()
                 .get<projectile_sprite<explosion_sprite_tag>>()
                 .where);
-        bang.emplace<visible_tag>();
-        bang.emplace<z_depth>(1);
+        bang.emplace<drawing::visible_tag>();
+        bang.emplace<drawing::z_depth>(1);
         bang.emplace<life::life_time>(std::chrono::seconds{1});
 
         bang.emplace<life::dying_wish>(
@@ -183,11 +183,11 @@ void make(entt::handle h, loc start, velocity dir,
                                 .where](loc offset, velocity dir_) {
                         const auto frag = entt::handle{reg, reg.create()};
                         frag.emplace<projectile_tag>();
-                        frag.emplace<current_rendering_sprite>(sprt);
+                        frag.emplace<drawing::current_rendering_sprite>(sprt);
                         frag.emplace<loc>(lb + offset);
                         frag.emplace<translation>(trans.get());
-                        frag.emplace<visible_tag>();
-                        frag.emplace<z_depth>(0);
+                        frag.emplace<drawing::visible_tag>();
+                        frag.emplace<drawing::z_depth>(0);
                         frag.emplace<velocity>(dir_);
                         frag.emplace<life::life_time>(std::chrono::seconds{1});
                         frag.emplace<non_uniform_movement_tag>();
@@ -235,15 +235,15 @@ void make(entt::handle h, loc loc, sprite sp) {
     h.emplace<collision::responce_func>(&gun::on_collide);
 }
 
-void fire(entt::handle character) {
-    const auto& l = character.get<loc>();
-    auto hit_box = character.get<collision::hit_extends>();
-    auto dir = character.get<draw_direction>();
+void fire(entt::handle player) {
+    const auto& l = player.get<loc>();
+    auto hit_box = player.get<collision::hit_extends>();
+    auto dir = player.get<drawing::direction>();
 
     const auto proj =
-        entt::handle{*character.registry(), character.registry()->create()};
+        entt::handle{*player.registry(), player.registry()->create()};
     const loc spawn_translation =
-        dir == draw_direction::right ? loc(hit_box.v.x, 0) : loc(-1, 0);
+        dir == drawing::direction::right ? loc(hit_box.v.x, 0) : loc(-1, 0);
     constexpr pos random_end_y{3, 5};
     constexpr pos random_velocity_range{15, 25};
     std::uniform_int_distribution<> life_dist(random_end_y.x, random_end_y.y);
@@ -266,7 +266,7 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
     trans.pin() = pos(0);
     trans.clear();
     if(reg.all_of<gun::gun_tag>(collider)) {
-        auto dir = reg.get<draw_direction>(self);
+        auto dir = reg.get<drawing::direction>(self);
         auto new_left_sprt = reg.create();
         auto new_sprt = sprite(sprite::unchecked_construct_tag{}, "-#");
         reg.get<collision::hit_extends>(self).v = pos(2, 1);
@@ -275,14 +275,14 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
         reg.emplace<sprite>(new_right_sprt,
                             sprite(sprite::unchecked_construct_tag{}, "#-"));
         auto old_sprt = std::exchange(
-            reg.get<current_rendering_sprite>(self).where,
-            dir == draw_direction::left ? new_left_sprt : new_right_sprt);
-        reg.emplace<direction_sprite<draw_direction::left>>(self,
+            reg.get<drawing::current_rendering_sprite>(self).where,
+            dir == drawing::direction::left ? new_left_sprt : new_right_sprt);
+        reg.emplace<drawing::direction_sprite<drawing::direction::left>>(self,
                                                             new_left_sprt);
-        reg.emplace<direction_sprite<draw_direction::right>>(self,
+        reg.emplace<drawing::direction_sprite<drawing::direction::right>>(self,
                                                              new_right_sprt);
-        reg.emplace<previous_sprite>(self, old_sprt);
-        reg.emplace<sprite_to_destroy>(self, old_sprt);
+        reg.emplace<drawing::previous_sprite>(self, old_sprt);
+        reg.emplace<drawing::sprite_to_destroy>(self, old_sprt);
 
         auto additional_input = reg.create();
         reg.emplace<input::task_owner>(additional_input, self);

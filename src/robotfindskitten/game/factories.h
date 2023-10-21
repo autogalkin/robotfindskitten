@@ -30,12 +30,12 @@ namespace factories {
  */
 inline void make_base_renderable(entt::handle h, loc start,
                                  int z_depth_position, sprite sprt) {
-    h.emplace<visible_tag>();
+    h.emplace<drawing::visible_tag>();
     h.emplace<loc>(start);
     h.emplace<translation>();
     h.emplace<sprite>(std::move(sprt));
-    h.emplace<current_rendering_sprite>(h.entity());
-    h.emplace<z_depth>(z_depth_position);
+    h.emplace<drawing::current_rendering_sprite>(h.entity());
+    h.emplace<drawing::z_depth>(z_depth_position);
 }
 
 /**
@@ -143,7 +143,7 @@ inline void make(entt::handle h,
                  life::dying_wish::function_type what_do_at_the_end,
                  std::chrono::milliseconds duration = std::chrono::seconds{1}) {
     h.emplace<life::life_time>(duration);
-    h.emplace<life::dying_wish>(what_do);
+    h.emplace<life::dying_wish>(what_do_at_the_end);
 }
 }; // namespace timer
 
@@ -162,12 +162,12 @@ void on_collide(const void* payload, entt::registry& reg, collision::self self,
 
 inline void make(entt::handle h, loc l, sprite sprt) {
     h.emplace<character_tag>();
-    h.emplace<z_depth>(2);
+    h.emplace<drawing::z_depth>(2);
     h.emplace<collision::hit_extends>(sprt.bounds());
     h.emplace<sprite>(sprt);
-    h.emplace<current_rendering_sprite>(h.entity());
-    h.emplace<draw_direction>(draw_direction::right);
-    h.emplace<visible_tag>();
+    h.emplace<drawing::current_rendering_sprite>(h.entity());
+    h.emplace<drawing::direction>(drawing::direction::right);
+    h.emplace<drawing::visible_tag>();
     h.emplace<loc>(l);
     h.emplace<translation>();
     h.emplace<uniform_movement_tag>();

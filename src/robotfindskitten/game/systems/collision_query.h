@@ -86,10 +86,10 @@ public:
     inline void operator()( // NOLINT(readability-function-cognitive-complexity)
         const entt::view<
             entt::get_t<const loc, const hit_extends, const need_update_entity,
-                        agent, const visible_tag>>& need_insert,
+                        agent, const drawing::visible_tag>>& need_insert,
         const entt::view<
             entt::get_t<const loc, const translation, const hit_extends,
-                        const agent, const visible_tag>>& query_view,
+                        const agent, const drawing::visible_tag>>& query_view,
         const entt::view<entt::get_t<const agent, const responce_func>>&
             responce_view,
         const entt::view<entt::get_t<const translation, agent>,
