@@ -1,7 +1,6 @@
 ﻿/**
  * @file
- * @brief Control Notepad.exe
- *
+ * @brief Controls the Notepad.exe
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_NOTEPAD_H
@@ -24,61 +23,51 @@
 #include "engine/time.h"
 
 // NOLINTBEGIN(readability-redundant-declaration)
-
 /**
- * @brief Custom Windows Proc
- *
- * Replace original Notepad.exe proc with this function
- * and filter windows messages and perform robotfindskitten logic:
+ * @brief The Custom Windows Proc
+ * We replace the original Notepad.exe Proc with this function
+ * to filter windows messages and perform `robotfindskitten` logic:
  *  - Initialize a game after notepad will be ready
- *  - handle WM_SIZE and redraw all spawned Static Controls
+ *  - handle WM_SIZE and redraw the all spawned Static Controls
  */
 LRESULT CALLBACK hook_wnd_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 
 /**
- * @brief A Hook for GetMessageW
- *
- * Modify Notepad.exe application loop: replace GetMessageW, which
- * waits messages with PeekMessageW which just poll and continue. it allows
- * run Notepad.exe as a game without waits every new message. And
- * send NULL to the original loop
- * Also performs:
- *  - Handle input
- *  - Block keyboard and mouse inputs for Notepad.exe
- *  - Scroll Skintilla on mouse wheel
- *  - Tick a render loop
+ * @brief The Hook for GetMessageW
+ * Modify the Notepad.exe application loop: replace GetMessageW, which
+ * waits for messages, with PeekMessageW, which polls and continues. This allows
+ * running Notepad.exe as a game without waiting for every new message. Also,
+ * send NULL to the original loop. Additionally, perform the following: Handle
+ * input Block keyboard and mouse inputs for Notepad.exe Scroll Scintilla by the
+ * mouse wheel etc."
  */
 bool hook_GetMessageW(HMODULE module);
 
 /**
- * @brief Hook for SendMessageW
+ * @brief The Hook for SendMessageW
  */
 bool hook_SendMessageW(HMODULE module);
 
 /**
- * @brief Hook for CreateWindowExW
- *
+ * @brief The Hook for CreateWindowExW
  *  - Capture window handles.
- *  - Destroy unnesessary windows: main menu and status line
- *  - Create Scintilla Edit Control
- *  - Replace original EditControl with Scintilla
- *  - Start a game after all windows are created
+ *  - Destroy unnesessary windows: the main menu and the status line
+ *  - Create the Scintilla Edit Control
+ *  - Replace the original EditControl with the Scintilla
+ *  - Start the game after all windows are created
  */
 bool hook_CreateWindowExW(HMODULE module);
 
 /**
- * @brief Hook for SetWindowTextW
- *
- * Prevent Notepad.exe window title updating
- *
+ * @brief The Hook for SetWindowTextW
+ * Prevent the Notepad.exe window title updating
  */
 bool hook_SetWindowTextW(HMODULE module);
-
 // NOLINTEND(readability-redundant-declaration)
 
+
 /**
- * @class title_line
- * @brief Manage title line with changing values
+ * @brief Formats the title line.
  */
 struct title_line_args {
     void set_game_thread_fps(timings::fps_count::value_type fps) noexcept {
@@ -88,11 +77,9 @@ struct title_line_args {
         notepad_thread_fps = fps;
     }
     /**
-     * @brief Construct a title line
-     *
-     * Format options into string
-     *
-     * @return std::wstring for Win32 API SetWindowTextW
+     * @brief Constructs a title line by
+     * formatting the options into a string
+     * @return std::wstring for the Win32 API SetWindowTextW
      */
     [[nodiscard]] std::wstring make() {
         return std::format(buf_, game_thread_fps, notepad_thread_fps);
@@ -102,17 +89,16 @@ private:
     timings::fps_count::value_type game_thread_fps;
     timings::fps_count::value_type notepad_thread_fps;
     static constexpr auto buf_ = PROJECT_NAME
-        " v " PROJECT_VER L" fps: [ game_thread {:02} ] [ notepad_thread {:02} ]";
+        " v"
+        " " PROJECT_VER L" fps: [ game_thread {:02} ] [ notepad_thread {:02} ]";
 };
 
 class notepad;
 /**
- * @class static_control
- * @brief Wrapper for Win32 API Text Static Control
- *
- * Hold some data for render a static control: text, color, size..
- * class notepad use array of static_control to batch render all together
- *
+ * @brief A wrapper for the Win32 API Text Static Control
+ * Stores data for rendering a static control, including text, color, and size.
+ * The Notepad class uses an array of static control handlers to batch render
+ * them together.
  */
 struct static_control_handler {
     friend notepad;
@@ -134,6 +120,9 @@ private:
     COLORREF fore_color_ = RGB(0, 0, 0);
 
 public:
+    operator HWND() { // NOLINT(google-explicit-constructor)
+        return wnd_.get();
+    }
     static_control_handler& with_position(pos where) noexcept {
         position_ = where;
         return *this;
@@ -156,9 +145,6 @@ public:
         fore_color_ = color;
         return *this;
     }
-    operator HWND() { // NOLINT(google-explicit-constructor)
-        return wnd_.get();
-    }
     [[nodiscard]] id_t get_id() const noexcept {
         return id_;
     }
@@ -172,7 +158,7 @@ public:
         return fore_color_;
     }
 };
-
+// RAII for joining a thread
 class thread_guard {
     std::thread t_;
     std::shared_ptr<std::atomic_bool> shutdown_token_ =
@@ -200,14 +186,10 @@ public:
     }
 };
 
-// A static Singelton for notepad.exe wrapper
 /**
- * @class notepad
- * @brief A global Singelton that has been load into Notepad.exe by DLL
- * injection
- *
- * Provides all infrastructure between the game and Notepad.exe
- *
+ * @brief A global singleton loaded into the Notepad.exe process via DLL
+ * injection. It serves as the infrastructure connecting the game thread and
+ * Notepad.exe.
  */
 class notepad {
     friend LRESULT CALLBACK hook_wnd_proc(HWND, UINT, WPARAM, LPARAM);
@@ -220,14 +202,10 @@ class notepad {
                                  LPVOID lp_reserved);
 
 public:
-    /**
-     * @class opts
-     * @brief Some startup options for notepad
-     *
-     */
+    /*! @brief Some startup options for the notepad */
     struct opts {
         uint8_t all = static_cast<uint8_t>(values::empty);
-        enum values : uint8_t { // Not enum class
+        enum values : uint8_t {
             // clang-format off
             empty          = 0x0,
             kill_focus     = 0x1 << 0,
@@ -251,10 +229,8 @@ public:
         std::shared_ptr<std::atomic_bool> shutdown_signal)>;
 
     /**
-     * @brief Get signal to connect for event that fired on, when all notepad
-     * ready for start a game
-     *
-     * @return a signal
+     * @brief Gets signal to connect for an event that fires when Notepad is
+     * ready to start a game
      */
     [[nodiscard]] std::optional<std::reference_wrapper<open_signal_t>>
     on_open() noexcept {
@@ -263,9 +239,7 @@ public:
     }
 
     /**
-     * @brief Initial function to call on start, setup all hooks,
-     * Must call only once
-     *
+     * @brief The function to call in the dllmain. Setups all hooks.
      * @param module Notepad.exe application module
      * @param start_options startup options
      */
@@ -279,62 +253,43 @@ public:
         hook_SetWindowTextW(module);
     }
 
-    /**
-     * @brief Get Notepad.exe Main Window descriptor
-     *
-     * @return HWND descriptor
-     */
+    /*! @brief Gets the Notepad.exe window descriptor */
     [[nodiscard]] HWND get_window() const noexcept {
         return main_window_;
     }
-
-    /**
-     * @brief Set Notepad.exe window title
-     *
-     * @param title text to set
-     */
+    /*! @brief Sets the Notepad.exe window title */
     void set_window_title(const std::wstring_view title) const noexcept {
         SetWindowTextW(main_window_, title.data());
     }
 
     /**
-     * @brief Add a render command to notepad command queue
-     *
-     * Execute a function with Notepad and Scintilla from the game thread
-     *
-     * @param cmd function to execute in the notepad thread
-     * @return Success
+     * @brief Adds a render command to the notepad command queue to
+     * execute a function with Notepad and Scintilla from the game thread.
      */
     static bool push_command(command_t&& cmd) {
         return notepad::get().commands_.push(cmd);
     };
-    /**
-     * @brief Get Scintilla Wrapper
-     *
-     * @return scintilla wrapper class
-     */
+    /*! @brief Gets the Scintilla dll wrapper */
     [[nodiscard]] scintilla::scintilla_dll& get_scintilla() noexcept {
         return *scintilla_;
     };
 
+    /*! @brief Checks is application windows is WA_INACTIVE in WM_ACTIVATE */
     [[nodiscard]] static bool is_window_active() noexcept {
         return notepad::get().is_active.load();
     }
 
     /**
-     * @brief [TODO:description]
-     *
-     * @param np [TODO:parameter]
-     * @return  reference to self
+     * @brief ShowWindow of the given static control handler.
      */
     void show_static_control(static_control_handler&& ctrl);
 
-    void send_game_fps(timings::fps_count::value_type fps) noexcept {
-        window_title_args.set_game_thread_fps(fps);
-    }
-
     std::vector<static_control_handler>& get_all_static_controls() noexcept {
         return static_controls;
+    }
+    void
+    send_game_fps_to_window_title(timings::fps_count::value_type fps) noexcept {
+        window_title_args.set_game_thread_fps(fps);
     }
 
 private:
@@ -346,21 +301,22 @@ private:
     void start_game_thread();
     void tick_render();
 
-    // commands from the other thread
+    // Commands from the other thread
     commands_queue_t commands_{};
     opts options_{opts::empty};
     HWND main_window_{};
     timings::fixed_time_step fixed_time_step_{};
     timings::fps_count fps_count_{};
-    // Live only on startup
+    // Lives only on startup
     std::unique_ptr<open_signal_t> on_open_{std::make_unique<open_signal_t>()};
-    // Notepad.exe window proc
+    // The Notepad.exe oroginal window proc
     LONG_PTR original_proc_{};
     std::optional<scintilla::scintilla_dll> scintilla_{std::nullopt};
-    // Indicate the application state
+    // The application state
     std::atomic_bool is_active{true};
     title_line_args window_title_args{};
     std::vector<static_control_handler> static_controls;
+    // The game
     std::optional<thread_guard> game_thread{std::nullopt};
 };
 

@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Managing game time
+ * @brief Managing the game time.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_TIME_H
@@ -13,20 +13,18 @@
 namespace timings {
 using namespace std::chrono_literals;
 
-// most suitable for measuring intervals
+// Most suitable for measuring intervals
 using clock = std::chrono::steady_clock;
 
-// fixed time stem inderval
+// The fixed time stem inderval
 constexpr auto dt = std::chrono::duration<int64_t, std::ratio<1, 60>>{1};
 
 using duration = decltype(clock::duration{} + dt);
-// clock time point
+// A clock time point
 using point = std::chrono::time_point<clock, duration>;
 
 /**
- * @class fixed_time_step
  * @brief A class is responsible for maintaining fixed time stem game loop
- *
  */
 class fixed_time_step {
     duration lag_accum_ = 0ms;
@@ -34,9 +32,10 @@ class fixed_time_step {
 
 public:
     /**
-     * @brief Sleep between current frame end and next frame start
-     *
-     * Usage: call in while loop
+     * @brief Sleep between the end of the current frame and the start of the
+     * next frame, and return the duration of the frame from the previous
+     * frame's start to the new frame's start because it can be not equal to dt
+     * exactly. Usage: call in the while loop
      */
     duration sleep() {
         const point new_point = clock::now();
@@ -62,8 +61,8 @@ public:
 };
 
 /**
- * @class fps_count
- * @brief Count FPS and return count of frames between calls fps()
+ * @brief Counts FPS and return count of frames between calls the fps() function
+ * in the while loop
  */
 class fps_count {
 public:
@@ -75,10 +74,9 @@ private:
 
 public:
     /**
-     * @brief Count fps between calls
-     *
-     * @tparam Printer Predicate to accept the result if it is ready
-     * @param printer a lambda of type Printer
+     * @brief Counts fps between calls
+     * @tparam Printer A predicate to accept the result if it is ready
+     * @param printer A lambda of type Printer
      */
     template<typename Printer>
         requires std::is_invocable_v<Printer, fps_count::value_type>

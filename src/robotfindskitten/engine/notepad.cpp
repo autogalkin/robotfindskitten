@@ -21,12 +21,14 @@
 #include "engine/scintilla_wrapper.h"
 #include "engine/time.h"
 
+// The std::optionals of the notepad class are always valid here
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
+
 void notepad::tick_render() {
     fps_count_.fps([](auto fps) {
         notepad::get().window_title_args.set_notepad_thread_fps(fps);
     });
-    // execute all commands from the Game thread
+    // Execute all commands from the Game thread
     commands_.consume_all([this](auto f) {
         if(f) {
             f(*this, *scintilla_);
@@ -35,7 +37,6 @@ void notepad::tick_render() {
     notepad::get().set_window_title(notepad::get().window_title_args.make());
 }
 
-// game in another thread
 void notepad::start_game_thread() {
     ::SetWindowPos(main_window_, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
     RECT rc;
@@ -64,12 +65,12 @@ LRESULT hook_wnd_proc(HWND hwnd, const UINT msg, const WPARAM wp,
     switch(msg) {
     case MY_START: {
         {
-            // destroy the status bar
+            // Destroy the status bar
             if(HWND stbar = ::FindWindowExW(np.get_window(), nullptr,
                                             STATUSCLASSNAMEW, nullptr)) {
                 ::DestroyWindow(stbar);
             }
-            // destroy the main menu
+            // Destroy the main menu
             HMENU hMenu = GetMenu(np.get_window());
             ::SetMenu(notepad::get().get_window(), nullptr);
             ::DestroyMenu(hMenu);
@@ -154,7 +155,7 @@ bool hook_GetMessageW(const HMODULE module) {
                     return 0;
                 case WM_MOUSEWHEEL: {
                     auto scroll_delta = GET_WHEEL_DELTA_WPARAM(lpMsg->wParam);
-                    // horizontal scroll
+                    // Horizontal scroll
                     auto scroll_op = scintilla::scroll_op{*np.scintilla_};
                     auto size_op = scintilla::size_op{*np.scintilla_};
                     auto text_op = scintilla::text_op{*np.scintilla_};
@@ -174,7 +175,7 @@ bool hook_GetMessageW(const HMODULE module) {
                                        : 0),
                             0);
                         lpMsg->message = WM_NULL;
-                        // vertical scroll
+                        // Vertical scroll
                     } else if(!(LOWORD(lpMsg->wParam))) {
                         scroll_op.scroll(
                             0, scroll_delta > 0
@@ -210,11 +211,11 @@ bool hook_GetMessageW(const HMODULE module) {
                 default:
                     break;
                 }
-                // work as PeekMessage for the notepad.exe
+                // Works as PeekMessage for the notepad.exe
                 ::TranslateMessage(lpMsg);
                 ::DispatchMessage(lpMsg);
                 lpMsg->message =
-                    WM_NULL; // send the null to the original dispatch loop
+                    WM_NULL; // Send the null to the original dispatch loop
             }
 
             [[maybe_unused]] static const auto once = [] {
@@ -250,8 +251,8 @@ bool hook_CreateWindowExW(HMODULE module) {
            DWORD dwStyle, int X, int Y, int nWidth, int nHeight,
            HWND hWndParent, HMENU hMenu, HINSTANCE hInstance,
            LPVOID lpParam) -> HWND {
-            // here creates class 'Notepad' and 'Edit'; can change creation
-            // params here
+            // Here class 'Notepad' and 'Edit' are creating; We can change the
+            // creation params here
             HWND out_hwnd = nullptr;
 
             auto& np = notepad::get();
@@ -274,10 +275,10 @@ bool hook_CreateWindowExW(HMODULE module) {
                                     X, Y, nWidth, nHeight, hWndParent, hMenu,
                                     hInstance, lpParam);
             }
-            // catch notepad.exe window
+            // Catch the notepad.exe window
             if(!lstrcmpW(lpClassName, L"Notepad")) {
                 np.main_window_ = out_hwnd;
-                // patch the wnd proc
+                // Patch the wnd proc
                 np.original_proc_ =
                     ::GetWindowLongPtr(np.main_window_, GWLP_WNDPROC);
                 ::SetWindowLongPtr(np.main_window_, GWLP_WNDPROC,
@@ -310,7 +311,6 @@ void notepad::show_static_control(static_control_handler&& ctrl) {
                          ::GetModuleHandle(nullptr), nullptr),
         [](HWND w) { ::PostMessage(w, WM_CLOSE, 0, 0); });
     ::SetLayeredWindowAttributes(
-        // Scintilla was not valid only on startup
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         ctrl,
         scintilla::look_op{*scintilla_}.get_background_color(STYLE_DEFAULT), 0,

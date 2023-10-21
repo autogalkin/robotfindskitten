@@ -1,5 +1,7 @@
-
-
+/**
+ * @file
+ * @brief Import adress table hooking
+ */
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_IAT_HOOK_H
 #define _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_DETAILS_IAT_HOOK_H
 
@@ -36,11 +38,11 @@ struct function_name: std::string_view {
 template<typename FuncType>
 [[nodiscard]] FuncType get_imported_function(const module_name mn,
                                              const function_name fn) {
-    auto* const module_handle = GetModuleHandleA(mn.data());
+    auto* const module_handle = ::GetModuleHandleA(mn.data());
     if(!module_handle) {
         return nullptr;
     }
-    return reinterpret_cast<FuncType>(GetProcAddress(module_handle, fn.data()));
+    return reinterpret_cast<FuncType>(::GetProcAddress(module_handle, fn.data()));
 }
 
 template<typename FuncType>
@@ -83,10 +85,10 @@ bool hook_import(HMODULE module, module_name mn, function_name fn,
 
             // Patch the function pointer
             DWORD old_protection = 0;
-            VirtualProtect(thunk, sizeof(PIMAGE_THUNK_DATA), PAGE_READWRITE,
+            ::VirtualProtect(thunk, sizeof(PIMAGE_THUNK_DATA), PAGE_READWRITE,
                            &old_protection);
             thunk->u1.Function = reinterpret_cast<uintptr_t>(hook);
-            VirtualProtect(thunk, sizeof(PIMAGE_THUNK_DATA), old_protection,
+            ::VirtualProtect(thunk, sizeof(PIMAGE_THUNK_DATA), old_protection,
                            &old_protection);
         }
     }

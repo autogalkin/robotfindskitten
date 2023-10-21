@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Render into BackBuffer
+ * @brief A back buffer for performing defferer rendering into Scintilla.
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_BUFFER_H
@@ -14,6 +14,10 @@
 
 #include "engine/details/base_types.hpp"
 
+/**
+ * @brief Checks is the mutex locked or not. The class works only in debug
+ * builds and has no overhead at release builds
+ */
 template<typename Mutex>
 class mutex_debug_wrapper: public Mutex {
 public:
@@ -43,7 +47,8 @@ public:
 
 #ifndef NDEBUG
     /**
-     * @return true iff the mutex is locked by the caller of this method. */
+     * @return True if the mutex is locked by the caller of this method False
+     * otherwise. */
     [[nodiscard]] bool locked_by_caller() const {
         return owner_thread_ == std::this_thread::get_id();
     }
@@ -55,6 +60,9 @@ private:
 #endif // #ifndef NDEBUG
 };
 
+/**
+ * @brief A buffer trait for injecting a mutex into the buffer functions
+ */
 template<typename Mutex>
 class thread_safe_trait {
     mutex_debug_wrapper<Mutex> mutex_;
@@ -69,6 +77,10 @@ public:
     }
 #endif // #ifndef NDEBUG
 };
+
+/**
+ * @brief Does nothing with the buffer, just a placeholder
+ */
 class not_thread_safe_trait {
 public:
     int lock() {
@@ -82,8 +94,7 @@ public:
 };
 
 /**
- * @class back_buffer
- * @brief An array of chars on the screen
+ * @brief An array of chars that sends to the Scintilla screen buffer
  */
 template<typename Trait = not_thread_safe_trait>
 class back_buffer: public Trait {
@@ -92,7 +103,7 @@ public:
 
 private:
     size_t width_;
-    // ensure null-terminated
+    // Ensure null-terminated
     std::basic_string<char_size> buf_;
     std::vector<int32_t> z_buf_;
     void set_lines() {
@@ -115,7 +126,7 @@ public:
         return {width_ - 1, buf_.size() / width_};
     }
     /**
-     * @brief Draw a sprite into the buffer
+     * @brief Draws a sprite into the buffer
      *
      * @param pivot a sprite start position
      * @param sh a sprite to render
@@ -123,7 +134,7 @@ public:
      */
     void draw(pos pivot, sprite_view sh, int32_t depth);
     /**
-     * @brief Erase sprite from the byffer
+     * @brief Erases sprite from the byffer
      *
      * @param pivot a sprite start position
      * @param sh a sprite to erase
@@ -131,9 +142,8 @@ public:
      */
     void erase(pos pivot, sprite_view sh, int32_t depth);
     /**
-     * @brief clear all buffer to initial state
-     *
-     * Keep spaces and \n
+     * @brief Reset the entire buffer to the initial state.
+     * Keeps spaces and \n.
      */
     void clear() {
         assert(this->is_locked_by_caller());
@@ -143,17 +153,15 @@ public:
     };
 
     /**
-     * @brief View buffer content
+     * @brief Views buffer content/
+     * A thread-Safe read-only access to the buffer.
      *
-     * Thread-Safe read-only access to the buffer
-     *
-     * @tparam Visitor Predicate to accept
-     * a buffer content void(std::basic_string<char_size>& str)
-     * @param visitor Visitor instance
+     * @tparam Visitor A predicate to accepts the buffer content.
+     * @param visitor A Visitor instance
      */
     template<typename Visitor>
         requires std::is_invocable_v<Visitor,
-                                     // Need for Scintilla api call, ensure \0
+                                     // Needs for Scintilla api call, ensure \0
                                      const std::basic_string<char_size>&>
     void view(Visitor&& visitor) {
         const auto maybe_lock = this->lock();
@@ -161,7 +169,7 @@ public:
     }
 
 private:
-    // visitor traverse all sprite matrix
+    // Traverse the sprite matrix
     template<typename Visitor>
         requires std::is_invocable_v<Visitor, pos, char_size>
     void traverse_sprite_positions(pos sprite_pivot, sprite_view sp,

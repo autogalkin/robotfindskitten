@@ -12,7 +12,7 @@ HWND scintilla_dll::create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
                                      HINSTANCE hInstance, LPVOID lpParam,
                                      uint8_t start_options) {
     edit_window_ =
-        CreateWindowExW(dwExStyle, L"Scintilla", lpWindowName, dwStyle, X, Y,
+        ::CreateWindowExW(dwExStyle, L"Scintilla", lpWindowName, dwStyle, X, Y,
                         nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 
     init_direct_access_to_scintilla();
@@ -33,8 +33,8 @@ HWND scintilla_dll::create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
 
     dcall1_w(SCI_SETSELEOLFILLED, 0);
 
-    ShowScrollBar(edit_window_, SB_BOTH, FALSE);
-    // hide control symbol mnemonics
+    ::ShowScrollBar(edit_window_, SB_BOTH, FALSE);
+    // Hide control symbol mnemonics
     dcall1_w(SCI_SETCONTROLCHARSYMBOL, ' ');
     look_op{*this}.show_spaces((::notepad::opts::show_spaces & start_options) != 0);
     look_op{*this}.show_eol((::notepad::opts::show_eol & start_options) != 0);
@@ -45,9 +45,9 @@ HWND scintilla_dll::create_native_window(DWORD dwExStyle, LPCWSTR lpWindowName,
 void scintilla_dll::init_direct_access_to_scintilla() {
     direct_function_ =
         reinterpret_cast<npi_t(__cdecl*)(sptr_t, int, uptr_t, sptr_t)>(
-            GetProcAddress(native_dll_.get(), "Scintilla_DirectFunction"));
+            ::GetProcAddress(native_dll_.get(), "Scintilla_DirectFunction"));
     direct_wnd_ptr_ =
-        SendMessage(get_native_window(), SCI_GETDIRECTPOINTER, 0, 0);
+        ::SendMessage(get_native_window(), SCI_GETDIRECTPOINTER, 0, 0);
 }
 
 } // namespace scintilla

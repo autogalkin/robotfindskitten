@@ -1,6 +1,6 @@
 ﻿/**
  * @file
- * @brief Scintilla API wrapper
+ * @brief Experimental wrappers of the Scintilla API
  */
 
 #ifndef _CPP_PROJECTS_ROBOTFINDSKITTEN_SRC_ROBOTFINDSKITTEN_ENGINE_SCINTILLA_WRAPPER_H
@@ -27,14 +27,16 @@ bool hook_CreateWindowExW(HMODULE);
 
 namespace scintilla {
 
+namespace details {
 template<typename T>
 concept is_container_of_chars = requires(T t) {
     { t.data() } -> std::convertible_to<char*>;
     { t.reserve(10) };
 };
+} // namespace details
 
 /**
- * @brief Key that prevent to construct a class outside class T
+ * @brief A key that prevents to construct a class outside of the class T
  */
 template<typename T>
 class construct_key {
@@ -46,31 +48,33 @@ class construct_key {
 class scintilla_dll;
 
 /**
- * @brief Specialization of construct_key for scintilla
- *
- * Allow to create a scintilla in scintilla and in hook_CreateWindowExW
+ * @brief Specialization of the \ref construct_key for \ref scintilla_dll
+ * Allows creating a scintilla_dll in the scintilla_sll and in the
+ * hook_CreateWindowExW
  */
 template<>
 class construct_key<scintilla_dll> {
     friend bool ::hook_CreateWindowExW(HMODULE);
 };
 
-// this is the EDIT Control window of the notepad
 /**
- * @class scintilla
- * @brief this is wrapper for Scintilla Edit Control
- * window of the game in notepad, replacement for a standart Edit Control.
+ * @brief This is a wrapper for the Scintilla Edit Control window in the Notepad
+ * game, replacing the standard Edit Control.
  *
- * It allow colorize word, set back and front colors, font,
- * fast push new text, scroll left and down
+ * It enables word coloring, setting background and foreground colors, custom
+ * fonts, fast text insertion, and left and downward scrolling.
  *
- * A Project builds with patched Scintilla version, where we disable
- *  - EnsureCaretVisible for prevent unnesessary scrolls and flickering
+ * The 'robotfindskitten' project builds with patched Scintilla version, where
+ * we disable the EnsureCaretVisible() function for preventing unnesessary
+ * scrolls and flickering
  *
+ * The scintilla_dll class handles essential functions for managing DLL
+ * resource and window creation. All Scintilla API components have been moved
+ * to separate classes called Operators
  */
 class scintilla_dll
     : public noncopyable,
-      public nonmoveable // Deleted so scintilla objects can not be copied.
+      public nonmoveable // Deleted so scintilla_dll objects can not be copied.
 {
     friend bool ::hook_CreateWindowExW(HMODULE);
     friend class ::notepad;
@@ -90,7 +94,7 @@ public:
     // Only the hook_CreateWindowExW can create this class
     explicit scintilla_dll(
         construct_key<scintilla_dll> /*access in friends*/) noexcept
-        : native_dll_{LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {}
+        : native_dll_{::LoadLibrary(TEXT("Scintilla.dll")), &::FreeLibrary} {}
 
     using direct_function_t = npi_t (*)(sptr_t, int, uptr_t, sptr_t);
 
@@ -113,6 +117,7 @@ public:
     // NOLINTEND(modernize-use-nodiscard)
 };
 
+namespace details{
 struct scintilla_ref {
     // Pure mans gsl::not_null
     std::reference_wrapper<scintilla_dll> dll_;
@@ -121,7 +126,12 @@ struct scintilla_ref {
         return dll_.get();
     }
 };
-struct selection_op: scintilla_ref {
+}
+
+/**
+ * @brief The part of the Scintilla API that deals with text selection.
+ */
+struct selection_op: details::scintilla_ref {
     void set_selection(npi_t start, npi_t end) const noexcept {
         sc().dcall2(SCI_SETSEL, start, end);
     }
@@ -140,8 +150,10 @@ struct selection_op: scintilla_ref {
     }
 };
 
-
-struct text_op: scintilla_ref {
+/**
+ * @brief The part of the Scintilla API that deals with text.
+ */
+struct text_op: details::scintilla_ref {
     void insert_text(npi_t index, std::string_view s) const noexcept {
         sc().dcall2(SCI_INSERTTEXT, index, reinterpret_cast<sptr_t>(s.data()));
     }
@@ -187,7 +199,7 @@ struct text_op: scintilla_ref {
         return get_line_lenght(get_lines_count() - 1);
     }
 
-    template<is_container_of_chars T>
+    template<details::is_container_of_chars T>
     void get_line_text(npi_t line_index, T& buffer) const {
         const npi_t line_length = get_line_lenght(line_index);
         buffer.reserve(line_length + 1);
@@ -195,14 +207,14 @@ struct text_op: scintilla_ref {
                reinterpret_cast<sptr_t>(buffer.data()));
     }
 
-    template<is_container_of_chars T>
+    template<details::is_container_of_chars T>
     void get_all_text(T& buffer) const {
         const npi_t len = get_all_text_length();
         buffer.reserve(len + 1);
         dcall2(SCI_GETTEXT, len + 1, reinterpret_cast<sptr_t>(buffer.data()));
     }
 
-    template<is_container_of_chars T>
+    template<details::is_container_of_chars T>
     std::pair<npi_t, npi_t> get_selection_text(T& out) const {
         {
             const auto range = selection_op{sc()}.get_selection_range();
@@ -213,7 +225,10 @@ struct text_op: scintilla_ref {
     }
 };
 
-struct caret_op: scintilla_ref {
+/**
+ * @brief The part of the Scintilla API that deals with caret movement.
+ */
+struct caret_op: details::scintilla_ref {
     [[nodiscard]] npi_t get_caret_index() const noexcept {
         return sc().dcall0(SCI_GETCURRENTPOS);
     }
@@ -231,27 +246,33 @@ struct caret_op: scintilla_ref {
     }
 };
 
-struct size_op: scintilla_ref {
+/**
+ * @brief The part of the Scintilla API that deals with Scintilla attribute
+ * sizes.
+ */
+struct size_op: details::scintilla_ref {
     [[nodiscard]] uint8_t get_char_width() const noexcept {
         return static_cast<uint8_t>(sc().dcall2(SCI_TEXTWIDTH, STYLE_DEFAULT,
                                                 reinterpret_cast<sptr_t>(" ")));
     }
-    // pixels
+    /*! @brief Gets a line height in pixels */
     [[nodiscard]] uint8_t get_line_height() const noexcept {
         return static_cast<uint8_t>(
             sc().dcall1_w(SCI_TEXTHEIGHT, STYLE_DEFAULT));
     }
-    // pixels
+    /*! @brief Gets a Scintilla window rect in pixels */
     [[nodiscard]] RECT get_window_rect() const noexcept {
         RECT r;
         GetWindowRect(sc().get_native_window(), &r);
         return r;
     }
+    /*! @brief Gets a window widthin pixels */
     [[nodiscard]] uint32_t get_window_width() const noexcept {
         RECT r = get_window_rect();
         return r.right - r.left;
     }
-    [[nodiscard]] npi_t get_font_size() const noexcept /*size in pt*/ {
+    /*! @brief Gets a Scintilla font size in pt */
+    [[nodiscard]] npi_t get_font_size() const noexcept {
         return static_cast<npi_t>(
             sc().dcall1_w(SCI_STYLEGETSIZE, STYLE_DEFAULT));
     }
@@ -263,7 +284,10 @@ struct size_op: scintilla_ref {
     }
 };
 
-struct look_op: scintilla_ref {
+/**
+ * @brief The part of the Scintilla API that deals with styling.
+ */
+struct look_op: details::scintilla_ref {
     void set_lexer(Scintilla::ILexer5* lexer) const noexcept {
         sc().dcall2(SCI_SETILEXER, 0, reinterpret_cast<sptr_t>(lexer));
     }
@@ -300,7 +324,11 @@ struct look_op: scintilla_ref {
         PostMessage(sc().get_native_window(), SCI_SETVIEWEOL, enable, 0);
     }
 };
-struct zoom_op: scintilla_ref {
+
+/**
+ * @brief The part of the Scintilla API that deals with zoom.
+ */
+struct zoom_op: details::scintilla_ref {
     int ZOOM_START = -10;
     int ZOOM_END = 50;
     void set_zoom(int zoom) const noexcept {
@@ -310,7 +338,11 @@ struct zoom_op: scintilla_ref {
         return static_cast<int>(sc().dcall0(SCI_GETZOOM));
     }
 };
-struct scroll_op: scintilla_ref {
+
+/**
+ * @brief The part of the Scintilla API that deals with scrolling.
+ */
+struct scroll_op: details::scintilla_ref {
     void scroll(npi_t columns_to_scroll, npi_t lines_to_scroll) const noexcept {
         sc().dcall2(SCI_LINESCROLL, columns_to_scroll, lines_to_scroll);
     }
