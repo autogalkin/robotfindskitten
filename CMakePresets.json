@@ -14,6 +14,7 @@
                 "rhs": "Windows"
             },
             "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_CXX_COMPILER": "cl.exe",
                 "CMAKE_CXX_LINK_EXECUTABLE": "link.exe",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/${presetName}-install",
@@ -30,10 +31,10 @@
             "description": "Target Windows Debug (64-bit).",
             "inherits": "windows-base",
             "cacheVariables": {
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_LINK_FLAGS": "/DEBUG:FULL /INCREMENTAL:NO",
-                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od /fsanitize=address $env{MSVC_FLAGS} $env{UUID_LINK}"
+                "CMAKE_CXX_FLAGS": "/MP /FS /Zi /Od /fsanitize=address $env{MSVC_FLAGS} $env{UUID_LINK}",
+                "ROBOTFINDSKITTEN_BUILD_TESTING": "ON"
             },
             "architecture": {
                 "value": "x64",
@@ -51,7 +52,8 @@
             "inherits": "windows-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "/MP /O2 $env{MSVC_FLAGS} $env{UUID_LINK}"
+                "CMAKE_CXX_FLAGS": "/MP /O2 $env{MSVC_FLAGS} $env{UUID_LINK}",
+                "ROBOTFINDSKITTEN_BUILD_DOCS": "ON"
             }
         }
     ],

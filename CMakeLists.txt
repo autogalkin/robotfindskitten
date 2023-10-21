@@ -46,6 +46,8 @@ endif()
 option(ROBOTFINDSKITTEN_BUILD_DOCS "Enable building with documentation." OFF)
 
 if(ROBOTFINDSKITTEN_BUILD_DOCS)
+    set(DOXY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    set(DOXY_SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/")
     find_package(Doxygen)
     configure_file(DoxyFile.in DoxyFile @ONLY)
     add_custom_target(

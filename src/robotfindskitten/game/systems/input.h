@@ -67,7 +67,8 @@ struct key_down_task {
     function_type exec;
 };
 /**
- * @brief If the \ref key_down_task is disabled inside the ecs execution graph
+ * @brief Indicates a disabled the \ref key_down_task inside the ecs execution
+ * graph
  */
 struct task_disable_tag {};
 
