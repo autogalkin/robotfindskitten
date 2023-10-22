@@ -1,5 +1,7 @@
 # robotfindskitten
 
+![Screenshot](./docs/screenshot.png)
+
 `robotfindskitten` is a my reimplementation of the game [originally](https://github.com/robotfindskitten/robotfindskitten) written by
 [Leonard Richardson](https://www.crummy.com/software/robotfindskitten/), now
 inside the Notepad.exe and uses the Entity Component System by the great [EnTT]🚀.
@@ -8,7 +10,7 @@ The game uses DLL injection to modify the notepad and replace the default Win32 
 
 Also, You can find a little gun, so be careful with it!
 
-A video let's play:
+A video Let's Play:
 
 https://github.com/autogalkin/robotfindskitten/assets/97976281/1d351bcf-15a5-4494-a250-1b6636e05c47
 
