@@ -51,8 +51,8 @@ void emplace_simple_death_anim(entt::handle h) {
 } // namespace factories
 namespace projectile {
 namespace {} // namespace
-void on_collide(const void* /*payload*/, entt::registry& r, collision::self self,
-                collision::collider other) {
+void on_collide(const void* /*payload*/, entt::registry& r,
+                collision::self self, collision::collider other) {
     if(!r.all_of<projectile_tag>(other)) {
         r.emplace_or_replace<life::begin_die>(self);
     }
@@ -277,10 +277,10 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
         auto old_sprt = std::exchange(
             reg.get<drawing::current_rendering_sprite>(self).where,
             dir == drawing::direction::left ? new_left_sprt : new_right_sprt);
-        reg.emplace<drawing::direction_sprite<drawing::direction::left>>(self,
-                                                            new_left_sprt);
-        reg.emplace<drawing::direction_sprite<drawing::direction::right>>(self,
-                                                             new_right_sprt);
+        reg.emplace<drawing::direction_sprite<drawing::direction::left>>(
+            self, new_left_sprt);
+        reg.emplace<drawing::direction_sprite<drawing::direction::right>>(
+            self, new_right_sprt);
         reg.emplace<drawing::previous_sprite>(self, old_sprt);
         reg.emplace<drawing::sprite_to_destroy>(self, old_sprt);
 
@@ -312,7 +312,6 @@ static_control_handler make_character() {
     return static_control_handler{}
         .with_position(start_pos)
         .with_text("#")
-        .with_fore_color(RGB(0, 0, 0))
         .with_size(w_size);
 }
 // FIXME(Igor) it is a very very bad function:(
@@ -326,15 +325,8 @@ void push_controls(std::array<static_control_handler, 2>&& ctrls) {
                 ::SetWindowText(i.get_wnd(), i.get_text().data());
             }
             for(auto& i: ctrls) {
-                // TODO(Igor): Shrink size
-                // i // {r.right-r.left, r.bottom-r.top}
-                // FIXME(Igor): make it explicit
-                if(i.get_fore_color() == RGB(0, 0, 0)) {
-                    i.with_fore_color(
-                        scintilla::look_op{sct}.get_text_color(STYLE_DEFAULT));
-                    ;
-                    ;
-                }
+                i.with_fore_color(
+                    scintilla::look_op{sct}.get_text_color(STYLE_DEFAULT));
                 np.show_static_control(std::move(i));
             }
         });
@@ -358,34 +350,29 @@ void bad_end_animation(entt::handle end_anim) {
         auto& cur_iter = h.get<current_iteration>().v;
         auto total_iter = h.get<total_iterations>().v;
         double alpha = std::min(total_iter, cur_iter) / total_iter;
-        double ch_x = h.get<changing_value>().v * glm::backEaseOut(alpha)
-                      + h.get<start_value>().v;
+        auto start_x = h.get<start_value>().v;
+        auto changing_x = h.get<changing_value>().v;
+        double ch_x = changing_x * glm::quarticEaseOut(alpha) + start_x;
         cur_iter += 1.;
         notepad::push_command(
             [ch_uuid = h.registry()->ctx().get<static_control_handler::id_t>(
                  entt::hashed_string{"character_uuid"}),
              k_uuid = h.registry()->ctx().get<static_control_handler::id_t>(
                  entt::hashed_string{"kitten_uuid"}),
-             ch_x](notepad& np, scintilla::scintilla_dll& /*sct*/) {
+             ch_x](notepad& np, scintilla::scintilla_dll& sc) {
                 auto find = [&np](auto uuid) {
                     return std::ranges::find_if(
                         np.get_all_static_controls(),
                         [uuid](auto& w) { return w.get_id() == uuid; });
                 };
-                auto k = find(k_uuid);
                 auto ch = find(ch_uuid);
-                if(ch == np.get_all_static_controls().end()
-                   || k == np.get_all_static_controls().end()) {
+                if(ch == np.get_all_static_controls().end()) {
                     return;
                 }
-                ch->with_position(pos(
-                    static_cast<int32_t>(std::lround(ch_x), ch->get_pos().y)));
+                ch->with_position(pos(std::lround(ch_x), ch->get_pos().y));
                 ::SetWindowText(*ch, ch->get_text().data());
                 ::SetWindowPos(*ch, HWND_TOP, ch->get_pos().x, ch->get_pos().y,
-                             ch->get_size().x, ch->get_size().y, 0);
-                ::SetWindowText(*k, k->get_text().data());
-                ::SetWindowPos(*k, HWND_TOP, k->get_pos().x, k->get_pos().y,
-                             k->get_size().x, k->get_size().y, 0);
+                               ch->get_size().x, ch->get_size().y, 0);
                 // NOLINTEND(readability-magic-numbers)
             });
     });
@@ -435,10 +422,10 @@ void good_end_animation(entt::handle end_anim) {
                 k->with_position(pos(std::lround(k_x), k->get_pos().y));
                 ::SetWindowText(*ch, ch->get_text().data());
                 ::SetWindowPos(*ch, HWND_TOP, ch->get_pos().x, ch->get_pos().y,
-                             ch->get_size().x, ch->get_size().y, 0);
+                               ch->get_size().x, ch->get_size().y, 0);
                 ::SetWindowText(*k, k->get_text().data());
                 ::SetWindowPos(*k, HWND_TOP, k->get_pos().x, k->get_pos().y,
-                             k->get_size().x, k->get_size().y, 0);
+                               k->get_size().x, k->get_size().y, 0);
                 // NOLINTEND(readability-magic-numbers)
             });
     });
@@ -492,11 +479,10 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
 
         static constexpr pos dead_kitten_start_pos{300, 0};
         static constexpr pos w_size = pos(150, 100);
-        auto kitten =
-            static_control_handler{}
-                .with_position(dead_kitten_start_pos)
-                .with_text("___")
-                .with_size(w_size);
+        auto kitten = static_control_handler{}
+                          .with_position(dead_kitten_start_pos)
+                          .with_text("___")
+                          .with_size(w_size);
         reg.ctx().emplace_as<static_control_handler::id_t>(
             entt::hashed_string{"kitten_uuid"}) = kitten.get_id();
         game_over::push_controls(
@@ -522,11 +508,10 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
         const auto sprt = end_anim.emplace<sprite>(reg.get<sprite>(self));
         static constexpr pos kitten_start_pos(300 + 280, 0);
         static constexpr pos kitten_size(50, 50);
-        auto kitten_wnd =
-            static_control_handler{}
-                .with_position(kitten_start_pos)
-                .with_text(sprt.data())
-                .with_size(kitten_size);
+        auto kitten_wnd = static_control_handler{}
+                              .with_position(kitten_start_pos)
+                              .with_text(sprt.data())
+                              .with_size(kitten_size);
 
         reg.ctx().emplace_as<static_control_handler::id_t>(
             entt::hashed_string{"kitten_uuid"}) = kitten_wnd.get_id();
