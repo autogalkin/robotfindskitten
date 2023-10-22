@@ -1,6 +1,6 @@
 # robotfindskitten
 
-`robotfindskitten` is a my reimplementation of the game originally written by
+`robotfindskitten` is a my reimplementation of the game [originally](https://github.com/robotfindskitten/robotfindskitten) written by
 [Leonard Richardson](https://www.crummy.com/software/robotfindskitten/), now
 inside the Notepad.exe and uses the Entity Component System by the great [EnTT]🚀.
 
