@@ -359,7 +359,7 @@ void bad_end_animation(entt::handle end_anim) {
                  entt::hashed_string{"character_uuid"}),
              k_uuid = h.registry()->ctx().get<static_control_handler::id_t>(
                  entt::hashed_string{"kitten_uuid"}),
-             ch_x](notepad& np, scintilla::scintilla_dll& sc) {
+             ch_x](notepad& np, scintilla::scintilla_dll&  /*sc*/) {
                 auto find = [&np](auto uuid) {
                     return std::ranges::find_if(
                         np.get_all_static_controls(),
@@ -434,7 +434,6 @@ void good_end_animation(entt::handle end_anim) {
 void create_input_wait(entt::registry& reg, game_status_flag status) {
     reg.ctx().emplace_as<game_status_flag>(
         entt::hashed_string{"flag_for_set"}) = status;
-    reg.clear<input::key_down_task>();
     auto inpt = reg.create();
     reg.emplace<input::key_down_task>(
         inpt, +[](const void*, entt::handle h, std::span<input::key_state>) {
@@ -473,6 +472,7 @@ void on_collide(const void* /*payload*/, entt::registry& reg,
         reg.emplace<life::begin_die>(
             reg.ctx().get<entt::entity>(entt::hashed_string{"character_id"}));
         reg.ctx().erase<entt::entity>(entt::hashed_string{"character_id"});
+        reg.clear<input::key_down_task>();
         auto char_wnd = game_over::make_character();
         reg.ctx().emplace_as<static_control_handler::id_t>(
             entt::hashed_string{"character_uuid"}) = char_wnd.get_id();
