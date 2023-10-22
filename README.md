@@ -59,7 +59,7 @@ Binary files will be located in the *./out/bin/x64-release* directory.
 
 - Remove Notepad's main menu and status bar, and changes the window title to fit the game's context
 
-- The game uses fixed time step with with 60 fps (*src/robotfindskitten/engine/time.h*).
+- The game uses fixed time step with 60 fps (*src/robotfindskitten/engine/time.h*).
 
 [@DragonEnergy]: https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det
 
